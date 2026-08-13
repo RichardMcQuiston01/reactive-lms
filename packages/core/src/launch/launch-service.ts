@@ -114,11 +114,21 @@ export class LaunchService {
 
       const nodeId =
         request.activityNodeId ?? courseModule.activityNodeId ?? undefined;
-      const activityNode = nodeId
+      let activityNode = nodeId
         ? await manager.findOne(ActivityNode, {
             where: { id: nodeId },
           })
         : null;
+      if (!activityNode) {
+        const nodes = await manager.find(ActivityNode, {
+          where: { contentPackageId: contentPackage.id },
+          order: { sortOrder: 'ASC' },
+        });
+        activityNode =
+          nodes.find((node) => node.href === contentPackage.entryHref) ??
+          nodes[0] ??
+          null;
+      }
       const entryHref = activityNode?.href ?? contentPackage.entryHref;
       const extractedKey = contentPackage.extractedKey;
       if (!extractedKey || !entryHref) {
@@ -168,6 +178,7 @@ export class LaunchService {
         sessionId: attempt.sessionId,
         extractedKey,
         entryHref,
+        activityNodeId: activityNode?.id,
         getPublicUrl: (key) => this.storage.getPublicUrl(key),
       });
 

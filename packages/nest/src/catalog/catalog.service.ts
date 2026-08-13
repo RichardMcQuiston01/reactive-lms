@@ -313,6 +313,37 @@ export class CatalogService {
   }
 
   /**
+   * Package entry (or first) activity node when the module has none.
+   *
+   * @param courseModuleId - Course module id
+   */
+  async packageEntryActivityNodeId(
+    courseModuleId: string,
+  ): Promise<string | undefined> {
+    const row = await this.dataSource.manager.findOne(CourseModule, {
+      where: { id: courseModuleId },
+    });
+    if (!row) {
+      throw notFound(MODULE_NOT_FOUND, 'Course module not found.', {
+        courseModuleId,
+      });
+    }
+    const contentPackage = await this.dataSource.manager.findOne(
+      ContentPackage,
+      { where: { id: row.contentPackageId } },
+    );
+    const nodes = await this.dataSource.manager.find(ActivityNode, {
+      where: { contentPackageId: row.contentPackageId },
+      order: { sortOrder: 'ASC' },
+    });
+    const entryHref = contentPackage?.entryHref;
+    const entry = entryHref
+      ? nodes.find((node) => node.href === entryHref)
+      : undefined;
+    return entry?.id ?? nodes[0]?.id;
+  }
+
+  /**
    * Lists normalized progress rows for a registration.
    *
    * @param registrationId - Registration id

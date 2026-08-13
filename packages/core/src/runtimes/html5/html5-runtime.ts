@@ -25,6 +25,8 @@ export interface Html5LaunchContext {
   extractedKey: string;
   /** Relative HTML entry (package or activity node href). */
   entryHref: string;
+  /** Activity node launched with this attempt, when known. */
+  activityNodeId?: string;
   /** Resolves a storage key to a player-loadable URL. */
   getPublicUrl: (key: string) => Promise<string>;
 }
@@ -109,6 +111,9 @@ export class Html5Runtime implements ContentRuntime {
       runtimeConfig: {
         launchMode: request.launchMode,
         learner: request.learner,
+        ...(context.activityNodeId
+          ? { activityNodeId: context.activityNodeId }
+          : {}),
       },
     };
   }

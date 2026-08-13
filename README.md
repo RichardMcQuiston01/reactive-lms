@@ -91,7 +91,8 @@ GET  /lms/registrations/:id/progress
 POST /lms/registrations/:id/progress
 ```
 
-Errors are `{ "code": "PACKAGE_NOT_FOUND", "message": "…" }` with the HTTP status from `LmsError.status`.
+Errors are always `{ "code": "PACKAGE_NOT_FOUND", "message": "…" }`
+(including Nest/TypeORM failures). `LmsError` uses `LmsError.status`.
 
 ### Angular player
 

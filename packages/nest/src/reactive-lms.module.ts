@@ -29,6 +29,7 @@ import { LaunchesController } from './controllers/launches.controller';
 import { ModulesController } from './controllers/modules.controller';
 import { PackagesController } from './controllers/packages.controller';
 import { ProgressController } from './controllers/progress.controller';
+import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LmsExceptionFilter } from './filters/lms-exception.filter';
 import { LmsRequestService } from './identity/lms-request.service';
 import { PersonDirectory } from './identity/person-directory';
@@ -182,6 +183,7 @@ function buildModule(input: {
     LmsRequestService,
     CatalogService,
     { provide: APP_FILTER, useClass: LmsExceptionFilter },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ];
 
   return {

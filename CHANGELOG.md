@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- HTML5 `complete` writes progress when a module has no stored
+  `activityNodeId` by resolving the package entry node and putting it on
+  launch `runtimeConfig`
+- Nest catch-all exception filter returns `{ code, message }` for
+  HttpException, TypeORM, and unexpected errors
+- Angular player ignores `postMessage` events that are not from the
+  content iframe
 - HTML5 import detects ZIP types from central-directory names without inflating
   payloads; a failed persist deletes the original ZIP and extract prefix
 - Shared `LMS_ERROR_HTTP_STATUS` maps `PACKAGE_ZIP_BOMB`, `PACKAGE_INVALID_ZIP`,

@@ -2,13 +2,16 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   Input,
+  ViewChild,
   inject,
+  type ElementRef,
   type OnChanges,
   type OnDestroy,
   type OnInit,
 } from '@angular/core';
 import type { CreateLaunchDto, LaunchDto } from '@reactive-lms/shared';
 import { lmsFetch } from '../http/lms-http';
+import { isContentFrameMessage } from '../progress/is-content-frame-message';
 import { mapHtml5Message } from '../progress/map-html5-message';
 import { REACTIVE_LMS_CONFIG } from '../provide-reactive-lms';
 
@@ -23,6 +26,7 @@ import { REACTIVE_LMS_CONFIG } from '../provide-reactive-lms';
   template: `
     <p class="rlms-player-error" *ngIf="error">{{ error }}</p>
     <iframe
+      #frame
       class="rlms-player-frame"
       [attr.src]="contentUrl"
       [attr.title]="'Course module ' + courseModuleId"
@@ -42,6 +46,9 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Last launch or progress error, when any. */
   error: string | null = null;
+
+  /** Content iframe used to validate `postMessage` source. */
+  @ViewChild('frame') frame?: ElementRef<HTMLIFrameElement>;
 
   private readonly config = inject(REACTIVE_LMS_CONFIG);
   private activityNodeId?: string;
@@ -75,6 +82,16 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private readonly onMessage = (event: MessageEvent): void => {
+    if (
+      !isContentFrameMessage(
+        event,
+        this.frame?.nativeElement.contentWindow,
+        this.contentUrl,
+        typeof location === 'undefined' ? undefined : location.href,
+      )
+    ) {
+      return;
+    }
     const payload = mapHtml5Message(event.data, {
       registrationId: this.registrationId,
       courseModuleId: this.courseModuleId,

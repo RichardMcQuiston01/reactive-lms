@@ -99,6 +99,7 @@ describe('Html5Runtime', () => {
       sessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       extractedKey: 'packages/pkg/content',
       entryHref: 'index.html',
+      activityNodeId: '12121212-1212-4121-8121-121212121212',
       getPublicUrl: async (key) => `/lms/content/${key}`,
     });
     expect(descriptor).toEqual({
@@ -110,6 +111,7 @@ describe('Html5Runtime', () => {
       runtimeConfig: {
         launchMode: 'Normal',
         learner: dummyLaunch.learner,
+        activityNodeId: '12121212-1212-4121-8121-121212121212',
       },
     });
   });

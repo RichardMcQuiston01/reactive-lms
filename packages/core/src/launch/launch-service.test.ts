@@ -99,6 +99,7 @@ describe('LaunchService', () => {
     );
     expect(descriptor.attemptId).toBeDefined();
     expect(descriptor.sessionId).toBeDefined();
+    expect(descriptor.runtimeConfig['activityNodeId']).toBe(NODE_ID);
 
     const attempts = ds.rowsOf(Attempt);
     expect(attempts).toHaveLength(1);
@@ -119,6 +120,20 @@ describe('LaunchService', () => {
         subjectId: descriptor.attemptId,
       }),
     ]);
+  });
+
+  test('puts the package entry node on launch when the module has none', async () => {
+    const ds = createMockDataSource();
+    seedLaunchable(ds);
+    const moduleRow = ds.rowsOf(CourseModule)[0];
+    if (moduleRow) {
+      moduleRow.activityNodeId = null;
+    }
+
+    const descriptor = await launchService(ds).launch(REQUEST);
+
+    expect(descriptor.runtimeConfig['activityNodeId']).toBe(NODE_ID);
+    expect(ds.rowsOf(Attempt)[0]?.activityNodeId).toBe(NODE_ID);
   });
 
   test('abandons a still_open attempt before opening a new one', async () => {

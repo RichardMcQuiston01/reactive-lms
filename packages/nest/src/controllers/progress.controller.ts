@@ -77,7 +77,8 @@ export class ProgressController {
     });
     const activityNodeId =
       body.activityNodeId ??
-      (await this.catalog.moduleActivityNodeId(body.courseModuleId));
+      (await this.catalog.moduleActivityNodeId(body.courseModuleId)) ??
+      (await this.catalog.packageEntryActivityNodeId(body.courseModuleId));
     if (!activityNodeId) {
       throw new LmsError({
         status: httpStatusForLmsCode(MODULE_NOT_FOUND),

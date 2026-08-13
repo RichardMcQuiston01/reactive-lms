@@ -1,4 +1,5 @@
 export { RlmsPlayerComponent } from './launch/rlms-player.component';
+export { isContentFrameMessage } from './progress/is-content-frame-message';
 export {
   mapHtml5Message,
   type Html5MessageContext,

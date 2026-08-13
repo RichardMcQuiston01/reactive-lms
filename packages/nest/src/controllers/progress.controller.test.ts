@@ -71,4 +71,29 @@ describe('ProgressController', () => {
 
     expect(await ctl.list('reg-1', {})).toEqual(rows);
   });
+
+  test('POST resolves the package entry node when the module has none', async () => {
+    const written: NormalizedProgress[] = [];
+    const ctl = new ProgressController(
+      {
+        upsert: async (progress) => {
+          written.push(progress);
+        },
+      } as ProgressSinkService,
+      {
+        moduleActivityNodeId: async () => undefined,
+        packageEntryActivityNodeId: async () => 'entry-node-1',
+      } as unknown as CatalogService,
+      { assertCan: async () => undefined } as LmsRequestService,
+    );
+
+    await ctl.upsert(
+      'reg-1',
+      { courseModuleId: 'mod-1', completionStatus: 'completed' },
+      {},
+    );
+
+    expect(written[0]?.activityNodeId).toBe('entry-node-1');
+    expect(written[0]?.completionStatus).toBe('completed');
+  });
 });
