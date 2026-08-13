@@ -4,12 +4,16 @@
  */
 export type LmsErrorCode =
   | typeof PACKAGE_NOT_DETECTED
+  | typeof PACKAGE_TYPE_UNSUPPORTED
   | typeof LAUNCH_SESSION_OPEN
   | typeof CMI5_TOKEN_USED
   | (string & {});
 
 /** Package import could not detect a supported format. */
 export const PACKAGE_NOT_DETECTED = 'PACKAGE_NOT_DETECTED';
+
+/** Detected package type cannot be imported in this version. */
+export const PACKAGE_TYPE_UNSUPPORTED = 'PACKAGE_TYPE_UNSUPPORTED';
 
 /** A launch was refused because another session is still open. */
 export const LAUNCH_SESSION_OPEN = 'LAUNCH_SESSION_OPEN';
@@ -23,6 +27,7 @@ export const CMI5_TOKEN_USED = 'CMI5_TOKEN_USED';
  */
 export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [PACKAGE_NOT_DETECTED]: 400,
+  [PACKAGE_TYPE_UNSUPPORTED]: 422,
   [CMI5_TOKEN_USED]: 400,
   [LAUNCH_SESSION_OPEN]: 409,
 };

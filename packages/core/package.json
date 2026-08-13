@@ -13,7 +13,12 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@reactive-lms/persistence": "workspace:*",
     "@reactive-lms/shared": "workspace:*",
-    "@reactive-lms/persistence": "workspace:*"
+    "fflate": "^0.8.3",
+    "typeorm": "^0.3.31"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0"
   }
 }

@@ -21,7 +21,7 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 | --- | --- | --- |
 | `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
 | `packages/persistence` | `@reactive-lms/persistence` | LIS-shaped TypeORM `rlms_*` entities, `createPersistenceDataSource` factory, and `0001-initial-schema` migration |
-| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes |
+| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 ZIP import (`PackageImporter`, `Html5Runtime`, `FilesystemStorageAdapter`) is implemented; other formats are detected but not yet parsed. |
 | `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST controllers, OpenAPI |
 | `packages/player` | `@reactive-lms/player` | Angular library: launch surface and progress subscription |
 | `packages/standalone-api` | `@reactive-lms/standalone-api` | Standalone Nest bootstrap + local identity adapter |

@@ -44,6 +44,7 @@ export {
   LMS_ERROR_HTTP_STATUS,
   LmsError,
   PACKAGE_NOT_DETECTED,
+  PACKAGE_TYPE_UNSUPPORTED,
   httpStatusForLmsCode,
 } from './errors/lms-error';
 export type { LmsErrorCode, LmsErrorOptions } from './errors/lms-error';

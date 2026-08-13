@@ -4,6 +4,7 @@ import {
   LAUNCH_SESSION_OPEN,
   LmsError,
   PACKAGE_NOT_DETECTED,
+  PACKAGE_TYPE_UNSUPPORTED,
   httpStatusForLmsCode,
 } from './lms-error';
 
@@ -39,6 +40,10 @@ describe('LmsError', () => {
 describe('httpStatusForLmsCode', () => {
   test('maps PACKAGE_NOT_DETECTED to 400', () => {
     expect(httpStatusForLmsCode(PACKAGE_NOT_DETECTED)).toBe(400);
+  });
+
+  test('maps PACKAGE_TYPE_UNSUPPORTED to 422', () => {
+    expect(httpStatusForLmsCode(PACKAGE_TYPE_UNSUPPORTED)).toBe(422);
   });
 
   test('maps CMI5_TOKEN_USED to 400', () => {

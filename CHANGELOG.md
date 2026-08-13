@@ -4,6 +4,10 @@
 
 ### Added
 
+- `@reactive-lms/core` HTML5 import pipeline: deterministic package detection,
+  `Html5Runtime`, `FilesystemStorageAdapter` (ZIP-bomb limits + optional
+  antivirus hook), and `PackageImporter` that stores a ZIP and persists a
+  `ContentPackage` + `ActivityNode`
 - `@reactive-lms/persistence` LIS-shaped `rlms_*` TypeORM schema, host-safe
   `createPersistenceDataSource` factory, and `0001-initial-schema` migration
 - `@reactive-lms/shared` LMS contracts: package/registration enums, `LearnerRef`,
