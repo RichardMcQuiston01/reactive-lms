@@ -1,3 +1,13 @@
+export { EventLogService, type EventLogRecord } from './audit/event-log.service';
+export {
+  ModuleService,
+  type PlaceModuleInput,
+} from './courses/module-service';
+export {
+  EnrolmentService,
+  type EnrolmentResult,
+  type SelfEnrolmentOptions,
+} from './enrolment/enrolment-service';
 export { detectPackageType } from './import/detect-package-type';
 export {
   PackageImporter,
@@ -9,7 +19,23 @@ export {
   createZipFileIndex,
   normalizePackagePath,
 } from './import/package-file-index';
-export { Html5Runtime } from './runtimes/html5/html5-runtime';
+export {
+  assertAvailable,
+  type AvailabilityModule,
+  type AvailabilityProgress,
+} from './launch/availability';
+export { LaunchService } from './launch/launch-service';
+export {
+  computeRegistrationStatus,
+  type ComputeRegistrationStatusInput,
+  type ModuleProgressSnapshot,
+} from './progress/course-completion';
+export { ProgressSinkService } from './progress/progress-sink';
+export {
+  Html5Runtime,
+  joinStorageKey,
+  type Html5LaunchContext,
+} from './runtimes/html5/html5-runtime';
 export {
   DEFAULT_MAX_ZIP_FILE_COUNT,
   DEFAULT_MAX_ZIP_UNCOMPRESSED_BYTES,

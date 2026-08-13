@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   ActivityNode,
   ContentPackage,
+  EventLog,
 } from '@reactive-lms/persistence';
 import {
   LmsError,
@@ -128,6 +129,19 @@ export class PackageImporter {
           metadataJson: rootActivity?.metadata ?? null,
         });
         await manager.save(activityNode);
+
+        const imported = manager.create(EventLog, {
+          personId: options?.createdByUserId ?? null,
+          action: 'package.imported',
+          subjectType: 'content_package',
+          subjectId: packageId,
+          payloadJson: {
+            packageType: parsed.packageType,
+            title: parsed.title,
+            activityNodeId,
+          },
+        });
+        await manager.save(imported);
       });
     } catch (error) {
       try {

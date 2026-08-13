@@ -11,6 +11,14 @@
 
 ### Added
 
+- `@reactive-lms/core` course spine: `ModuleService` places/reorders imported
+  packages as course modules; `EnrolmentService` supports `manual`, `self`
+  (open window + optional key), and `group` methods; `LaunchService` launches
+  HTML5 modules in an iframe; `ProgressSinkService` rolls up
+  `registration.status` from module completion; `event_log` records
+  `package.imported`, `enrol.joined`, `launch.started`, `progress.committed`
+- Shared error codes for module availability, enrolment gates (403), and
+  package/module/registration not-found (404)
 - `@reactive-lms/core` HTML5 import pipeline: deterministic package detection,
   `Html5Runtime`, `FilesystemStorageAdapter` (ZIP-bomb limits + optional
   antivirus hook), and `PackageImporter` that stores a ZIP and persists a

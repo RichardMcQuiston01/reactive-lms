@@ -13,8 +13,26 @@ import { detectPackageType } from '../../import/detect-package-type';
 import { normalizePackagePath } from '../../import/package-file-index';
 
 /**
+ * Extra fields {@link Html5Runtime.createLaunch} needs after the
+ * attempt row exists. `LaunchRequest` stays the shared contract.
+ */
+export interface Html5LaunchContext {
+  /** Attempt created by {@link LaunchService}. */
+  attemptId: string;
+  /** Unique session id stored on the attempt. */
+  sessionId: string;
+  /** Storage prefix of the extracted package. */
+  extractedKey: string;
+  /** Relative HTML entry (package or activity node href). */
+  entryHref: string;
+  /** Resolves a storage key to a player-loadable URL. */
+  getPublicUrl: (key: string) => Promise<string>;
+}
+
+/**
  * HTML5 static-bundle runtime (ZIP of assets + an HTML entry).
- * Launch is implemented in a later slice.
+ * Launch returns an iframe descriptor whose `contentUrl` is the
+ * public URL of the extracted entry file.
  */
 export class Html5Runtime implements ContentRuntime {
   /** @inheritdoc */
@@ -62,18 +80,50 @@ export class Html5Runtime implements ContentRuntime {
   }
 
   /**
-   * Launch is not part of this slice.
+   * Builds an iframe launch descriptor for extracted HTML5 content.
    *
-   * @param _request - Launch request (unused)
-   * @throws {@link LmsError} always
+   * @param request - Registration, module, learner, and launch mode
+   * @param context - Attempt ids plus extracted entry location
    */
-  async createLaunch(_request: LaunchRequest): Promise<LaunchDescriptor> {
-    throw new LmsError({
-      status: httpStatusForLmsCode(LAUNCH_NOT_IMPLEMENTED),
-      code: LAUNCH_NOT_IMPLEMENTED,
-      message: 'HTML5 launch is not implemented in 3a',
-    });
+  async createLaunch(
+    request: LaunchRequest,
+    context?: Html5LaunchContext,
+  ): Promise<LaunchDescriptor> {
+    if (!context?.extractedKey || !context.entryHref) {
+      throw new LmsError({
+        status: httpStatusForLmsCode(LAUNCH_NOT_IMPLEMENTED),
+        code: LAUNCH_NOT_IMPLEMENTED,
+        message:
+          'HTML5 launch requires extracted content location and a public URL.',
+      });
+    }
+
+    const storageKey = joinStorageKey(context.extractedKey, context.entryHref);
+    const contentUrl = await context.getPublicUrl(storageKey);
+    return {
+      attemptId: context.attemptId,
+      sessionId: context.sessionId,
+      packageType: 'html5',
+      playerKind: 'iframe',
+      contentUrl,
+      runtimeConfig: {
+        launchMode: request.launchMode,
+        learner: request.learner,
+      },
+    };
   }
+}
+
+/**
+ * Joins a storage prefix and relative href without introducing `..`.
+ *
+ * @param prefix - Extracted package key
+ * @param relative - Entry href inside the package
+ */
+export function joinStorageKey(prefix: string, relative: string): string {
+  const left = prefix.replace(/\\/g, '/').replace(/\/+$/, '');
+  const right = relative.replace(/\\/g, '/').replace(/^\/+/, '');
+  return left ? `${left}/${right}` : right;
 }
 
 function pickHtmlEntry(files: PackageFileIndex): string | undefined {

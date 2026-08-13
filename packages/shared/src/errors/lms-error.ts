@@ -11,6 +11,14 @@ export type LmsErrorCode =
   | typeof STORAGE_KEY_INVALID
   | typeof LAUNCH_NOT_IMPLEMENTED
   | typeof LAUNCH_SESSION_OPEN
+  | typeof MODULE_NOT_AVAILABLE
+  | typeof ENROLMENT_METHOD_UNAVAILABLE
+  | typeof ENROLMENT_WINDOW_CLOSED
+  | typeof ENROLMENT_KEY_REQUIRED
+  | typeof ENROLMENT_GROUP_REQUIRED
+  | typeof PACKAGE_NOT_FOUND
+  | typeof MODULE_NOT_FOUND
+  | typeof REGISTRATION_NOT_FOUND
   | typeof CMI5_TOKEN_USED
   | (string & {});
 
@@ -38,6 +46,30 @@ export const LAUNCH_NOT_IMPLEMENTED = 'LAUNCH_NOT_IMPLEMENTED';
 /** A launch was refused because another session is still open. */
 export const LAUNCH_SESSION_OPEN = 'LAUNCH_SESSION_OPEN';
 
+/** Module availability rules block launch (date, prerequisite, score). */
+export const MODULE_NOT_AVAILABLE = 'MODULE_NOT_AVAILABLE';
+
+/** No enabled enrolment method matches the requested path. */
+export const ENROLMENT_METHOD_UNAVAILABLE = 'ENROLMENT_METHOD_UNAVAILABLE';
+
+/** Self-enrolment is outside its openFrom / openUntil window. */
+export const ENROLMENT_WINDOW_CLOSED = 'ENROLMENT_WINDOW_CLOSED';
+
+/** Self-enrolment requires a key that was missing or wrong. */
+export const ENROLMENT_KEY_REQUIRED = 'ENROLMENT_KEY_REQUIRED';
+
+/** Group enrolment requires membership in the configured LIS Group. */
+export const ENROLMENT_GROUP_REQUIRED = 'ENROLMENT_GROUP_REQUIRED';
+
+/** Content package id does not exist. */
+export const PACKAGE_NOT_FOUND = 'PACKAGE_NOT_FOUND';
+
+/** Course module id does not exist (or is not in the section). */
+export const MODULE_NOT_FOUND = 'MODULE_NOT_FOUND';
+
+/** Registration id does not exist. */
+export const REGISTRATION_NOT_FOUND = 'REGISTRATION_NOT_FOUND';
+
 /** cmi5 one-time fetch token was already consumed. */
 export const CMI5_TOKEN_USED = 'CMI5_TOKEN_USED';
 
@@ -53,7 +85,15 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [CMI5_TOKEN_USED]: 400,
   [PACKAGE_TYPE_UNSUPPORTED]: 422,
   [STORAGE_KEY_NOT_FOUND]: 404,
+  [PACKAGE_NOT_FOUND]: 404,
+  [MODULE_NOT_FOUND]: 404,
+  [REGISTRATION_NOT_FOUND]: 404,
   [LAUNCH_SESSION_OPEN]: 409,
+  [MODULE_NOT_AVAILABLE]: 403,
+  [ENROLMENT_METHOD_UNAVAILABLE]: 403,
+  [ENROLMENT_WINDOW_CLOSED]: 403,
+  [ENROLMENT_KEY_REQUIRED]: 403,
+  [ENROLMENT_GROUP_REQUIRED]: 403,
   [LAUNCH_NOT_IMPLEMENTED]: 501,
 };
 

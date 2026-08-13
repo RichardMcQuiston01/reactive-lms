@@ -13,6 +13,8 @@ Fully fledged TypeScript LMS that can run **standalone** or **embed** into an ex
 
 Standalone boots the same Nest module and Angular player with thin local adapters (identity, storage). Embed reuses TypeORM entities/migrations and shared DTOs without owning host users.
 
+A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`). Module availability (`afterModuleId`, date window, `minScore`) is enforced at launch. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed).
+
 ## Monorepo map
 
 Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for install or scripts.
@@ -21,7 +23,7 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 | --- | --- | --- |
 | `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
 | `packages/persistence` | `@reactive-lms/persistence` | LIS-shaped TypeORM `rlms_*` entities, `createPersistenceDataSource` factory, and `0001-initial-schema` migration |
-| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 ZIP import (`PackageImporter`, `Html5Runtime`, `FilesystemStorageAdapter`) is implemented; other formats are detected but not yet parsed. |
+| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 ZIP import (`PackageImporter`, `Html5Runtime`, `FilesystemStorageAdapter`), module placement (`ModuleService`), enrolment (`manual` / `self` / `group`), HTML5 iframe launch, and course-completion rollup are implemented; other formats are detected but not yet parsed. |
 | `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST controllers, OpenAPI |
 | `packages/player` | `@reactive-lms/player` | Angular library: launch surface and progress subscription |
 | `packages/standalone-api` | `@reactive-lms/standalone-api` | Standalone Nest bootstrap + local identity adapter |

@@ -80,7 +80,7 @@ describe('Html5Runtime', () => {
     }
   });
 
-  test('createLaunch throws a clear not-implemented error', async () => {
+  test('createLaunch throws when extracted location is missing', async () => {
     try {
       await runtime.createLaunch(dummyLaunch);
       throw new Error('expected createLaunch to throw');
@@ -90,7 +90,27 @@ describe('Html5Runtime', () => {
         code: 'LAUNCH_NOT_IMPLEMENTED',
         status: 501,
       });
-      expect((error as LmsError).message).toMatch(/not implemented in 3a/i);
     }
+  });
+
+  test('createLaunch returns an iframe descriptor for extracted content', async () => {
+    const descriptor = await runtime.createLaunch(dummyLaunch, {
+      attemptId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      sessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      extractedKey: 'packages/pkg/content',
+      entryHref: 'index.html',
+      getPublicUrl: async (key) => `/lms/content/${key}`,
+    });
+    expect(descriptor).toEqual({
+      attemptId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      sessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      packageType: 'html5',
+      playerKind: 'iframe',
+      contentUrl: '/lms/content/packages/pkg/content/index.html',
+      runtimeConfig: {
+        launchMode: 'Normal',
+        learner: dummyLaunch.learner,
+      },
+    });
   });
 });

@@ -21,6 +21,7 @@ interface SavedRow {
   extractedKey?: string;
   contentPackageId?: string;
   href?: string;
+  action?: string;
 }
 
 function createMockDataSource(saved: SavedRow[]) {
@@ -90,6 +91,7 @@ describe('PackageImporter', () => {
       `${pkg!.extractedKey}/index.html`,
     );
     expect(new TextDecoder().decode(extracted)).toContain('Demo');
+    expect(saved.some((row) => row.action === 'package.imported')).toBe(true);
   });
 
   test('imports a wrapped HTML5 ZIP using the nested index.html path', async () => {

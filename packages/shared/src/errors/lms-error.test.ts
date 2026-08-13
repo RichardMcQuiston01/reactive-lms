@@ -61,6 +61,12 @@ describe('httpStatusForLmsCode', () => {
     expect(httpStatusForLmsCode(STORAGE_KEY_NOT_FOUND)).toBe(404);
   });
 
+  test('maps PACKAGE_NOT_FOUND, MODULE_NOT_FOUND, REGISTRATION_NOT_FOUND to 404', () => {
+    expect(httpStatusForLmsCode('PACKAGE_NOT_FOUND')).toBe(404);
+    expect(httpStatusForLmsCode('MODULE_NOT_FOUND')).toBe(404);
+    expect(httpStatusForLmsCode('REGISTRATION_NOT_FOUND')).toBe(404);
+  });
+
   test('maps CMI5_TOKEN_USED to 400', () => {
     expect(httpStatusForLmsCode(CMI5_TOKEN_USED)).toBe(400);
   });
@@ -71,5 +77,13 @@ describe('httpStatusForLmsCode', () => {
 
   test('maps LAUNCH_NOT_IMPLEMENTED to 501', () => {
     expect(httpStatusForLmsCode(LAUNCH_NOT_IMPLEMENTED)).toBe(501);
+  });
+
+  test('maps MODULE_NOT_AVAILABLE and enrolment gates to 403', () => {
+    expect(httpStatusForLmsCode('MODULE_NOT_AVAILABLE')).toBe(403);
+    expect(httpStatusForLmsCode('ENROLMENT_METHOD_UNAVAILABLE')).toBe(403);
+    expect(httpStatusForLmsCode('ENROLMENT_WINDOW_CLOSED')).toBe(403);
+    expect(httpStatusForLmsCode('ENROLMENT_KEY_REQUIRED')).toBe(403);
+    expect(httpStatusForLmsCode('ENROLMENT_GROUP_REQUIRED')).toBe(403);
   });
 });
