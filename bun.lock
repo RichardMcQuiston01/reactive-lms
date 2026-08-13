@@ -1,0 +1,79 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "reactive-lms",
+      "devDependencies": {
+        "typescript": "^5.8.3",
+      },
+    },
+    "packages/core": {
+      "name": "@reactive-lms/core",
+      "version": "0.0.0",
+      "dependencies": {
+        "@reactive-lms/persistence": "workspace:*",
+        "@reactive-lms/shared": "workspace:*",
+      },
+    },
+    "packages/nest": {
+      "name": "@reactive-lms/nest",
+      "version": "0.0.0",
+      "dependencies": {
+        "@reactive-lms/core": "workspace:*",
+        "@reactive-lms/shared": "workspace:*",
+      },
+    },
+    "packages/persistence": {
+      "name": "@reactive-lms/persistence",
+      "version": "0.0.0",
+      "dependencies": {
+        "@reactive-lms/shared": "workspace:*",
+      },
+    },
+    "packages/player": {
+      "name": "@reactive-lms/player",
+      "version": "0.0.0",
+      "dependencies": {
+        "@reactive-lms/shared": "workspace:*",
+      },
+    },
+    "packages/shared": {
+      "name": "@reactive-lms/shared",
+      "version": "0.0.0",
+    },
+    "packages/standalone-api": {
+      "name": "@reactive-lms/standalone-api",
+      "version": "0.0.0",
+      "dependencies": {
+        "@reactive-lms/nest": "workspace:*",
+        "@reactive-lms/shared": "workspace:*",
+      },
+    },
+    "packages/standalone-web": {
+      "name": "@reactive-lms/standalone-web",
+      "version": "0.0.0",
+      "dependencies": {
+        "@reactive-lms/player": "workspace:*",
+        "@reactive-lms/shared": "workspace:*",
+      },
+    },
+  },
+  "packages": {
+    "@reactive-lms/core": ["@reactive-lms/core@workspace:packages/core"],
+
+    "@reactive-lms/nest": ["@reactive-lms/nest@workspace:packages/nest"],
+
+    "@reactive-lms/persistence": ["@reactive-lms/persistence@workspace:packages/persistence"],
+
+    "@reactive-lms/player": ["@reactive-lms/player@workspace:packages/player"],
+
+    "@reactive-lms/shared": ["@reactive-lms/shared@workspace:packages/shared"],
+
+    "@reactive-lms/standalone-api": ["@reactive-lms/standalone-api@workspace:packages/standalone-api"],
+
+    "@reactive-lms/standalone-web": ["@reactive-lms/standalone-web@workspace:packages/standalone-web"],
+
+    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+  }
+}

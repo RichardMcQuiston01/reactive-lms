@@ -1,0 +1,19 @@
+{
+  "name": "@reactive-lms/nest",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@reactive-lms/core": "workspace:*",
+    "@reactive-lms/shared": "workspace:*"
+  }
+}

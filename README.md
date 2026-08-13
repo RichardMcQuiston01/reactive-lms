@@ -2,7 +2,50 @@
 
 ## Overview
 
-Fully fledged TypeScript LMS package that can be run standalone or easily integrated into another TypeScript project via shared library or via API requests
+Fully fledged TypeScript LMS that can run **standalone** or **embed** into an existing NestJS + TypeORM backend and Angular frontend. Domain contracts live in a shared library consumed by both sides; package-format adapters implement one progress model for SCORM, xAPI, cmi5, HTML5, H5P, and LTI.
+
+## Dual mode
+
+| Mode | What you run | When to use it |
+| --- | --- | --- |
+| **Standalone** | `@reactive-lms/standalone-api` + `@reactive-lms/standalone-web` | Demo, evaluation, or a self-contained LMS process |
+| **Embed** | Import `@reactive-lms/nest` into a host NestJS app and `@reactive-lms/player` into a host Angular app | Host already owns identity, auth, and UI shell |
+
+Standalone boots the same Nest module and Angular player with thin local adapters (identity, storage). Embed reuses TypeORM entities/migrations and shared DTOs without owning host users.
+
+## Monorepo map
+
+Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for install or scripts.
+
+| Package | Name | Responsibility |
+| --- | --- | --- |
+| `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, contracts, LIS-shaped models (no Nest/Angular/TypeORM) |
+| `packages/persistence` | `@reactive-lms/persistence` | TypeORM entities, repositories, migrations |
+| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes |
+| `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST controllers, OpenAPI |
+| `packages/player` | `@reactive-lms/player` | Angular library: launch surface and progress subscription |
+| `packages/standalone-api` | `@reactive-lms/standalone-api` | Standalone Nest bootstrap + local identity adapter |
+| `packages/standalone-web` | `@reactive-lms/standalone-web` | Demo Angular app consuming the player |
+
+## Tech stack
+
+- **Backend:** TypeScript, NestJS, TypeORM, PostgreSQL first
+- **Frontend demo:** Angular 18+, TailwindCSS, Google Material, RxJS
+- **Shared:** interfaces and DTOs used by frontend and backend
+
+Standards and editions are listed in [docs/STANDARDS.md](docs/STANDARDS.md).
+
+## Scripts
+
+From the repo root (after `bun install`):
+
+```bash
+bun run typecheck
+bun run test
+bun run test:file -- path/to/file.test.ts
+bun run lint
+bun run lint:file -- path/to/file.ts
+```
 
 ## Support
 
