@@ -19,7 +19,7 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 
 | Package | Name | Responsibility |
 | --- | --- | --- |
-| `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, contracts, LIS-shaped models (no Nest/Angular/TypeORM) |
+| `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
 | `packages/persistence` | `@reactive-lms/persistence` | TypeORM entities, repositories, migrations |
 | `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes |
 | `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST controllers, OpenAPI |
