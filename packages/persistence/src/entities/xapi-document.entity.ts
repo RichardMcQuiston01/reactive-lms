@@ -1,4 +1,4 @@
-import { Column, Entity, Unique } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { TimestampedEntity } from './base.entity';
 
 /**
@@ -11,16 +11,13 @@ export type XapiDocumentKind =
 
 /**
  * xAPI State, Agent Profile, or Activity Profile document.
+ *
+ * Uniqueness is only the COALESCE unique index `uq_rlms_xapi_document_key`
+ * in `0001-initial-schema` (kind + activity + agent + registration +
+ * state/profile id). No entity `@Unique` — Postgres treats NULLs as
+ * distinct, which would drift from xAPI document identity.
  */
 @Entity({ name: 'rlms_xapi_document' })
-@Unique('uq_rlms_xapi_document_key', [
-  'documentKind',
-  'activityIri',
-  'agentJson',
-  'registrationId',
-  'stateId',
-  'profileId',
-])
 export class XapiDocument extends TimestampedEntity {
   @Column({ name: 'document_kind', type: 'text' })
   documentKind!: XapiDocumentKind;

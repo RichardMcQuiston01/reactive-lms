@@ -3,38 +3,79 @@ import { getMetadataArgsStorage } from 'typeorm';
 import {
   ALL_ENTITIES,
   Registration,
+  XapiDocument,
   createPersistenceDataSource,
 } from './index';
 
+const EXPECTED_TABLE_NAMES = [
+  'rlms_activity_node',
+  'rlms_attempt',
+  'rlms_content_package',
+  'rlms_course_category',
+  'rlms_course_module',
+  'rlms_course_offering',
+  'rlms_course_section',
+  'rlms_course_template',
+  'rlms_enrolment_method',
+  'rlms_event_log',
+  'rlms_group',
+  'rlms_line_item',
+  'rlms_lti_launch_nonce',
+  'rlms_lti_platform_deployment',
+  'rlms_membership',
+  'rlms_normalized_progress',
+  'rlms_person',
+  'rlms_registration',
+  'rlms_result',
+  'rlms_xapi_document',
+  'rlms_xapi_statement',
+];
+
 describe('entity metadata', () => {
-  test('every entity table name starts with rlms_', () => {
+  test('every entity table name is the exact rlms_* name', () => {
     expect(ALL_ENTITIES.length).toBeGreaterThan(0);
 
     const tableNames = getMetadataArgsStorage()
       .tables.filter((table) => ALL_ENTITIES.includes(table.target as never))
-      .map((table) => table.name);
+      .map((table) => table.name)
+      .sort();
 
-    expect(tableNames.length).toBe(ALL_ENTITIES.length);
-
-    for (const name of tableNames) {
-      expect(name?.startsWith('rlms_')).toBe(true);
-    }
+    expect(tableNames).toEqual(EXPECTED_TABLE_NAMES);
   });
 
   test('Registration has a unique index on (personId, courseSectionId)', () => {
-    const uniqueColumns = getMetadataArgsStorage()
-      .uniques.filter((unique) => unique.target === Registration)
-      .flatMap((unique) => unique.columns ?? []);
+    const matchingUniques = getMetadataArgsStorage().uniques.filter(
+      (unique) => {
+        if (unique.target !== Registration) {
+          return false;
+        }
+        const columns = unique.columns;
+        return (
+          Array.isArray(columns) &&
+          columns.includes('personId') &&
+          columns.includes('courseSectionId')
+        );
+      },
+    );
 
-    const indexColumns = getMetadataArgsStorage()
-      .indices.filter(
-        (index) => index.target === Registration && index.unique === true,
-      )
-      .flatMap((index) => index.columns ?? []);
+    expect(matchingUniques).toHaveLength(1);
+    expect(matchingUniques[0]?.columns).toEqual([
+      'personId',
+      'courseSectionId',
+    ]);
+  });
 
-    const columns = [...uniqueColumns, ...indexColumns];
-    expect(columns).toContain('personId');
-    expect(columns).toContain('courseSectionId');
+  test('XapiDocument has no column Unique (COALESCE index lives in migration)', () => {
+    const uniques = getMetadataArgsStorage().uniques.filter(
+      (unique) => unique.target === XapiDocument,
+    );
+    const namedIndices = getMetadataArgsStorage().indices.filter(
+      (entry) =>
+        entry.target === XapiDocument &&
+        entry.name === 'uq_rlms_xapi_document_key',
+    );
+    expect(uniques).toEqual([]);
+    expect(namedIndices).toEqual([]);
   });
 });
 

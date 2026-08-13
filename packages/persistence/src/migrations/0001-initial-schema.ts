@@ -7,8 +7,7 @@ export class InitialSchema0001 implements MigrationInterface {
   name = '0001-initial-schema';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
-
+    // gen_random_uuid() is in core PostgreSQL 13+; do not CREATE EXTENSION.
     await queryRunner.query(`
       CREATE TABLE "rlms_person" (
         "id" uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -314,6 +313,7 @@ export class InitialSchema0001 implements MigrationInterface {
       )
     `);
 
+    // Sole definition of xAPI document identity (entity has no @Unique).
     await queryRunner.query(`
       CREATE UNIQUE INDEX "uq_rlms_xapi_document_key"
       ON "rlms_xapi_document" (
