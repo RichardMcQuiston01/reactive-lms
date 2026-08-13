@@ -11,6 +11,13 @@
 
 ### Added
 
+- `@reactive-lms/nest` `ReactiveLmsModule.registerAsync` with REST + OpenAPI
+  for packages, course templates/offerings/sections, modules, enrolment,
+  launches, and progress; `LmsError` filter returns `{ code, message }`
+- `@reactive-lms/standalone-api` boots that module with a filesystem dataroot
+  (`RLMS_DATAROOT`), `GET /health`, `/lms/content/**`, and a fixed demo learner
+- `@reactive-lms/player` Angular standalone `RlmsPlayerComponent` plus
+  `provideReactiveLms`; HTML5 `postMessage` mapper posts launch progress
 - `@reactive-lms/core` course spine: `ModuleService` places/reorders imported
   packages as course modules; `EnrolmentService` supports `manual`, `self`
   (open window + optional key), and `group` methods; `LaunchService` launches

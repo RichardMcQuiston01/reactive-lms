@@ -1,0 +1,51 @@
+import { Body, Controller, HttpCode, Param, Post, Req } from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { LaunchService } from '@reactive-lms/core';
+import type { CreateLaunchDto, LaunchDto } from '@reactive-lms/shared';
+import { LmsRequestService } from '../identity/lms-request.service';
+
+/**
+ * Creates launch attempts for an existing registration.
+ */
+@ApiTags('launches')
+@Controller('registrations')
+export class LaunchesController {
+  /**
+   * @param launches - Core launch service
+   * @param request - Identity / capability
+   */
+  constructor(
+    private readonly launches: LaunchService,
+    private readonly request: LmsRequestService,
+  ) {}
+
+  /**
+   * Launches a module for the registration.
+   *
+   * @param id - Registration id
+   * @param body - Course module and optional activity node
+   * @param req - Host request
+   */
+  @Post(':id/launches')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Launch a course module' })
+  @ApiParam({ name: 'id' })
+  async create(
+    @Param('id') id: string,
+    @Body() body: CreateLaunchDto,
+    @Req() req: unknown,
+  ): Promise<LaunchDto> {
+    await this.request.assertCan(req, 'launch', {
+      type: 'registration',
+      id,
+    });
+    const learner = await this.request.resolveLearner(req);
+    return this.launches.launch({
+      registrationId: id,
+      courseModuleId: body.courseModuleId,
+      activityNodeId: body.activityNodeId,
+      learner,
+      launchMode: body.launchMode ?? 'Normal',
+    });
+  }
+}
