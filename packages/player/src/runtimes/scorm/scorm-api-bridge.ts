@@ -23,6 +23,17 @@ export interface Scorm12Api {
 export type ScormApiHost = Window | { API?: Scorm12Api };
 
 /**
+ * Extra options for {@link ScormApiBridge.install}.
+ */
+export interface ScormApiInstallOptions {
+  /**
+   * When provided, `window.API` is assigned only if this returns true
+   * after hydrate. Stale attaches must return false.
+   */
+  shouldApply?: () => boolean;
+}
+
+/**
  * HTTP + timer hooks used by {@link ScormApiBridge}.
  */
 export interface ScormApiBridgeOptions {
@@ -44,6 +55,7 @@ export interface ScormApiBridgeOptions {
  */
 export class ScormApiBridge {
   private store = new CmiStore();
+  private installedApi?: Scorm12Api;
   private timer: unknown;
   private readonly debounceMs: number;
   private readonly setTimeoutFn: (
@@ -71,8 +83,12 @@ export class ScormApiBridge {
    * Hydrates CMI and assigns `target.API`. Call before setting iframe `src`.
    *
    * @param target - Player window (parent of the SCO)
+   * @param installOptions - Optional apply gate for stale attaches
    */
-  async install(target: ScormApiHost): Promise<Scorm12Api> {
+  async install(
+    target: ScormApiHost,
+    installOptions?: ScormApiInstallOptions,
+  ): Promise<Scorm12Api> {
     const hydrated = await this.options.getCmi();
     this.store = new CmiStore({ values: hydrated.values ?? {} });
     const api: Scorm12Api = {
@@ -86,18 +102,26 @@ export class ScormApiBridge {
       LMSGetErrorString: (code) => this.store.LMSGetErrorString(code),
       LMSGetDiagnostic: (code) => this.store.LMSGetDiagnostic(code),
     };
+    this.installedApi = api;
+    if (installOptions?.shouldApply && !installOptions.shouldApply()) {
+      return api;
+    }
     asApiHost(target).API = api;
     return api;
   }
 
   /**
-   * Flushes a pending debounced Commit, then removes `target.API`.
+   * Flushes a pending debounced Commit, then removes `target.API`
+   * only when this bridge still owns it.
    *
    * @param target - Player window previously passed to {@link install}
    */
   uninstall(target: ScormApiHost): void {
     this.flushPending();
-    delete asApiHost(target).API;
+    const host = asApiHost(target);
+    if (this.installedApi && host.API === this.installedApi) {
+      delete host.API;
+    }
   }
 
   /**

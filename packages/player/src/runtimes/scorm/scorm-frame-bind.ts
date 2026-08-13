@@ -25,6 +25,11 @@ export interface ScormFrameBindOptions {
   host: ScormApiHost;
   /** Previous bridge to uninstall / flush first. */
   previous?: ScormApiBridge;
+  /**
+   * When provided, `window.API` is assigned only if this returns true
+   * after hydrate (stale attach generations return false).
+   */
+  shouldApply?: () => boolean;
   /** Hydrate hook. */
   getCmi: () => Promise<ScormCmiDto>;
   /** Commit hook. */
@@ -49,7 +54,9 @@ export async function bindScormFrame(
     putCmi: input.putCmi,
   });
   try {
-    await bridge.install(input.host);
+    await bridge.install(input.host, {
+      shouldApply: input.shouldApply,
+    });
     return { bridge, iframeSrc: input.contentUrl, error: null };
   } catch (error) {
     bridge.uninstall(input.host);

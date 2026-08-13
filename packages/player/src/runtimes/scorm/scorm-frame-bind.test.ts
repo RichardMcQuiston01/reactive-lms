@@ -75,4 +75,42 @@ describe('bindScormFrame', () => {
       puts.some((body) => body.values['cmi.core.lesson_location'] === 'keep-me'),
     ).toBe(true);
   });
+
+  test('a stale bind does not wipe a newer window.API', async () => {
+    const host: { API?: unknown } = {};
+    let generation = 1;
+    let releaseFirst!: (value: ScormCmiDto) => void;
+    const firstHydrate = new Promise<ScormCmiDto>((resolve) => {
+      releaseFirst = resolve;
+    });
+
+    const firstPromise = bindScormFrame({
+      attemptId: 'att-1',
+      contentUrl: '/lms/content/a.html',
+      host,
+      shouldApply: () => generation === 1,
+      getCmi: () => firstHydrate,
+      putCmi: async () => undefined,
+    });
+
+    generation = 2;
+    const second = await bindScormFrame({
+      attemptId: 'att-2',
+      contentUrl: '/lms/content/b.html',
+      host,
+      shouldApply: () => generation === 2,
+      getCmi: async () => ({ values: { gen: '2' } }),
+      putCmi: async () => undefined,
+    });
+    const newerApi = host.API;
+    expect(newerApi).toBeDefined();
+    expect(second.iframeSrc).toBe('/lms/content/b.html');
+
+    releaseFirst({ values: { gen: '1' } });
+    const first = await firstPromise;
+    first.bridge?.uninstall(host);
+
+    expect(host.API).toBe(newerApi);
+    expect(host.API).toBeDefined();
+  });
 });

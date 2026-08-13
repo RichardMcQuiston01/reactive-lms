@@ -92,6 +92,7 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
       contentUrl,
       host: window,
       previous: this.bridge,
+      shouldApply: () => gen === this.attachGen,
       getCmi: () =>
         lmsFetch<ScormCmiDto>(
           this.config,

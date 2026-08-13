@@ -4,6 +4,7 @@ export {
   type Scorm12Api,
   type ScormApiBridgeOptions,
   type ScormApiHost,
+  type ScormApiInstallOptions,
 } from './runtimes/scorm/scorm-api-bridge';
 export {
   bindScormFrame,

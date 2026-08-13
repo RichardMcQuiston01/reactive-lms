@@ -94,6 +94,43 @@ describe('ScormApiBridge', () => {
     expect(puts).toEqual([]);
   });
 
+  test('uninstall does not delete a newer window.API', async () => {
+    const host: { API?: unknown } = {};
+    const older = new ScormApiBridge({
+      getCmi: async () => ({ values: { owner: 'older' } }),
+      putCmi: async () => undefined,
+    });
+    const newer = new ScormApiBridge({
+      getCmi: async () => ({ values: { owner: 'newer' } }),
+      putCmi: async () => undefined,
+    });
+    const olderApi = await older.install(host);
+    const newerApi = await newer.install(host);
+    expect(host.API).toBe(newerApi);
+    older.uninstall(host);
+    expect(host.API).toBe(newerApi);
+    expect(host.API).not.toBe(olderApi);
+    newer.uninstall(host);
+    expect(host.API).toBeUndefined();
+  });
+
+  test('install skips assigning API when shouldApply is false', async () => {
+    const host: { API?: unknown } = {};
+    const newer = new ScormApiBridge({
+      getCmi: async () => ({ values: {} }),
+      putCmi: async () => undefined,
+    });
+    const newerApi = await newer.install(host);
+    const stale = new ScormApiBridge({
+      getCmi: async () => ({ values: { stale: '1' } }),
+      putCmi: async () => undefined,
+    });
+    await stale.install(host, { shouldApply: () => false });
+    expect(host.API).toBe(newerApi);
+    stale.uninstall(host);
+    expect(host.API).toBe(newerApi);
+  });
+
   test('uninstall flushes a pending debounced Commit', async () => {
     const scheduled: Array<{ handler: () => void; ms: number }> = [];
     const puts: ScormCmiDto[] = [];

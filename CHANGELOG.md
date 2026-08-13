@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- SCORM 1.2: a stale attach no longer deletes a newer `window.API`
 - SCORM 1.2: flush a pending Commit on player destroy; coerce numeric
   CMI values so `score.raw` hydrates; accept empty / `null` /
   `undefined` Initialize-Commit-Finish args; re-apply LMS-owned CMI
