@@ -1,4 +1,9 @@
-import { LmsError } from '@reactive-lms/shared';
+import {
+  LmsError,
+  PACKAGE_INVALID_ZIP,
+  PACKAGE_ZIP_BOMB,
+  httpStatusForLmsCode,
+} from '@reactive-lms/shared';
 import { unzipSync } from 'fflate';
 
 /** Default uncompressed ZIP size limit (200 MiB). */
@@ -43,8 +48,8 @@ export function listZipMembers(buffer: Uint8Array): ZipMemberInfo[] {
       throw error;
     }
     throw new LmsError({
-      status: 400,
-      code: 'PACKAGE_INVALID_ZIP',
+      status: httpStatusForLmsCode(PACKAGE_INVALID_ZIP),
+      code: PACKAGE_INVALID_ZIP,
       message: 'Uploaded file is not a valid ZIP archive.',
       details: error,
     });
@@ -77,8 +82,8 @@ export function assertZipNotBomb(
 
   if (fileCount > maxFileCount || uncompressed > maxUncompressedBytes) {
     throw new LmsError({
-      status: 400,
-      code: 'PACKAGE_ZIP_BOMB',
+      status: httpStatusForLmsCode(PACKAGE_ZIP_BOMB),
+      code: PACKAGE_ZIP_BOMB,
       message: 'Archive exceeds the uncompressed size or file-count limit.',
       details: {
         fileCount,
@@ -90,4 +95,39 @@ export function assertZipNotBomb(
   }
 
   return members;
+}
+
+/**
+ * Inflates a single ZIP member by name. Other payloads stay compressed.
+ *
+ * @param buffer - ZIP bytes
+ * @param name - Archive member path
+ * @returns Member bytes, or `undefined` if the name is absent
+ */
+export function readZipMember(
+  buffer: Uint8Array,
+  name: string,
+): Uint8Array | undefined {
+  const wanted = name.replace(/\\/g, '/').replace(/^\/+/, '');
+  let unzipped: Record<string, Uint8Array>;
+  try {
+    unzipped = unzipSync(buffer, {
+      filter(file) {
+        const candidate = file.name.replace(/\\/g, '/').replace(/^\/+/, '');
+        return (
+          candidate === wanted ||
+          candidate.toLowerCase() === wanted.toLowerCase()
+        );
+      },
+    });
+  } catch (error) {
+    throw new LmsError({
+      status: httpStatusForLmsCode(PACKAGE_INVALID_ZIP),
+      code: PACKAGE_INVALID_ZIP,
+      message: 'Uploaded file is not a valid ZIP archive.',
+      details: error,
+    });
+  }
+
+  return unzipped[name] ?? unzipped[wanted] ?? Object.values(unzipped)[0];
 }

@@ -1,9 +1,5 @@
-import {
-  LmsError,
-  type PackageFileIndex,
-} from '@reactive-lms/shared';
-import { unzipSync } from 'fflate';
-import { assertZipNotBomb } from './zip-limits';
+import type { PackageFileIndex } from '@reactive-lms/shared';
+import { assertZipNotBomb, readZipMember } from './zip-limits';
 
 /**
  * Normalizes a package-relative path to forward slashes without a leading `./`.
@@ -39,37 +35,46 @@ export function createMemoryFileIndex(
 }
 
 /**
- * Builds a {@link PackageFileIndex} from a ZIP buffer.
- * Paths stay as stored in the archive so they match extracted keys.
+ * Builds a {@link PackageFileIndex} from ZIP central-directory names.
+ * Member bodies are inflated only when {@link PackageFileIndex.read} is called.
  *
  * @param buffer - ZIP bytes
  * @throws LmsError when the buffer is not a valid ZIP or is a ZIP bomb
  */
 export function createZipFileIndex(buffer: Uint8Array): PackageFileIndex {
-  assertZipNotBomb(buffer);
-
-  let unzipped: Record<string, Uint8Array>;
-  try {
-    unzipped = unzipSync(buffer);
-  } catch (error) {
-    throw new LmsError({
-      status: 400,
-      code: 'PACKAGE_INVALID_ZIP',
-      message: 'Uploaded file is not a valid ZIP archive.',
-      details: error,
-    });
-  }
-
-  const files = new Map<string, Uint8Array>();
-  for (const [path, data] of Object.entries(unzipped)) {
-    const normalized = normalizePackagePath(path);
+  const members = assertZipNotBomb(buffer);
+  const names = new Map<string, string>();
+  for (const member of members) {
+    const normalized = normalizePackagePath(member.name);
     if (!normalized || normalized.endsWith('/')) {
       continue;
     }
-    files.set(normalized, data);
+    names.set(normalized, member.name);
   }
 
-  return createMapFileIndex(files);
+  const cache = new Map<string, Uint8Array>();
+  return {
+    paths: [...names.keys()],
+    has(path: string): boolean {
+      return names.has(normalizePackagePath(path));
+    },
+    read(path: string): Uint8Array | undefined {
+      const normalized = normalizePackagePath(path);
+      const cached = cache.get(normalized);
+      if (cached) {
+        return cached;
+      }
+      const storedName = names.get(normalized);
+      if (!storedName) {
+        return undefined;
+      }
+      const bytes = readZipMember(buffer, storedName);
+      if (bytes) {
+        cache.set(normalized, bytes);
+      }
+      return bytes;
+    },
+  };
 }
 
 function createMapFileIndex(files: Map<string, Uint8Array>): PackageFileIndex {

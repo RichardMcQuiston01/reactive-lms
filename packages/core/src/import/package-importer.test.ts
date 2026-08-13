@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LmsError, PACKAGE_NOT_DETECTED } from '@reactive-lms/shared';
@@ -124,6 +124,7 @@ describe('PackageImporter', () => {
       });
     }
     expect(saved).toEqual([]);
+    expect(await readdir(dataRoot)).toEqual([]);
   });
 
   test('throws PACKAGE_NOT_DETECTED when the ZIP has no package marker', async () => {
@@ -142,5 +143,43 @@ describe('PackageImporter', () => {
       });
     }
     expect(saved).toEqual([]);
+    expect(await readdir(dataRoot)).toEqual([]);
+  });
+
+  test('removes stored keys when persist fails after extract', async () => {
+    const failing = new PackageImporter(
+      {
+        transaction: async (run: (manager: {
+          create: <T extends object>(_c: unknown, plain: T) => T;
+          save: <T>(entity: T) => Promise<T>;
+        }) => Promise<unknown>) =>
+          run({
+            create: (_c, plain) => ({ ...plain }),
+            save: async () => {
+              throw new Error('db down');
+            },
+          }),
+      } as unknown as DataSource,
+      storage,
+      [new Html5Runtime()],
+    );
+    const buffer = zipSync({
+      'index.html': strToU8('<html>orphan?</html>'),
+    });
+
+    await expect(failing.import(buffer)).rejects.toThrow('db down');
+    expect(await listStoredFiles(dataRoot)).toEqual([]);
   });
 });
+
+async function listStoredFiles(root: string): Promise<string[]> {
+  const names = await readdir(root, { recursive: true });
+  const files: string[] = [];
+  for (const name of names) {
+    const info = await stat(path.join(root, name));
+    if (info.isFile()) {
+      files.push(name.replace(/\\/g, '/'));
+    }
+  }
+  return files.sort();
+}

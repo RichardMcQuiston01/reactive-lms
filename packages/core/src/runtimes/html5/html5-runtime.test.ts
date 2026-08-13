@@ -86,6 +86,10 @@ describe('Html5Runtime', () => {
       throw new Error('expected createLaunch to throw');
     } catch (error) {
       expect(error).toBeInstanceOf(LmsError);
+      expect(error).toMatchObject({
+        code: 'LAUNCH_NOT_IMPLEMENTED',
+        status: 501,
+      });
       expect((error as LmsError).message).toMatch(/not implemented in 3a/i);
     }
   });

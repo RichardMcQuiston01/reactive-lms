@@ -87,46 +87,56 @@ export class PackageImporter {
     const parsed = await runtime.parse(files);
     const packageId = randomUUID();
     const activityNodeId = randomUUID();
-    const storageKey = `packages/${packageId}/original.zip`;
-    const extractedKey = `packages/${packageId}/content`;
+    const packagePrefix = `packages/${packageId}`;
+    const storageKey = `${packagePrefix}/original.zip`;
+    const extractedKey = `${packagePrefix}/content`;
     const checksumSha256 = createHash('sha256')
       .update(buffer)
       .digest('hex');
     const rootActivity = parsed.activities[0];
 
-    await this.dataSource.transaction(async (manager) => {
-      await this.storage.put(storageKey, buffer);
-      await this.storage.extractZip(storageKey, extractedKey);
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        await this.storage.put(storageKey, buffer);
+        await this.storage.extractZip(storageKey, extractedKey);
 
-      const contentPackage = manager.create(ContentPackage, {
-        id: packageId,
-        packageType: parsed.packageType,
-        title: parsed.title,
-        version: parsed.version ?? null,
-        entryHref: parsed.entryHref,
-        storageKey,
-        extractedKey,
-        manifestJson: {
+        const contentPackage = manager.create(ContentPackage, {
+          id: packageId,
+          packageType: parsed.packageType,
           title: parsed.title,
-          version: parsed.version,
+          version: parsed.version ?? null,
           entryHref: parsed.entryHref,
-          activities: parsed.activities,
-        },
-        checksumSha256,
-        createdByUserId: options?.createdByUserId ?? null,
-      });
-      await manager.save(contentPackage);
+          storageKey,
+          extractedKey,
+          manifestJson: {
+            title: parsed.title,
+            version: parsed.version,
+            entryHref: parsed.entryHref,
+            activities: parsed.activities,
+          },
+          checksumSha256,
+          createdByUserId: options?.createdByUserId ?? null,
+        });
+        await manager.save(contentPackage);
 
-      const activityNode = manager.create(ActivityNode, {
-        id: activityNodeId,
-        contentPackageId: packageId,
-        title: rootActivity?.title ?? parsed.title,
-        href: rootActivity?.href ?? parsed.entryHref,
-        sortOrder: 0,
-        metadataJson: rootActivity?.metadata ?? null,
+        const activityNode = manager.create(ActivityNode, {
+          id: activityNodeId,
+          contentPackageId: packageId,
+          title: rootActivity?.title ?? parsed.title,
+          href: rootActivity?.href ?? parsed.entryHref,
+          sortOrder: 0,
+          metadataJson: rootActivity?.metadata ?? null,
+        });
+        await manager.save(activityNode);
       });
-      await manager.save(activityNode);
-    });
+    } catch (error) {
+      try {
+        await this.storage.remove(packagePrefix);
+      } catch {
+        // Compensation must not hide the persist/store failure.
+      }
+      throw error;
+    }
 
     return {
       packageId,

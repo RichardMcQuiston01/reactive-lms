@@ -5,6 +5,11 @@
 export type LmsErrorCode =
   | typeof PACKAGE_NOT_DETECTED
   | typeof PACKAGE_TYPE_UNSUPPORTED
+  | typeof PACKAGE_INVALID_ZIP
+  | typeof PACKAGE_ZIP_BOMB
+  | typeof STORAGE_KEY_NOT_FOUND
+  | typeof STORAGE_KEY_INVALID
+  | typeof LAUNCH_NOT_IMPLEMENTED
   | typeof LAUNCH_SESSION_OPEN
   | typeof CMI5_TOKEN_USED
   | (string & {});
@@ -14,6 +19,21 @@ export const PACKAGE_NOT_DETECTED = 'PACKAGE_NOT_DETECTED';
 
 /** Detected package type cannot be imported in this version. */
 export const PACKAGE_TYPE_UNSUPPORTED = 'PACKAGE_TYPE_UNSUPPORTED';
+
+/** Uploaded bytes are not a readable ZIP archive. */
+export const PACKAGE_INVALID_ZIP = 'PACKAGE_INVALID_ZIP';
+
+/** Archive exceeds uncompressed-size or file-count limits. */
+export const PACKAGE_ZIP_BOMB = 'PACKAGE_ZIP_BOMB';
+
+/** No object exists at the requested storage key. */
+export const STORAGE_KEY_NOT_FOUND = 'STORAGE_KEY_NOT_FOUND';
+
+/** Storage key would escape the configured data root. */
+export const STORAGE_KEY_INVALID = 'STORAGE_KEY_INVALID';
+
+/** Requested launch path is not implemented in this version. */
+export const LAUNCH_NOT_IMPLEMENTED = 'LAUNCH_NOT_IMPLEMENTED';
 
 /** A launch was refused because another session is still open. */
 export const LAUNCH_SESSION_OPEN = 'LAUNCH_SESSION_OPEN';
@@ -27,9 +47,14 @@ export const CMI5_TOKEN_USED = 'CMI5_TOKEN_USED';
  */
 export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [PACKAGE_NOT_DETECTED]: 400,
-  [PACKAGE_TYPE_UNSUPPORTED]: 422,
+  [PACKAGE_INVALID_ZIP]: 400,
+  [PACKAGE_ZIP_BOMB]: 400,
+  [STORAGE_KEY_INVALID]: 400,
   [CMI5_TOKEN_USED]: 400,
+  [PACKAGE_TYPE_UNSUPPORTED]: 422,
+  [STORAGE_KEY_NOT_FOUND]: 404,
   [LAUNCH_SESSION_OPEN]: 409,
+  [LAUNCH_NOT_IMPLEMENTED]: 501,
 };
 
 /**

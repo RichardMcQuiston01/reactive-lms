@@ -40,11 +40,16 @@ export type { CreateLaunchDto, LaunchDto } from './dto/launch.dto';
 // Errors
 export {
   CMI5_TOKEN_USED,
+  LAUNCH_NOT_IMPLEMENTED,
   LAUNCH_SESSION_OPEN,
   LMS_ERROR_HTTP_STATUS,
   LmsError,
+  PACKAGE_INVALID_ZIP,
   PACKAGE_NOT_DETECTED,
   PACKAGE_TYPE_UNSUPPORTED,
+  PACKAGE_ZIP_BOMB,
+  STORAGE_KEY_INVALID,
+  STORAGE_KEY_NOT_FOUND,
   httpStatusForLmsCode,
 } from './errors/lms-error';
 export type { LmsErrorCode, LmsErrorOptions } from './errors/lms-error';

@@ -117,6 +117,22 @@ describe('detectPackageType', () => {
     expect(detectPackageType(files)).toBe('scorm_12');
   });
 
+  test('detects name-only markers without reading file bodies', () => {
+    const reads: string[] = [];
+    const files: PackageFileIndex = {
+      paths: ['cmi5.xml', 'payload.bin'],
+      has(path) {
+        return path === 'cmi5.xml' || path === 'payload.bin';
+      },
+      read(path) {
+        reads.push(path);
+        throw new Error(`unexpected read of ${path}`);
+      },
+    };
+    expect(detectPackageType(files)).toBe('cmi5');
+    expect(reads).toEqual([]);
+  });
+
   test('throws PACKAGE_NOT_DETECTED with status 400 when no marker matches', () => {
     const files = memoryIndex({ 'readme.txt': 'hello' });
     try {

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- HTML5 import detects ZIP types from central-directory names without inflating
+  payloads; a failed persist deletes the original ZIP and extract prefix
+- Shared `LMS_ERROR_HTTP_STATUS` maps `PACKAGE_ZIP_BOMB`, `PACKAGE_INVALID_ZIP`,
+  `STORAGE_KEY_*`, and `LAUNCH_NOT_IMPLEMENTED`
+
 ### Added
 
 - `@reactive-lms/core` HTML5 import pipeline: deterministic package detection,

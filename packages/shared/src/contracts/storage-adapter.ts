@@ -33,4 +33,12 @@ export interface StorageAdapter {
    * @returns Relative paths of extracted files under the destination
    */
   extractZip(key: string, destPrefix: string): Promise<string[]>;
+
+  /**
+   * Deletes a stored object or every object under a key prefix.
+   * Missing keys are a no-op.
+   *
+   * @param key - Storage key or directory prefix
+   */
+  remove(key: string): Promise<void>;
 }

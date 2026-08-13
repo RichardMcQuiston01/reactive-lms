@@ -1,6 +1,13 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { LmsError, type StorageAdapter } from '@reactive-lms/shared';
+import {
+  LmsError,
+  PACKAGE_INVALID_ZIP,
+  STORAGE_KEY_INVALID,
+  STORAGE_KEY_NOT_FOUND,
+  httpStatusForLmsCode,
+  type StorageAdapter,
+} from '@reactive-lms/shared';
 import { unzipSync } from 'fflate';
 import {
   DEFAULT_MAX_ZIP_FILE_COUNT,
@@ -88,8 +95,8 @@ export class FilesystemStorageAdapter implements StorageAdapter {
           : undefined;
       if (code === 'ENOENT') {
         throw new LmsError({
-          status: 404,
-          code: 'STORAGE_KEY_NOT_FOUND',
+          status: httpStatusForLmsCode(STORAGE_KEY_NOT_FOUND),
+          code: STORAGE_KEY_NOT_FOUND,
           message: `No object stored at key: ${key}`,
         });
       }
@@ -127,8 +134,8 @@ export class FilesystemStorageAdapter implements StorageAdapter {
       unzipped = unzipSync(archive);
     } catch (error) {
       throw new LmsError({
-        status: 400,
-        code: 'PACKAGE_INVALID_ZIP',
+        status: httpStatusForLmsCode(PACKAGE_INVALID_ZIP),
+        code: PACKAGE_INVALID_ZIP,
         message: 'Stored object is not a valid ZIP archive.',
         details: error,
       });
@@ -150,6 +157,17 @@ export class FilesystemStorageAdapter implements StorageAdapter {
     return extracted;
   }
 
+  /**
+   * Deletes a stored object or every object under a key prefix.
+   * Missing keys are a no-op.
+   *
+   * @param key - Storage key or directory prefix
+   */
+  async remove(key: string): Promise<void> {
+    const dest = this.resolveKey(key);
+    await rm(dest, { recursive: true, force: true });
+  }
+
   private async writeExtracted(
     key: string,
     body: Uint8Array,
@@ -164,8 +182,8 @@ export class FilesystemStorageAdapter implements StorageAdapter {
     const parts = normalized.split('/').filter(Boolean);
     if (parts.some((part) => part === '..')) {
       throw new LmsError({
-        status: 400,
-        code: 'STORAGE_KEY_INVALID',
+        status: httpStatusForLmsCode(STORAGE_KEY_INVALID),
+        code: STORAGE_KEY_INVALID,
         message: 'Storage key must stay under the data root.',
         details: { key },
       });
@@ -176,8 +194,8 @@ export class FilesystemStorageAdapter implements StorageAdapter {
     const relative = path.relative(root, full);
     if (relative.startsWith('..') || path.isAbsolute(relative)) {
       throw new LmsError({
-        status: 400,
-        code: 'STORAGE_KEY_INVALID',
+        status: httpStatusForLmsCode(STORAGE_KEY_INVALID),
+        code: STORAGE_KEY_INVALID,
         message: 'Storage key must stay under the data root.',
         details: { key },
       });
@@ -194,8 +212,8 @@ function sanitizeZipEntryName(name: string): string | undefined {
   const parts = normalized.split('/').filter((part) => part && part !== '.');
   if (parts.length === 0 || parts.some((part) => part === '..')) {
     throw new LmsError({
-      status: 400,
-      code: 'PACKAGE_INVALID_ZIP',
+      status: httpStatusForLmsCode(PACKAGE_INVALID_ZIP),
+      code: PACKAGE_INVALID_ZIP,
       message: 'Archive contains an unsafe path.',
       details: { name },
     });

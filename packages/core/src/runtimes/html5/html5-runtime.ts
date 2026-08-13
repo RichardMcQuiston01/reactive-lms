@@ -1,5 +1,6 @@
 import {
   LmsError,
+  LAUNCH_NOT_IMPLEMENTED,
   PACKAGE_NOT_DETECTED,
   httpStatusForLmsCode,
   type ContentRuntime,
@@ -68,8 +69,8 @@ export class Html5Runtime implements ContentRuntime {
    */
   async createLaunch(_request: LaunchRequest): Promise<LaunchDescriptor> {
     throw new LmsError({
-      status: 501,
-      code: 'LAUNCH_NOT_IMPLEMENTED',
+      status: httpStatusForLmsCode(LAUNCH_NOT_IMPLEMENTED),
+      code: LAUNCH_NOT_IMPLEMENTED,
       message: 'HTML5 launch is not implemented in 3a',
     });
   }

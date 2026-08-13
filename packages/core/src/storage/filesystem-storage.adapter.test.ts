@@ -105,6 +105,25 @@ describe('FilesystemStorageAdapter', () => {
     expect(DEFAULT_MAX_ZIP_FILE_COUNT).toBe(10_000);
   });
 
+  test('remove deletes a stored object and a prefix tree', async () => {
+    await storage.put('packages/p1/original.zip', new Uint8Array([1, 2]));
+    await storage.put(
+      'packages/p1/content/index.html',
+      new TextEncoder().encode('<html></html>'),
+    );
+    await storage.remove('packages/p1');
+    try {
+      await storage.get('packages/p1/original.zip');
+      throw new Error('expected original zip to be removed');
+    } catch (error) {
+      expect(error).toBeInstanceOf(LmsError);
+      expect(error).toMatchObject({
+        code: 'STORAGE_KEY_NOT_FOUND',
+        status: 404,
+      });
+    }
+  });
+
   test('put invokes antivirusScan with the original archive bytes', async () => {
     const scanned: Uint8Array[] = [];
     const guarded = new FilesystemStorageAdapter(dataRoot, {
