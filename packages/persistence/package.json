@@ -13,6 +13,12 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@reactive-lms/shared": "workspace:*"
+    "@reactive-lms/shared": "workspace:*",
+    "pg": "^8.23.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.31"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.21.0"
   }
 }

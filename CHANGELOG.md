@@ -4,6 +4,8 @@
 
 ### Added
 
+- `@reactive-lms/persistence` LIS-shaped `rlms_*` TypeORM schema, host-safe
+  `createPersistenceDataSource` factory, and `0001-initial-schema` migration
 - `@reactive-lms/shared` LMS contracts: package/registration enums, `LearnerRef`,
   `NormalizedProgress`, launch models, adapter interfaces (`ContentRuntime`,
   identity/capability/enrolment/storage), content package / registration / launch
