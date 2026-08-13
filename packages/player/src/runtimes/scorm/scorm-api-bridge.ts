@@ -7,11 +7,11 @@ import {
  * SCORM 1.2 `window.API` surface the SCO looks up via findAPI.
  */
 export interface Scorm12Api {
-  LMSInitialize(param: string): string;
-  LMSFinish(param: string): string;
+  LMSInitialize(param?: string | null): string;
+  LMSFinish(param?: string | null): string;
   LMSGetValue(element: string): string;
-  LMSSetValue(element: string, value: string): string;
-  LMSCommit(param: string): string;
+  LMSSetValue(element: string, value: string | number): string;
+  LMSCommit(param?: string | null): string;
   LMSGetLastError(): string;
   LMSGetErrorString(errorCode: string): string;
   LMSGetDiagnostic(errorCode: string): string;
@@ -91,12 +91,12 @@ export class ScormApiBridge {
   }
 
   /**
-   * Removes `target.API` and cancels a pending commit.
+   * Flushes a pending debounced Commit, then removes `target.API`.
    *
    * @param target - Player window previously passed to {@link install}
    */
   uninstall(target: ScormApiHost): void {
-    this.clearTimer();
+    this.flushPending();
     delete asApiHost(target).API;
   }
 
@@ -104,14 +104,24 @@ export class ScormApiBridge {
    * Flushes a pending debounced commit immediately.
    */
   async flush(): Promise<void> {
+    this.flushPending();
+  }
+
+  /**
+   * Writes a pending Commit now (used by uninstall / destroy).
+   */
+  private flushPending(): void {
+    if (this.timer === undefined) {
+      return;
+    }
     this.clearTimer();
-    await this.options.putCmi({
+    void this.options.putCmi({
       values: this.store.snapshot(),
       finished: this.store.isFinished(),
     });
   }
 
-  private onCommit(param: string): string {
+  private onCommit(param?: string | null): string {
     const result = this.store.LMSCommit(param);
     if (result === 'true') {
       this.scheduleCommit(false);
@@ -119,7 +129,7 @@ export class ScormApiBridge {
     return result;
   }
 
-  private onFinish(param: string): string {
+  private onFinish(param?: string | null): string {
     const result = this.store.LMSFinish(param);
     if (result === 'true') {
       this.clearTimer();

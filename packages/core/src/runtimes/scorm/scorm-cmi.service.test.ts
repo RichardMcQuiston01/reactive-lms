@@ -99,6 +99,28 @@ describe('ScormCmiService', () => {
     expect(values['cmi.core.entry']).toBe('ab-initio');
   });
 
+  test('hydrates numeric score.raw and overwrites stale LMS-owned keys', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds, {
+      cmi: {
+        'cmi.core.score.raw': 80,
+        'cmi.core.student_id': 'stale-id',
+        'cmi.core.student_name': 'Stale Name',
+        'cmi.core.lesson_mode': 'browse',
+        'cmi.launch_data': 'old',
+        'cmi.core.lesson_location': 'page-2',
+      },
+    });
+
+    const { values } = await service(ds).getCmi(ATTEMPT_ID);
+    expect(values['cmi.core.score.raw']).toBe('80');
+    expect(values['cmi.core.student_id']).toBe('u1');
+    expect(values['cmi.core.student_name']).toBe('Ada Lovelace');
+    expect(values['cmi.core.lesson_mode']).toBe('normal');
+    expect(values['cmi.launch_data']).toBe('hole=1');
+    expect(values['cmi.core.lesson_location']).toBe('page-2');
+  });
+
   test('resumes entry and bookmark after a suspend commit', async () => {
     const ds = createMockDataSource();
     seedAttempt(ds, {

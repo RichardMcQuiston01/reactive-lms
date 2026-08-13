@@ -5,6 +5,11 @@ export {
   type ScormApiBridgeOptions,
   type ScormApiHost,
 } from './runtimes/scorm/scorm-api-bridge';
+export {
+  bindScormFrame,
+  type ScormFrameBindOptions,
+  type ScormFrameBindResult,
+} from './runtimes/scorm/scorm-frame-bind';
 export { ScormFrameComponent } from './runtimes/scorm/scorm-frame.component';
 export { isContentFrameMessage } from './progress/is-content-frame-message';
 export {

@@ -30,6 +30,47 @@ describe('CmiStore', () => {
     expect(store.LMSGetErrorString('201')).toMatch(/argument/i);
   });
 
+  test('treats empty, null, undefined, and "null" as an empty parameter', () => {
+    for (const param of ['', 'null', null, undefined] as const) {
+      const store = new CmiStore();
+      expect(store.LMSInitialize(param)).toBe('true');
+      expect(store.LMSCommit(param)).toBe('true');
+      expect(store.LMSFinish(param)).toBe('true');
+    }
+  });
+
+  test('coerces numeric LMSSetValue arguments to strings', () => {
+    const store = new CmiStore();
+    store.LMSInitialize('');
+    expect(store.LMSSetValue('cmi.core.score.raw', 80 as unknown as string)).toBe(
+      'true',
+    );
+    expect(store.LMSGetValue('cmi.core.score.raw')).toBe('80');
+    expect(store.snapshot()['cmi.core.score.raw']).toBe('80');
+  });
+
+  test('re-applies LMS-owned keys after hydrating persisted values', () => {
+    const store = new CmiStore({
+      studentId: 'u-now',
+      studentName: 'Current Learner',
+      lessonMode: 'review',
+      launchData: 'fresh',
+      values: {
+        'cmi.core.student_id': 'stale-id',
+        'cmi.core.student_name': 'Stale Name',
+        'cmi.core.lesson_mode': 'normal',
+        'cmi.launch_data': 'old',
+        'cmi.core.lesson_location': 'bookmark',
+      },
+    });
+    store.LMSInitialize('');
+    expect(store.LMSGetValue('cmi.core.student_id')).toBe('u-now');
+    expect(store.LMSGetValue('cmi.core.student_name')).toBe('Current Learner');
+    expect(store.LMSGetValue('cmi.core.lesson_mode')).toBe('review');
+    expect(store.LMSGetValue('cmi.launch_data')).toBe('fresh');
+    expect(store.LMSGetValue('cmi.core.lesson_location')).toBe('bookmark');
+  });
+
   test('get and set before initialize return 301', () => {
     const store = new CmiStore();
     expect(store.LMSGetValue('cmi.core.lesson_location')).toBe('');

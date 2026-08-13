@@ -135,10 +135,10 @@ export class CmiStore {
    * @param seed - LMS-provided student fields and optional hydrate map
    */
   constructor(seed: CmiStoreSeed = {}) {
-    this.data.set('cmi.core.student_id', seed.studentId ?? '');
-    this.data.set('cmi.core.student_name', seed.studentName ?? '');
-    this.data.set('cmi.core.lesson_mode', seed.lessonMode ?? 'normal');
-    this.data.set('cmi.launch_data', seed.launchData ?? '');
+    this.data.set('cmi.core.student_id', '');
+    this.data.set('cmi.core.student_name', '');
+    this.data.set('cmi.core.lesson_mode', 'normal');
+    this.data.set('cmi.launch_data', '');
     this.data.set('cmi.core.credit', 'credit');
     this.data.set('cmi.core.lesson_status', 'not attempted');
     this.data.set('cmi.core.entry', 'ab-initio');
@@ -148,6 +148,7 @@ export class CmiStore {
     if (seed.values) {
       this.loadValues(seed.values);
     }
+    this.applyLmsOwned(seed);
   }
 
   /**
@@ -157,8 +158,33 @@ export class CmiStore {
    */
   loadValues(values: CmiValues): void {
     for (const [key, value] of Object.entries(values)) {
-      this.data.set(key, value);
+      const text = coerceCmiValue(value);
+      if (text === undefined) {
+        continue;
+      }
+      this.data.set(key, text);
       this.explicit.add(key);
+    }
+  }
+
+  /**
+   * Overwrites LMS-owned keys from the current attempt / learner.
+   * Call after hydrate or commit so persisted leftovers cannot stick.
+   *
+   * @param seed - Current student, mode, and launch_data
+   */
+  applyLmsOwned(seed: CmiStoreSeed): void {
+    if (seed.studentId !== undefined) {
+      this.data.set('cmi.core.student_id', seed.studentId);
+    }
+    if (seed.studentName !== undefined) {
+      this.data.set('cmi.core.student_name', seed.studentName);
+    }
+    if (seed.lessonMode !== undefined) {
+      this.data.set('cmi.core.lesson_mode', seed.lessonMode);
+    }
+    if (seed.launchData !== undefined) {
+      this.data.set('cmi.launch_data', seed.launchData);
     }
   }
 
@@ -193,9 +219,9 @@ export class CmiStore {
   /**
    * Starts a communication session. `param` must be `""`.
    *
-   * @param param - SCORM 1.2 requires an empty string
+   * @param param - Empty string, `"null"`, `null`, or `undefined`
    */
-  LMSInitialize(param: string): 'true' | 'false' {
+  LMSInitialize(param?: string | null): 'true' | 'false' {
     if (!isEmptyParam(param)) {
       return this.fail('201');
     }
@@ -209,9 +235,9 @@ export class CmiStore {
   /**
    * Ends the session. `param` must be `""`.
    *
-   * @param param - SCORM 1.2 requires an empty string
+   * @param param - Empty string, `"null"`, `null`, or `undefined`
    */
-  LMSFinish(param: string): 'true' | 'false' {
+  LMSFinish(param?: string | null): 'true' | 'false' {
     if (!isEmptyParam(param)) {
       return this.fail('201');
     }
@@ -273,14 +299,18 @@ export class CmiStore {
    * Writes a CMI element.
    *
    * @param element - Dot-path CMI element name
-   * @param value - New value
+   * @param value - New value (numbers are coerced to strings)
    */
-  LMSSetValue(element: string, value: string): 'true' | 'false' {
+  LMSSetValue(element: string, value: string | number): 'true' | 'false' {
     if (this.state !== 'running') {
       return this.fail('301');
     }
     if (!element) {
       return this.fail('201');
+    }
+    const text = coerceCmiValue(value);
+    if (text === undefined) {
+      return this.fail('351');
     }
     const def = resolveElement(element);
     if (!def) {
@@ -292,10 +322,10 @@ export class CmiStore {
     if (def.access === 'ro') {
       return this.fail('403');
     }
-    if (def.validate && !def.validate(value)) {
+    if (def.validate && !def.validate(text)) {
       return this.fail('351');
     }
-    this.data.set(element, value);
+    this.data.set(element, text);
     this.explicit.add(element);
     return this.ok();
   }
@@ -303,9 +333,9 @@ export class CmiStore {
   /**
    * Marks a successful in-memory commit. Persistence is the caller's job.
    *
-   * @param param - SCORM 1.2 requires an empty string
+   * @param param - Empty string, `"null"`, `null`, or `undefined`
    */
-  LMSCommit(param: string): 'true' | 'false' {
+  LMSCommit(param?: string | null): 'true' | 'false' {
     if (!isEmptyParam(param)) {
       return this.fail('201');
     }
@@ -480,8 +510,29 @@ function resolveElement(element: string): ElementDef | undefined {
   return { access: 'rw', optional: true, validate: isDecimal };
 }
 
-function isEmptyParam(param: string): boolean {
-  return param === '' || param === 'null';
+function isEmptyParam(param: unknown): boolean {
+  return (
+    param === '' ||
+    param === 'null' ||
+    param === null ||
+    param === undefined
+  );
+}
+
+/**
+ * Coerces a SCO-supplied CMI value to a string.
+ * Finite numbers become decimal strings so `score.raw` survives.
+ *
+ * @param value - Runtime value from SetValue or persisted extras
+ */
+export function coerceCmiValue(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
 }
 
 function isDecimal(value: string): boolean {

@@ -81,12 +81,47 @@ describe('ScormApiBridge', () => {
 
   test('uninstall removes window.API', async () => {
     const host: { API?: unknown } = {};
+    const puts: ScormCmiDto[] = [];
     const bridge = new ScormApiBridge({
       getCmi: async () => ({ values: {} }),
-      putCmi: async () => undefined,
+      putCmi: async (body) => {
+        puts.push(body);
+      },
     });
     await bridge.install(host);
     bridge.uninstall(host);
     expect(host.API).toBeUndefined();
+    expect(puts).toEqual([]);
+  });
+
+  test('uninstall flushes a pending debounced Commit', async () => {
+    const scheduled: Array<{ handler: () => void; ms: number }> = [];
+    const puts: ScormCmiDto[] = [];
+    const host: { API?: unknown } = {};
+    const bridge = new ScormApiBridge({
+      getCmi: async () => ({ values: {} }),
+      putCmi: async (body) => {
+        puts.push(body);
+      },
+      setTimeoutFn: (handler, ms) => {
+        scheduled.push({ handler, ms });
+        return scheduled.length;
+      },
+      clearTimeoutFn: () => {
+        scheduled.pop();
+      },
+    });
+
+    const api = await bridge.install(host);
+    api.LMSInitialize('');
+    api.LMSSetValue('cmi.core.lesson_location', 'page-9');
+    expect(api.LMSCommit('')).toBe('true');
+    expect(puts).toEqual([]);
+
+    bridge.uninstall(host);
+    expect(host.API).toBeUndefined();
+    expect(puts).toHaveLength(1);
+    expect(puts[0]?.values['cmi.core.lesson_location']).toBe('page-9');
+    expect(puts[0]?.finished).toBe(false);
   });
 });

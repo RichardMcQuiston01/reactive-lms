@@ -9,6 +9,7 @@ import {
   ATTEMPT_NOT_FOUND,
   CmiStore,
   LmsError,
+  coerceCmiValue,
   httpStatusForLmsCode,
   mapCmiToProgress,
   type CmiValues,
@@ -52,6 +53,7 @@ export class ScormCmiService {
     const ctx = await this.loadContext(attemptId);
     const store = this.seedStore(ctx);
     store.loadValues(body.values ?? {});
+    store.applyLmsOwned(lmsOwnedFrom(ctx));
     const values = store.snapshot();
     const activityNodeId = ctx.activityNodeId;
     if (!activityNodeId) {
@@ -85,15 +87,13 @@ export class ScormCmiService {
     delete persisted['cmi.core.session_time'];
     const exit = persisted['cmi.core.exit'];
     const store = new CmiStore({
-      studentId: ctx.studentId,
-      studentName: ctx.studentName,
-      lessonMode: lessonModeFrom(ctx.attempt.launchMode),
-      launchData: ctx.launchData,
+      ...lmsOwnedFrom(ctx),
       values: persisted,
     });
     store.loadValues({
       'cmi.core.entry': exit === 'suspend' ? 'resume' : 'ab-initio',
     });
+    store.applyLmsOwned(lmsOwnedFrom(ctx));
     return store;
   }
 
@@ -169,13 +169,24 @@ function extractCmi(extras: Record<string, unknown> | null): CmiValues {
     for (const [key, value] of Object.entries(
       cmi as Record<string, unknown>,
     )) {
-      if (typeof value === 'string') {
-        values[key] = value;
+      const text = coerceCmiValue(value);
+      if (text !== undefined) {
+        values[key] = text;
       }
     }
     return values;
   }
   return {};
+}
+
+/** LMS-owned CMI fields taken from the current person / attempt. */
+function lmsOwnedFrom(ctx: CmiContext) {
+  return {
+    studentId: ctx.studentId,
+    studentName: ctx.studentName,
+    lessonMode: lessonModeFrom(ctx.attempt.launchMode),
+    launchData: ctx.launchData ?? '',
+  };
 }
 
 function launchDataFrom(

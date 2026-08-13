@@ -3,13 +3,15 @@ import {
   Component,
   Input,
   inject,
+  type OnChanges,
   type OnDestroy,
   type OnInit,
 } from '@angular/core';
 import type { ScormCmiDto } from '@reactive-lms/shared';
 import { lmsFetch } from '../../http/lms-http';
 import { REACTIVE_LMS_CONFIG } from '../../provide-reactive-lms';
-import { ScormApiBridge } from './scorm-api-bridge';
+import { bindScormFrame } from './scorm-frame-bind';
+import type { ScormApiBridge } from './scorm-api-bridge';
 
 /**
  * SCORM 1.2 player surface: installs `window.API`, then iframes the SCO.
@@ -19,6 +21,7 @@ import { ScormApiBridge } from './scorm-api-bridge';
   standalone: true,
   imports: [CommonModule],
   template: `
+    <p class="rlms-player-error" *ngIf="error">{{ error }}</p>
     <iframe
       *ngIf="iframeSrc"
       class="rlms-player-frame"
@@ -28,7 +31,7 @@ import { ScormApiBridge } from './scorm-api-bridge';
     ></iframe>
   `,
 })
-export class ScormFrameComponent implements OnInit, OnDestroy {
+export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
   /** Attempt whose CMI is hydrated / committed. */
   @Input({ required: true }) attemptId = '';
 
@@ -41,26 +44,63 @@ export class ScormFrameComponent implements OnInit, OnDestroy {
   /** Iframe src assigned after the API is installed. */
   iframeSrc: string | null = null;
 
+  /** Hydrate / bind error shown instead of a blank frame. */
+  error: string | null = null;
+
   private readonly config = inject(REACTIVE_LMS_CONFIG);
   private bridge?: ScormApiBridge;
+  private started = false;
+  private attachGen = 0;
 
   /**
    * Hydrates CMI, installs `window.API`, then loads the SCO.
    */
-  async ngOnInit(): Promise<void> {
-    if (!this.attemptId || !this.contentUrl) {
-      return;
+  ngOnInit(): void {
+    this.started = true;
+    void this.attach();
+  }
+
+  /**
+   * Re-installs the API and reloads the SCO when launch inputs change.
+   */
+  ngOnChanges(): void {
+    if (this.started) {
+      void this.attach();
     }
-    this.bridge = new ScormApiBridge({
+  }
+
+  /**
+   * Flushes a pending Commit and drops `window.API`.
+   */
+  ngOnDestroy(): void {
+    this.attachGen += 1;
+    this.bridge?.uninstall(window);
+    this.bridge = undefined;
+  }
+
+  /**
+   * Installs (or reinstalls) `window.API` for the current inputs.
+   */
+  private async attach(): Promise<void> {
+    const gen = ++this.attachGen;
+    this.iframeSrc = null;
+    this.error = null;
+    const attemptId = this.attemptId;
+    const contentUrl = this.contentUrl;
+    const result = await bindScormFrame({
+      attemptId,
+      contentUrl,
+      host: window,
+      previous: this.bridge,
       getCmi: () =>
         lmsFetch<ScormCmiDto>(
           this.config,
-          `/scorm/attempts/${this.attemptId}/cmi`,
+          `/scorm/attempts/${attemptId}/cmi`,
         ),
       putCmi: async (body) => {
         await lmsFetch<ScormCmiDto>(
           this.config,
-          `/scorm/attempts/${this.attemptId}/cmi`,
+          `/scorm/attempts/${attemptId}/cmi`,
           {
             method: 'PUT',
             body: JSON.stringify(body),
@@ -68,14 +108,12 @@ export class ScormFrameComponent implements OnInit, OnDestroy {
         );
       },
     });
-    await this.bridge.install(window);
-    this.iframeSrc = this.contentUrl;
-  }
-
-  /**
-   * Drops `window.API` when the player is destroyed.
-   */
-  ngOnDestroy(): void {
-    this.bridge?.uninstall(window);
+    if (gen !== this.attachGen) {
+      result.bridge?.uninstall(window);
+      return;
+    }
+    this.bridge = result.bridge;
+    this.iframeSrc = result.iframeSrc;
+    this.error = result.error;
   }
 }
