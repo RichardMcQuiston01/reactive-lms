@@ -17,6 +17,7 @@ export { LaunchesController } from './controllers/launches.controller';
 export { ModulesController } from './controllers/modules.controller';
 export { PackagesController } from './controllers/packages.controller';
 export { ProgressController } from './controllers/progress.controller';
+export { ScormRuntimeController } from './controllers/scorm-runtime.controller';
 export { AllExceptionsFilter } from './filters/all-exceptions.filter';
 export { LmsExceptionFilter } from './filters/lms-exception.filter';
 export { LmsRequestService } from './identity/lms-request.service';

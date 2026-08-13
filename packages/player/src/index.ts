@@ -1,4 +1,11 @@
 export { RlmsPlayerComponent } from './launch/rlms-player.component';
+export {
+  ScormApiBridge,
+  type Scorm12Api,
+  type ScormApiBridgeOptions,
+  type ScormApiHost,
+} from './runtimes/scorm/scorm-api-bridge';
+export { ScormFrameComponent } from './runtimes/scorm/scorm-frame.component';
 export { isContentFrameMessage } from './progress/is-content-frame-message';
 export {
   mapHtml5Message,

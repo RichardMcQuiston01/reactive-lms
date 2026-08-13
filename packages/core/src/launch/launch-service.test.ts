@@ -12,6 +12,7 @@ import { LmsError, type LaunchRequest, type StorageAdapter } from '@reactive-lms
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
+import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import { createMockDataSource } from '../test/mock-data-source';
 import { LaunchService } from './launch-service';
 
@@ -44,7 +45,7 @@ function launchService(ds: ReturnType<typeof createMockDataSource>): LaunchServi
   return new LaunchService(
     ds as unknown as DataSource,
     storage(),
-    [new Html5Runtime()],
+    [new Html5Runtime(), new Scorm12Runtime()],
     new EventLogService(ds as unknown as DataSource),
   );
 }
@@ -193,6 +194,28 @@ describe('LaunchService', () => {
 
     const descriptor = await launchService(ds).launch(REQUEST);
     expect(descriptor.playerKind).toBe('iframe');
+  });
+
+  test('launches a SCORM 1.2 module as a scorm-frame', async () => {
+    const ds = createMockDataSource();
+    seedLaunchable(ds);
+    const pkg = ds.rowsOf(ContentPackage)[0];
+    if (pkg) {
+      pkg.packageType = 'scorm_12';
+      pkg.entryHref = 'sco.html';
+    }
+    const node = ds.rowsOf(ActivityNode)[0];
+    if (node) {
+      node.href = 'sco.html';
+    }
+
+    const descriptor = await launchService(ds).launch(REQUEST);
+    expect(descriptor.packageType).toBe('scorm_12');
+    expect(descriptor.playerKind).toBe('scorm-frame');
+    expect(descriptor.contentUrl).toBe(
+      `/lms/content/packages/${PACKAGE_ID}/content/sco.html`,
+    );
+    expect(descriptor.runtimeConfig['activityNodeId']).toBe(NODE_ID);
   });
 
   test('throws REGISTRATION_NOT_FOUND when the registration is missing', async () => {

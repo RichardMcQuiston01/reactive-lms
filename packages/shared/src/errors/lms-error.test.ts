@@ -65,6 +65,7 @@ describe('httpStatusForLmsCode', () => {
     expect(httpStatusForLmsCode('PACKAGE_NOT_FOUND')).toBe(404);
     expect(httpStatusForLmsCode('MODULE_NOT_FOUND')).toBe(404);
     expect(httpStatusForLmsCode('REGISTRATION_NOT_FOUND')).toBe(404);
+    expect(httpStatusForLmsCode('ATTEMPT_NOT_FOUND')).toBe(404);
   });
 
   test('maps CMI5_TOKEN_USED to 400', () => {

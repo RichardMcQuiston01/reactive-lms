@@ -36,6 +36,20 @@ export {
   joinStorageKey,
   type Html5LaunchContext,
 } from './runtimes/html5/html5-runtime';
+export { parseImsmanifest } from './runtimes/scorm/parse-imsmanifest';
+export {
+  CmiStore,
+  addCmiTimespans,
+  cmiTimespanToIso8601,
+  mapCmiToProgress,
+  type CmiStoreSeed,
+  type CmiValues,
+} from './runtimes/scorm/cmi-store';
+export {
+  Scorm12Runtime,
+  type Scorm12LaunchContext,
+} from './runtimes/scorm/scorm-12-runtime';
+export { ScormCmiService } from './runtimes/scorm/scorm-cmi.service';
 export {
   DEFAULT_MAX_ZIP_FILE_COUNT,
   DEFAULT_MAX_ZIP_UNCOMPRESSED_BYTES,

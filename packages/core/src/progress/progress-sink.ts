@@ -53,6 +53,7 @@ export class ProgressSinkService implements ProgressSink {
         location: progress.location ?? null,
         totalTimeIso8601: progress.totalTime ?? null,
         suspendData: progress.suspendData ?? null,
+        extrasJson: progress.extras ?? existing?.extrasJson ?? null,
       };
 
       if (existing) {

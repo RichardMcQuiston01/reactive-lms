@@ -13,7 +13,7 @@ Fully fledged TypeScript LMS that can run **standalone** or **embed** into an ex
 
 Standalone boots the same Nest module and Angular player with thin local adapters (identity, storage). Embed reuses TypeORM entities/migrations and shared DTOs without owning host users.
 
-A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`). Module availability (`afterModuleId`, date window, `minScore`) is enforced at launch. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed).
+A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`) or SCORM 1.2 (`playerKind: 'scorm-frame'`). Module availability (`afterModuleId`, date window, `minScore`) is enforced at launch. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed). SCORM 1.2 commits map `cmi.core.lesson_status` and `cmi.core.score.raw` onto that sink.
 
 Those services are also exposed over HTTP by `@reactive-lms/nest` (`ReactiveLmsModule.registerAsync`, default prefix `/lms`). `@reactive-lms/player` ships `provideReactiveLms` and `<rlms-player>` which launches a module, iframes `contentUrl`, and posts HTML5 `postMessage` progress.
 
@@ -25,9 +25,9 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 | --- | --- | --- |
 | `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
 | `packages/persistence` | `@reactive-lms/persistence` | LIS-shaped TypeORM `rlms_*` entities, `createPersistenceDataSource` factory, and `0001-initial-schema` migration |
-| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 ZIP import (`PackageImporter`, `Html5Runtime`, `FilesystemStorageAdapter`), module placement (`ModuleService`), enrolment (`manual` / `self` / `group`), HTML5 iframe launch, and course-completion rollup are implemented; other formats are detected but not yet parsed. |
-| `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST + OpenAPI over the 3b services, `LmsError` JSON filter |
-| `packages/player` | `@reactive-lms/player` | Angular standalone `RlmsPlayerComponent`, `provideReactiveLms`, HTML5 postMessage mapper |
+| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 and SCORM 1.2 ZIP import (`PackageImporter`, `Html5Runtime`, `Scorm12Runtime`, `FilesystemStorageAdapter`), CMI store + persist (`ScormCmiService`), module placement (`ModuleService`), enrolment (`manual` / `self` / `group`), iframe / scorm-frame launch, and course-completion rollup are implemented; 2004 / cmi5 / H5P / LTI are detected but not yet parsed. |
+| `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST + OpenAPI over the 3b/4 services, `LmsError` JSON filter |
+| `packages/player` | `@reactive-lms/player` | Angular standalone `RlmsPlayerComponent`, `provideReactiveLms`, HTML5 postMessage mapper, SCORM `window.API` bridge |
 | `packages/standalone-api` | `@reactive-lms/standalone-api` | Nest bootstrap, filesystem dataroot, demo identity, `/health`, `/lms/content/**` |
 | `packages/standalone-web` | `@reactive-lms/standalone-web` | Thin demo entry that re-exports the Angular player |
 
@@ -89,6 +89,9 @@ POST /lms/registrations/:id/launches
 
 GET  /lms/registrations/:id/progress
 POST /lms/registrations/:id/progress
+
+GET  /lms/scorm/attempts/:id/cmi
+PUT  /lms/scorm/attempts/:id/cmi
 ```
 
 Errors are always `{ "code": "PACKAGE_NOT_FOUND", "message": "…" }`
@@ -123,6 +126,8 @@ HTML5 content posts:
 ```
 
 The player maps those messages and `POST`s `/registrations/:id/progress`.
+
+SCORM 1.2 launches use `playerKind: 'scorm-frame'`. `<rlms-player>` installs `window.API` (`LMSInitialize` / `LMSGetValue` / `LMSSetValue` / `LMSCommit` / `LMSFinish` plus error methods) on the player window **before** the SCO iframe loads. `LMSCommit` is debounced 500ms to `PUT /scorm/attempts/:id/cmi`. A page refresh hydrates `lesson_location` / `suspend_data` from `GET` of the same path.
 
 ### Host embed
 

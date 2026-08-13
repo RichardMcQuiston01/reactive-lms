@@ -9,6 +9,14 @@ export type {
   NormalizedProgress,
   SuccessStatus,
 } from './models/normalized-progress';
+export {
+  CmiStore,
+  addCmiTimespans,
+  cmiTimespanToIso8601,
+  mapCmiToProgress,
+  type CmiStoreSeed,
+  type CmiValues,
+} from './models/cmi-store';
 export type {
   LaunchDescriptor,
   LaunchMode,
@@ -36,6 +44,7 @@ export type { StorageAdapter } from './contracts/storage-adapter';
 export type { ContentPackageDto } from './dto/content-package.dto';
 export type { RegistrationDto } from './dto/registration.dto';
 export type { CreateLaunchDto, LaunchDto } from './dto/launch.dto';
+export type { ScormCmiDto } from './dto/scorm-cmi.dto';
 
 // Errors
 export {
@@ -56,6 +65,7 @@ export {
   PACKAGE_TYPE_UNSUPPORTED,
   PACKAGE_ZIP_BOMB,
   REGISTRATION_NOT_FOUND,
+  ATTEMPT_NOT_FOUND,
   STORAGE_KEY_INVALID,
   STORAGE_KEY_NOT_FOUND,
   httpStatusForLmsCode,

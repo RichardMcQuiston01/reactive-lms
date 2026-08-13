@@ -14,18 +14,27 @@ import { lmsFetch } from '../http/lms-http';
 import { isContentFrameMessage } from '../progress/is-content-frame-message';
 import { mapHtml5Message } from '../progress/map-html5-message';
 import { REACTIVE_LMS_CONFIG } from '../provide-reactive-lms';
+import { ScormFrameComponent } from '../runtimes/scorm/scorm-frame.component';
 
 /**
- * Angular standalone player: launches a module and iframes `contentUrl`.
+ * Angular standalone player: launches a module and renders HTML5 or SCORM.
  * HTML5 content posts `{ source: 'reactive-lms', type: 'progress' | 'complete' }`.
+ * SCORM 1.2 installs `window.API` then iframes the SCO.
  */
 @Component({
   selector: 'rlms-player',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ScormFrameComponent],
   template: `
     <p class="rlms-player-error" *ngIf="error">{{ error }}</p>
+    <rlms-scorm-frame
+      *ngIf="playerKind === 'scorm-frame' && contentUrl && attemptId"
+      [attemptId]="attemptId"
+      [contentUrl]="contentUrl"
+      [courseModuleId]="courseModuleId"
+    ></rlms-scorm-frame>
     <iframe
+      *ngIf="playerKind !== 'scorm-frame'"
       #frame
       class="rlms-player-frame"
       [attr.src]="contentUrl"
@@ -43,6 +52,12 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Public iframe src after a successful launch. */
   contentUrl: string | null = null;
+
+  /** Player surface from the launch descriptor. */
+  playerKind: string = 'iframe';
+
+  /** Attempt id used by the SCORM CMI bridge. */
+  attemptId: string | null = null;
 
   /** Last launch or progress error, when any. */
   error: string | null = null;
@@ -124,6 +139,8 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
         },
       );
       this.contentUrl = descriptor.contentUrl;
+      this.playerKind = descriptor.playerKind;
+      this.attemptId = descriptor.attemptId;
       const node = descriptor.runtimeConfig['activityNodeId'];
       this.activityNodeId = typeof node === 'string' ? node : undefined;
     } catch (error) {

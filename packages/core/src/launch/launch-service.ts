@@ -23,19 +23,22 @@ import {
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
+import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import type { AvailabilityProgress } from './availability';
 import { assertAvailable } from './availability';
 
+const LAUNCHABLE = new Set(['html5', 'scorm_12']);
+
 /**
  * Creates an attempt, checks availability, and asks the matching
- * content runtime for a launch descriptor. HTML5 is the only runtime
- * implemented in this slice.
+ * content runtime for a launch descriptor. HTML5 and SCORM 1.2
+ * are implemented in this slice.
  */
 export class LaunchService {
   /**
    * @param dataSource - Caller-owned TypeORM DataSource
    * @param storage - Blob store used to resolve the HTML5 content URL
-   * @param runtimes - Registered content runtimes (HTML5 required)
+   * @param runtimes - Registered content runtimes (HTML5 / SCORM 1.2)
    * @param events - Audit writer; constructed from `dataSource` when omitted
    */
   constructor(
@@ -97,7 +100,7 @@ export class LaunchService {
       if (
         !contentPackage ||
         !runtime ||
-        contentPackage.packageType !== 'html5'
+        !LAUNCHABLE.has(contentPackage.packageType)
       ) {
         throw new LmsError({
           status: httpStatusForLmsCode(LAUNCH_NOT_IMPLEMENTED),
@@ -171,16 +174,19 @@ export class LaunchService {
       });
       await manager.save(attempt);
 
-      const html5 =
-        runtime instanceof Html5Runtime ? runtime : new Html5Runtime();
-      const descriptor = await html5.createLaunch(request, {
+      const launchContext = {
         attemptId: attempt.id,
         sessionId: attempt.sessionId,
         extractedKey,
         entryHref,
         activityNodeId: activityNode?.id,
-        getPublicUrl: (key) => this.storage.getPublicUrl(key),
-      });
+        getPublicUrl: (key: string) => this.storage.getPublicUrl(key),
+      };
+      const descriptor = await createRuntimeLaunch(
+        runtime,
+        request,
+        launchContext,
+      );
 
       await this.events.record(
         {
@@ -201,6 +207,26 @@ export class LaunchService {
       return descriptor;
     });
   }
+}
+
+async function createRuntimeLaunch(
+  runtime: ContentRuntime,
+  request: LaunchRequest,
+  context: {
+    attemptId: string;
+    sessionId: string;
+    extractedKey: string;
+    entryHref: string;
+    activityNodeId?: string;
+    getPublicUrl: (key: string) => Promise<string>;
+  },
+) {
+  if (runtime instanceof Scorm12Runtime) {
+    return runtime.createLaunch(request, context);
+  }
+  const html5 =
+    runtime instanceof Html5Runtime ? runtime : new Html5Runtime();
+  return html5.createLaunch(request, context);
 }
 
 function progressMapFromRows(

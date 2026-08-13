@@ -8,6 +8,7 @@ import {
   LmsError,
   PACKAGE_TYPE_UNSUPPORTED,
   httpStatusForLmsCode,
+  type ActivityNodeTree,
   type ContentRuntime,
   type PackageType,
   type StorageAdapter,
@@ -36,14 +37,17 @@ export interface ImportPackageResult {
   packageType: PackageType;
 }
 
+const IMPORTABLE = new Set<PackageType>(['html5', 'scorm_12']);
+
 /**
- * Detects a ZIP package, stores it, and persists HTML5 package + activity tree.
+ * Detects a ZIP package, stores it, and persists HTML5 / SCORM 1.2
+ * packages plus their activity trees.
  */
 export class PackageImporter {
   /**
    * @param dataSource - Caller-owned TypeORM DataSource (not a global)
    * @param storage - Blob store for the original ZIP and extracted files
-   * @param runtimes - Registered content runtimes (HTML5 is required in 3a)
+   * @param runtimes - Registered content runtimes (HTML5 + SCORM 1.2)
    */
   constructor(
     private readonly dataSource: DataSource,
@@ -52,8 +56,8 @@ export class PackageImporter {
   ) {}
 
   /**
-   * Imports a ZIP buffer: detect → parse HTML5 → store → persist.
-   * Other detected types are rejected with `PACKAGE_TYPE_UNSUPPORTED`.
+   * Imports a ZIP buffer: detect → parse → store → persist.
+   * Unsupported detected types are rejected with `PACKAGE_TYPE_UNSUPPORTED`.
    *
    * @param buffer - Uploaded ZIP bytes
    * @param options - Optional audit fields
@@ -64,7 +68,7 @@ export class PackageImporter {
   ): Promise<ImportPackageResult> {
     const files = createZipFileIndex(buffer);
     const packageType = detectPackageType(files);
-    if (packageType !== 'html5') {
+    if (!IMPORTABLE.has(packageType)) {
       throw new LmsError({
         status: httpStatusForLmsCode(PACKAGE_TYPE_UNSUPPORTED),
         code: PACKAGE_TYPE_UNSUPPORTED,
@@ -74,27 +78,27 @@ export class PackageImporter {
     }
 
     const runtime = this.runtimes.find(
-      (entry) => entry.packageType === 'html5',
+      (entry) => entry.packageType === packageType,
     );
     if (!runtime) {
       throw new LmsError({
         status: httpStatusForLmsCode(PACKAGE_TYPE_UNSUPPORTED),
         code: PACKAGE_TYPE_UNSUPPORTED,
-        message: 'No HTML5 runtime is registered for import.',
+        message: `No ${packageType} runtime is registered for import.`,
         details: { packageType },
       });
     }
 
     const parsed = await runtime.parse(files);
     const packageId = randomUUID();
-    const activityNodeId = randomUUID();
     const packagePrefix = `packages/${packageId}`;
     const storageKey = `${packagePrefix}/original.zip`;
     const extractedKey = `${packagePrefix}/content`;
     const checksumSha256 = createHash('sha256')
       .update(buffer)
       .digest('hex');
-    const rootActivity = parsed.activities[0];
+    const flattened = flattenActivities(parsed.activities, parsed.entryHref);
+    const activityNodeId = flattened.defaultNodeId;
 
     try {
       await this.dataSource.transaction(async (manager) => {
@@ -120,15 +124,19 @@ export class PackageImporter {
         });
         await manager.save(contentPackage);
 
-        const activityNode = manager.create(ActivityNode, {
-          id: activityNodeId,
-          contentPackageId: packageId,
-          title: rootActivity?.title ?? parsed.title,
-          href: rootActivity?.href ?? parsed.entryHref,
-          sortOrder: 0,
-          metadataJson: rootActivity?.metadata ?? null,
-        });
-        await manager.save(activityNode);
+        for (const node of flattened.nodes) {
+          const activityNode = manager.create(ActivityNode, {
+            id: node.id,
+            contentPackageId: packageId,
+            parentId: node.parentId,
+            publisherId: node.publisherId,
+            title: node.title,
+            href: node.href,
+            sortOrder: node.sortOrder,
+            metadataJson: node.metadata,
+          });
+          await manager.save(activityNode);
+        }
 
         const imported = manager.create(EventLog, {
           personId: options?.createdByUserId ?? null,
@@ -158,4 +166,55 @@ export class PackageImporter {
       packageType: parsed.packageType,
     };
   }
+}
+
+interface FlattenedActivity {
+  id: string;
+  parentId: string | null;
+  publisherId: string | null;
+  title: string;
+  href: string | null;
+  sortOrder: number;
+  metadata: Record<string, unknown> | null;
+}
+
+function flattenActivities(
+  activities: ActivityNodeTree[],
+  entryHref: string,
+): { nodes: FlattenedActivity[]; defaultNodeId: string } {
+  const nodes: FlattenedActivity[] = [];
+  let sortOrder = 0;
+
+  const walk = (
+    items: ActivityNodeTree[],
+    parentId: string | null,
+  ): void => {
+    for (const item of items) {
+      const id = randomUUID();
+      nodes.push({
+        id,
+        parentId,
+        publisherId: item.publisherId ?? null,
+        title: item.title,
+        href: item.href ?? null,
+        sortOrder: sortOrder++,
+        metadata: item.metadata ?? null,
+      });
+      if (item.children?.length) {
+        walk(item.children, id);
+      }
+    }
+  };
+
+  walk(activities, null);
+
+  const defaultNode =
+    nodes.find((node) => node.href === entryHref) ??
+    nodes.find((node) => node.href) ??
+    nodes[0];
+
+  return {
+    nodes,
+    defaultNodeId: defaultNode?.id ?? randomUUID(),
+  };
 }

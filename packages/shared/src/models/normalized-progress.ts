@@ -43,4 +43,6 @@ export interface NormalizedProgress {
   totalTime?: string;
   /** Opaque suspend data for resume. */
   suspendData?: string;
+  /** Format-specific leftovers (raw CMI map, objectives, …). */
+  extras?: Record<string, unknown>;
 }

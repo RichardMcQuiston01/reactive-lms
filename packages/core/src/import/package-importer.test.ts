@@ -6,6 +6,7 @@ import { LmsError, PACKAGE_NOT_DETECTED } from '@reactive-lms/shared';
 import { zipSync, strToU8 } from 'fflate';
 import type { DataSource } from 'typeorm';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
+import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import { FilesystemStorageAdapter } from '../storage/filesystem-storage.adapter';
 import { PackageImporter } from './package-importer';
 
@@ -56,7 +57,7 @@ describe('PackageImporter', () => {
     importer = new PackageImporter(
       createMockDataSource(saved),
       storage,
-      [new Html5Runtime()],
+      [new Html5Runtime(), new Scorm12Runtime()],
     );
   });
 
@@ -108,11 +109,60 @@ describe('PackageImporter', () => {
     expect(new TextDecoder().decode(extracted)).toContain('wrapped');
   });
 
-  test('throws PACKAGE_TYPE_UNSUPPORTED for a detected non-HTML5 package', async () => {
+  test('imports a SCORM 1.2 ZIP and persists the first SCO as the default node', async () => {
     const buffer = zipSync({
-      'imsmanifest.xml': strToU8(
-        '<manifest><schemaversion>1.2</schemaversion></manifest>',
-      ),
+      'imsmanifest.xml': strToU8(`<?xml version="1.0"?>
+<manifest>
+  <metadata><schemaversion>1.2</schemaversion></metadata>
+  <organizations>
+    <organization identifier="ORG">
+      <title>Golf Explained</title>
+      <item identifier="ITEM-1" identifierref="RES-1">
+        <title>Playing the Game</title>
+      </item>
+      <item identifier="ITEM-2">
+        <title>Chapter</title>
+        <item identifier="ITEM-2A" identifierref="RES-2">
+          <title>Etiquette</title>
+        </item>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES-1" href="shared/launchpage.html"
+        adlcp:scormtype="sco"/>
+    <resource identifier="RES-2" href="etiquette/etiquette.html"
+        adlcp:scormtype="sco"/>
+  </resources>
+</manifest>`),
+      'shared/launchpage.html': strToU8('<html>sco</html>'),
+      'etiquette/etiquette.html': strToU8('<html>etiquette</html>'),
+    });
+
+    const result = await importer.import(buffer);
+    expect(result.packageType).toBe('scorm_12');
+    expect(result.packageId).toMatch(UUID_RE);
+    expect(result.activityNodeId).toMatch(UUID_RE);
+
+    const pkg = saved.find((row) => row.id === result.packageId);
+    expect(pkg?.packageType).toBe('scorm_12');
+    expect(pkg?.title).toBe('Golf Explained');
+    expect(pkg?.entryHref).toBe('shared/launchpage.html');
+
+    const nodes = saved.filter(
+      (row) => row.contentPackageId === result.packageId,
+    );
+    expect(nodes).toHaveLength(3);
+    const firstSco = nodes.find((row) => row.id === result.activityNodeId);
+    expect(firstSco?.href).toBe('shared/launchpage.html');
+    expect(nodes.some((row) => row.href === 'etiquette/etiquette.html')).toBe(
+      true,
+    );
+  });
+
+  test('throws PACKAGE_TYPE_UNSUPPORTED for a detected non-importable package', async () => {
+    const buffer = zipSync({
+      'cmi5.xml': strToU8('<courseStructure></courseStructure>'),
     });
 
     try {

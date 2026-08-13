@@ -15,6 +15,8 @@ import {
   ModuleService,
   PackageImporter,
   ProgressSinkService,
+  Scorm12Runtime,
+  ScormCmiService,
 } from '@reactive-lms/core';
 import type {
   CapabilityAdapter,
@@ -29,6 +31,7 @@ import { LaunchesController } from './controllers/launches.controller';
 import { ModulesController } from './controllers/modules.controller';
 import { PackagesController } from './controllers/packages.controller';
 import { ProgressController } from './controllers/progress.controller';
+import { ScormRuntimeController } from './controllers/scorm-runtime.controller';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LmsExceptionFilter } from './filters/lms-exception.filter';
 import { LmsRequestService } from './identity/lms-request.service';
@@ -85,6 +88,7 @@ const CONTROLLERS = [
   EnrolmentsController,
   LaunchesController,
   ProgressController,
+  ScormRuntimeController,
 ];
 
 /**
@@ -154,7 +158,10 @@ function buildModule(input: {
     {
       provide: PackageImporter,
       useFactory: (dataSource: DataSource, storage: StorageAdapter) =>
-        new PackageImporter(dataSource, storage, [new Html5Runtime()]),
+        new PackageImporter(dataSource, storage, [
+          new Html5Runtime(),
+          new Scorm12Runtime(),
+        ]),
       inject: [RLMS_DATA_SOURCE, RLMS_STORAGE_ADAPTER],
     },
     {
@@ -170,7 +177,10 @@ function buildModule(input: {
     {
       provide: LaunchService,
       useFactory: (dataSource: DataSource, storage: StorageAdapter) =>
-        new LaunchService(dataSource, storage, [new Html5Runtime()]),
+        new LaunchService(dataSource, storage, [
+          new Html5Runtime(),
+          new Scorm12Runtime(),
+        ]),
       inject: [RLMS_DATA_SOURCE, RLMS_STORAGE_ADAPTER],
     },
     {
@@ -178,6 +188,12 @@ function buildModule(input: {
       useFactory: (dataSource: DataSource) =>
         new ProgressSinkService(dataSource),
       inject: [RLMS_DATA_SOURCE],
+    },
+    {
+      provide: ScormCmiService,
+      useFactory: (dataSource: DataSource, sink: ProgressSinkService) =>
+        new ScormCmiService(dataSource, sink),
+      inject: [RLMS_DATA_SOURCE, ProgressSinkService],
     },
     PersonDirectory,
     LmsRequestService,
@@ -203,6 +219,7 @@ function buildModule(input: {
       EnrolmentService,
       LaunchService,
       ProgressSinkService,
+      ScormCmiService,
       CatalogService,
       LmsRequestService,
       PersonDirectory,

@@ -19,6 +19,7 @@ export type LmsErrorCode =
   | typeof PACKAGE_NOT_FOUND
   | typeof MODULE_NOT_FOUND
   | typeof REGISTRATION_NOT_FOUND
+  | typeof ATTEMPT_NOT_FOUND
   | typeof CMI5_TOKEN_USED
   | (string & {});
 
@@ -70,6 +71,9 @@ export const MODULE_NOT_FOUND = 'MODULE_NOT_FOUND';
 /** Registration id does not exist. */
 export const REGISTRATION_NOT_FOUND = 'REGISTRATION_NOT_FOUND';
 
+/** Attempt id does not exist. */
+export const ATTEMPT_NOT_FOUND = 'ATTEMPT_NOT_FOUND';
+
 /** cmi5 one-time fetch token was already consumed. */
 export const CMI5_TOKEN_USED = 'CMI5_TOKEN_USED';
 
@@ -88,6 +92,7 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [PACKAGE_NOT_FOUND]: 404,
   [MODULE_NOT_FOUND]: 404,
   [REGISTRATION_NOT_FOUND]: 404,
+  [ATTEMPT_NOT_FOUND]: 404,
   [LAUNCH_SESSION_OPEN]: 409,
   [MODULE_NOT_AVAILABLE]: 403,
   [ENROLMENT_METHOD_UNAVAILABLE]: 403,

@@ -18,6 +18,11 @@
 
 ### Added
 
+- SCORM 1.2 import, launch, CMI store, and `window.API` player bridge:
+  parse `imsmanifest.xml` activity trees, persist CMI (`cmi.core.*`,
+  suspend_data, comments; objectives in extras), `GET`/`PUT
+  /scorm/attempts/:id/cmi`, map `lesson_status` and `score.raw` onto
+  `ProgressSink`, debounce Commit 500ms
 - `@reactive-lms/nest` `ReactiveLmsModule.registerAsync` with REST + OpenAPI
   for packages, course templates/offerings/sections, modules, enrolment,
   launches, and progress; `LmsError` filter returns `{ code, message }`
