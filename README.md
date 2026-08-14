@@ -18,7 +18,7 @@ If this library saved you some reverse-engineering, consider [buying me a coffee
 
 ## License
 
-MIT
+[MIT](./LICENSE)
 
 ## Copyright
 
