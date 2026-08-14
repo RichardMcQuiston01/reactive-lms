@@ -4,7 +4,8 @@
 
 ### BACKEND
 
-- TypeScript based (NestJS or similar)
+- TypeScript
+- NestJS
 - TypeORM
 - Support for Postgres to start, but it should eventually support multiple database types
 - Support for Redis caching down the line
@@ -13,7 +14,6 @@
 
 - Angular 18+
 - TailwindCSS
-- Google Material
 - RxJS
 
 ### SHARE LIBRARY
