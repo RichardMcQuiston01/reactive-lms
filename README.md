@@ -38,6 +38,8 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 - **Shared:** interfaces and DTOs used by frontend and backend
 
 Standards and editions are listed in [docs/STANDARDS.md](docs/STANDARDS.md).
+Stack choices (NestJS, TypeORM, Postgres first, Angular 18+, Tailwind, Material, Redis later) are in [docs/TECHNOLOGY.md](docs/TECHNOLOGY.md).
+The implementation plan is [GROK_PLAN.md](GROK_PLAN.md).
 
 ## Scripts
 

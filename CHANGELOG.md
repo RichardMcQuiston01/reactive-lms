@@ -24,6 +24,9 @@
 
 ### Added
 
+- `GROK_PLAN.md` implementation plan and `docs/TECHNOLOGY.md` stack spec
+  (Postgres first / multi-DB later, Redis behind a cache adapter, Angular 18+
+  with Tailwind and Material on the demo app)
 - SCORM 1.2 import, launch, CMI store, and `window.API` player bridge:
   parse `imsmanifest.xml` activity trees, persist CMI (`cmi.core.*`,
   suspend_data, comments; objectives in extras), `GET`/`PUT
