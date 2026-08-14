@@ -6,7 +6,7 @@
 
 **Architecture:** A bun workspace monorepo. Domain contracts (interfaces, DTOs, enums) live in a shared library consumed by both backend and frontend. A course is a container of modules (Moodle/Chamilo/ILIAS model); imported packages are reusable content placed into those modules. Package-format adapters implement a common `ContentRuntime` contract so every format launches, tracks, and reports through one progress model. A NestJS module exposes REST + OpenAPI and can be imported into a host API. An Angular library provides the player, progress subscription, and launch surface.
 
-**Tech Stack:** bun, TypeScript, NestJS, TypeORM, PostgreSQL first (multi-database later), Angular 18+ (standalone, RxJS), TailwindCSS + Angular Material for the demo UI, OpenAPI. Redis is a later cache backend behind a `CacheAdapter`, not a v1 dependency.
+**Tech Stack:** bun, TypeScript, NestJS, TypeORM, PostgreSQL first (multi-database later), Angular 18+ (standalone, TailwindCSS, RxJS), OpenAPI. Redis is a later cache backend behind a `CacheAdapter`, not a v1 dependency.
 
 ## Global Constraints
 
@@ -27,7 +27,7 @@
 - Backend is TypeScript + NestJS + TypeORM (`docs/TECHNOLOGY.md`).
 - Persistence v1 targets PostgreSQL. Do not write Postgres-only SQL into entities (no `pgcrypto`, no `jsonb`-only APIs in TypeScript). Driver-specific SQL belongs in the Postgres migration only. A later phase adds other TypeORM drivers (MySQL / MariaDB / SQLite) behind `createPersistenceDataSource`.
 - Do not take a Redis dependency in v1. Cache through a `CacheAdapter` so Redis can be plugged in later.
-- Standalone demo UI is Angular 18+, TailwindCSS, Angular Material, RxJS. `@reactive-lms/player` stays framework-thin (standalone components + RxJS) so a host Angular 18+ app can import it without pulling the demo theme.
+- Standalone demo UI is Angular 18+, TailwindCSS, RxJS. `@reactive-lms/player` stays framework-thin (standalone components + RxJS) so a host Angular 18+ app can import it without pulling the demo theme.
 - Shared Interfaces and DTOs live only in `@reactive-lms/shared` and must be usable from both frontend and backend.
 
 ---
@@ -109,11 +109,11 @@ That file is short and binding. It does not add LMS features; it locks the stack
 
 | TECHNOLOGY.md | How the plan treats it |
 | --- | --- |
-| TypeScript backend, NestJS or similar, TypeORM | NestJS is the backend. `@reactive-lms/nest` is the embeddable module; `@reactive-lms/standalone-api` boots it. |
+| TypeScript backend, NestJS, TypeORM | NestJS is the backend. `@reactive-lms/nest` is the embeddable module; `@reactive-lms/standalone-api` boots it. |
 | Postgres to start, multiple database types later | v1 DataSource is Postgres. Entities stay driver-agnostic. Postgres-specific DDL (UUID default, `jsonb`) lives only in `0001-initial-schema.ts`. Later: additional TypeORM drivers selected by connection URL / `type` option. Do not sprinkle `pg` types through core. |
 | Redis caching down the line | v1 is correct without Redis. Introduce `CacheAdapter` (`get` / `set` / `del` / `setNx`) with an in-memory implementation. Redis becomes a second adapter when the host needs shared cache (LTI nonces, cmi5 one-time tokens, CMI commit coalescing, LRS query cache). |
 | Angular 18+ demo | `@reactive-lms/standalone-web` and `@reactive-lms/player` target Angular **18 or newer**, standalone APIs. No NgModule compatibility layer unless a host asks. Open question 1 is closed. |
-| TailwindCSS + Google Material | Demo chrome only (`standalone-web`): layout, catalog, enrol, reports. Player chrome may use Tailwind utility classes; do not force Angular Material into a host app that imports `@reactive-lms/player`. |
+| TailwindCSS | Demo chrome (`standalone-web`): layout, catalog, enrol, reports. Player may use Tailwind utilities; do not require a host app to adopt the demo Tailwind config. |
 | RxJS | `ReactiveLmsProgressService.watch()` returns `Observable<NormalizedProgress>`. No Zone-free rewrite in v1. |
 | Shared interfaces / DTOs useful on frontend and backend | Already the monorepo spine. `@reactive-lms/shared` must stay free of Nest, TypeORM, Angular, Redis, and Tailwind. |
 
@@ -619,9 +619,9 @@ Dynamic Registration, Submission Review, Proctoring, and Caliper are out of v1.
 - `<rlms-player [registrationId] [courseModuleId] />`
 - `ReactiveLmsProgressService.watch(registrationId): Observable<NormalizedProgress>`
 
-The player never talks to TypeORM. It only uses the REST API and the shared DTOs. It must not import Tailwind config or Angular Material so a host app can theme it.
+The player never talks to TypeORM. It only uses the REST API and the shared DTOs. It must not require the demo Tailwind config so a host app can theme it.
 
-`@reactive-lms/standalone-web` is the demo app from `docs/TECHNOLOGY.md`: Angular 18+, TailwindCSS, Angular Material. It owns catalog, enrol, and report chrome. The player is embedded inside it.
+`@reactive-lms/standalone-web` is the demo app from `docs/TECHNOLOGY.md`: Angular 18+, TailwindCSS, RxJS. It owns catalog, enrol, and report chrome. The player is embedded inside it.
 
 Launch for SCORM must happen from a real browsing context that can set `window.API` on the parent of the SCO iframe. That component lives in the Angular library, not in the NestJS API.
 
@@ -933,7 +933,7 @@ cmi5 requires an LRS. Build the LRS first, then the cmi5 profile on top.
 - [ ] **Step 2:** Split migrations: `packages/persistence/src/migrations` (embeddable) vs `packages/standalone-api/src/migrations` (local users only).
 - [ ] **Step 3:** OpenAPI complete for every controller; export the spec from `@reactive-lms/shared` or generate it at build.
 - [ ] **Step 4:** Angular 18+ library packaged so a host app can `import { RlmsPlayerComponent, provideReactiveLms } from '@reactive-lms/player'`.
-- [ ] **Step 5:** `standalone-web` is a real Angular 18+ app: TailwindCSS + Angular Material chrome around the player (course list, enrol, launch, section report). Player package stays Material-free.
+- [ ] **Step 5:** `standalone-web` is a real Angular 18+ app: TailwindCSS chrome around the player (course list, enrol, launch, section report). Player package stays free of the demo theme.
 - [ ] **Step 6:** Progress events: `GET /registrations/:id/progress` plus an optional SSE endpoint `GET /registrations/:id/progress/stream` so the host UI can update without polling. Use RxJS on the client.
 - [ ] **Step 7:** Accessibility pass on the player chrome (keyboard Next/Previous, iframe title, focus return on terminate). Follow the ui-design skill when that UI is built.
 - [ ] **Step 8:** GDPR-shaped `GET /people/:id/export` that returns the person’s registrations, progress, statements they originated, and event log. `DELETE /people/:id/forget` anonymises PII on `person` and actor JSON but keeps aggregates (Chamilo GDPR export lesson).
@@ -1082,7 +1082,7 @@ The `rlms_` table prefix is a hard decision: it is the only safe way to ship mig
 15. **Stack is `docs/TECHNOLOGY.md`** — NestJS + TypeORM, Angular 18+ / RxJS, shared DTOs in `@reactive-lms/shared`.
 16. **Postgres first, TypeORM drivers later** — entities stay portable; Postgres DDL stays in the Postgres migration.
 17. **Cache behind `CacheAdapter`** — in-memory in v1, Redis when we need a shared cache. No Redis client in v1 lockfile.
-18. **Demo UI is Tailwind + Angular Material; the player library is not** — hosts must not inherit the demo theme.
+18. **Demo UI is Angular 18+ + TailwindCSS + RxJS; the player library stays theme-free** — hosts must not inherit the demo Tailwind setup.
 
 ---
 
@@ -1119,7 +1119,7 @@ Work on `feature/...` branches from `dev`. One phase per PR unless a phase is to
 | 6b | `feat(scorm): add SCORM 2004 sequencing engine` | 6a | SN (own plan if large) |
 | 7 | `feat(h5p): import and play H5P packages` | 5 | H5P |
 | 8 | `feat(lti): add LTI 1.3 platform launches` | 2 | LTI Advantage |
-| 9 | `feat(nest): ship embeddable Nest module and Angular player` | 3–8 | integration story + Angular 18/Tailwind/Material demo |
+| 9 | `feat(nest): ship embeddable Nest module and Angular player` | 3–8 | integration story + Angular 18 / Tailwind demo |
 | 10 | `feat(report): add section and transcript endpoints` | 3 | host-facing progress API |
 | 11 | `feat(persist): add extra TypeORM drivers and Redis cache` | 2, 9 | TECHNOLOGY.md “later” items |
 
@@ -1151,7 +1151,7 @@ Do not start Phase 0 in this session unless asked. This document is the plan, no
 ## 16. Sources read
 
 - `docs/DESIGN_CONSIDERATIONS.md`
-- `docs/TECHNOLOGY.md` — NestJS, TypeORM, Postgres first / multi-DB later, Redis later, Angular 18+, TailwindCSS, Angular Material, RxJS, shared DTOs
+- `docs/TECHNOLOGY.md` — NestJS, TypeORM, Postgres first / multi-DB later, Redis later, Angular 18+, TailwindCSS, RxJS, shared DTOs
 - `README.md`, `CHANGELOG.md`
 - [LTI (1EdTech)](https://www.1edtech.org/standards/lti) — LTI 1.3, AGS 2.0, NRPS 2.0, Deep Linking 2.0
 - [LIS overview](https://www.imsglobal.org/1edtech-learning-information-services-overview) and [LIS 2.0.1](https://www.imsglobal.org/lis/lisv2p0p1/LISSpecificationv2p0p1.html)
