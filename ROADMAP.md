@@ -98,7 +98,9 @@ formats arrive. `standalone-web` is a thin app composing `admin` and `player`.
 
 **Done when:** a section with one HTML5 module that posts `complete` marks the
 module and section `completed`; a two-module section requires both; and the
-same flow works end to end through the admin screens in `standalone-web`.
+same flow works end to end through the admin screens in `standalone-web`; and
+the filesystem `BlobStorageAdapter` passes the shared adapter conformance
+suite (D3).
 
 ## 0.4.0 — SCORM 1.2
 
@@ -162,6 +164,8 @@ Angular player without forking.
 ## 1.0.0 — First stable release
 
 - Publish strategy executed (D4)
+- S3-compatible `BlobStorageAdapter` (S3, MinIO, R2, Spaces), passing the
+  shared adapter conformance suite (D3)
 - Conformance fixtures green for every claimed format
 - Security review: ZIP handling, token scoping, LTI key handling
 - Docs: embedding guide, adapter guide, upgrade notes
@@ -176,7 +180,6 @@ Angular player without forking.
 - SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
   plan; no commercial engine unless the owner decides otherwise)
 - Certificates (D6)
-- S3/MinIO `BlobStorageAdapter` (D3)
 
 ## Non-goals (v1)
 
@@ -192,7 +195,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D3 | **Object storage:** filesystem only in v1, or also S3/MinIO for package files. | 1.0.0 | Filesystem in v1; the adapter interface leaves room. |
 | D4 | **Publish strategy:** private workspace via path references, or publish `@reactive-lms/*` to a registry. | 1.0.0 | Publish at 1.0.0; path references until then. |
 | D5 | **Learning paths:** is `sort_order` + `availability_json` enough, or do we need a path entity. | 0.9.0 | Enough for v1. |
 | D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
@@ -273,6 +275,18 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   `bytea`, UUID defaults) appear only in the Postgres migration. This keeps
   the entity set usable by the later MySQL/MariaDB and SQLite drivers (D8) and
   overrides the `jsonb` / `bytea` in GROK_PLAN §4.1.
+- **D3 — Object storage** (decided 2026-10-20). Filesystem
+  `BlobStorageAdapter` ships first; an S3-compatible adapter is a committed
+  1.0.0 deliverable. Constraints that follow:
+  - The contract is stream-based and key-based with prefix listing, and
+    exposes no local file paths, so a second adapter drops in.
+  - A shared adapter conformance suite ships with the filesystem adapter
+    (0.3.0) and is the pass bar for S3.
+  - SCORM and cmi5 content must be served from our origin, so the content
+    controller streams objects through the API; no redirects to presigned
+    URLs.
+  - Extraction to S3 batches uploads, and serving caches small files, since
+    packages are often hundreds of small objects.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).

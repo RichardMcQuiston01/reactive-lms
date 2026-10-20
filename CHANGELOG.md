@@ -12,6 +12,8 @@
 - Roadmap: decided the reusable `@reactive-lms/admin` package, first screens in
   0.3.0 (D2).
 - Roadmap: decided portable TypeORM column types in entities (D9).
+- Roadmap: decided filesystem blob storage first and S3-compatible storage
+  in 1.0.0 (D3).
 
 ### Added
 
