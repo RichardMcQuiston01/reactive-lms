@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Roadmap: decided to keep an own `BlobStorageAdapter` for package files (D11).
+
 ### Added
 
 - `ROADMAP.md` with milestones, exit criteria, and open design decisions.

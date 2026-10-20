@@ -190,9 +190,17 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 | D9 | **Portable column types.** Plan constraints say "no Postgres-only types in entities," yet §4.1 specifies `jsonb` and `bytea`. | 0.2.0 | Use TypeORM `simple-json`/`json` and `blob`; keep native types in the Postgres migration only. |
 | D10 | **Branch naming.** GROK_PLAN says `feature/...` from `dev` after confirmation; this repo currently merges `dev` straight to `main`. | 0.2.0 | Decide the convention before the first code PR. |
-| D11 | **Package-file storage contract.** `storage-adapters` is string key-value, not a fit for ZIPs and extracted trees. Own a streaming `BlobStorageAdapter`, or extend `storage-adapters` with a binary/stream adapter upstream. | 0.2.0 | Own interface now; revisit if the package gains binary support. |
 | D12 | **Error-log wiring.** Required peer dependency of `core`/`nest`, or optional with a console default. Which sink does standalone use by default. | 0.2.0 | Required dependency, injected; standalone defaults to console plus a JSON file with rotation. |
 | D13 | **Version pinning.** Both packages are pre-1.0 (0.20.0 and 0.15.0), so minor releases may break. | 0.2.0 | Pin exact versions; wrap each behind our own thin type in `shared` so a break touches one file. |
+
+### Decided
+
+- **D11 — Own `BlobStorageAdapter`** (decided 2026-10-20). Package files
+  (ZIPs, extracted trees, H5P libraries) go through a ReactiveLMS-owned
+  streaming binary interface in `@reactive-lms/shared`.
+  `@richardmcquiston01/storage-adapters` is used only for small key-value
+  state behind `CacheAdapter`. Revisit if that package gains a binary/stream
+  adapter.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
