@@ -6,6 +6,25 @@ holds the order, the exit criteria, and the decisions still open.
 
 Status key: ✅ done · 🚧 in progress · ⬜ planned · ❓ blocked on a decision
 
+## Adopted packages
+
+| Package | Role in ReactiveLMS | Where |
+| ------- | ------------------- | ----- |
+| `@richardmcquiston01/error-log-adapter` | Operational error logging behind an injected `ErrorLogAdapter`. Adapters never throw, which fits the "catch everything, exit gracefully" rule. `LmsError` maps onto `ErrorLogEntry` (`code`, `message`, `cause`, `source`). Host chooses the sink (console, webhook, Postgres, S3, ...). | 0.2.0 |
+| `@richardmcquiston01/storage-adapters` | Small key-value state behind `CacheAdapter` (`memoryAdapter` in v1; its Postgres/other adapters and `withReadCache`/`withRetry` wrappers for later). Typed results with revisions suit cmi5 token and LTI nonce handling. | 0.3.0 / 1.1.0 |
+
+Boundaries, so the two don't blur:
+
+- **`event_log` (database) stays.** It is the product's audit trail (import,
+  launch, grade, enrol, GDPR export). The error-log adapter is for operational
+  failures and does not replace it.
+- **Package files do not go through `storage-adapters`.** It is a string
+  key-value contract (some backends cap values around 1 MB). Imported ZIPs,
+  extracted trees, and H5P libraries need streaming binary I/O, so
+  `BlobStorageAdapter` stays our own interface (D11).
+- Both packages are Apache-2.0 and zero-dependency at the core. Our MIT
+  license is unaffected; we depend on them, we don't redistribute them.
+
 ## Principles
 
 - **Prove the spine first.** HTML5 plus the course container ships before the
@@ -51,7 +70,9 @@ not a constraint. LTI depends only on the schema (PR 2).
   `player`, `standalone-api`, `standalone-web`
 - `docs/STANDARDS.md` pinning exact spec versions
 - `@reactive-lms/shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
-  `IdentityAdapter`, `CapabilityAdapter`, `StorageAdapter`, `CacheAdapter`
+  `IdentityAdapter`, `CapabilityAdapter`, `BlobStorageAdapter`, `CacheAdapter`
+- Adopt `@richardmcquiston01/error-log-adapter` as the operational error sink
+  (see [Adopted packages](#adopted-packages))
 - `@reactive-lms/persistence`: LIS-shaped TypeORM entities, `0001` migration,
   `createPersistenceDataSource`
 
@@ -143,7 +164,7 @@ Angular player without forking.
 
 - SCORM 2004 sequencing and navigation engine (own plan; ADL conformance suite)
 - Certificates (D6)
-- S3/MinIO `StorageAdapter` (D3)
+- S3/MinIO `BlobStorageAdapter` (D3)
 
 ## Non-goals (v1)
 
@@ -161,7 +182,7 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 | -- | -------- | ------ | -------------- |
 | D1 | **SCORM engine:** wrap `scorm-again` for the in-browser API object, or write our own. GROK_PLAN says both: wrap it, and also that `feature/lms-foundation` owns CMI in `shared`. That branch does not exist in this repo. | 0.4.0 | Wrap `scorm-again` for the browser API only; own the CMI store and persistence. |
 | D2 | **Standalone admin UI:** minimal admin (upload, place modules, enrol, report) vs API plus a thin demo player. | 0.9.0 | Minimal admin; it's the only way to demo the full flow. |
-| D3 | **Object storage:** filesystem only in v1, or also S3/MinIO. | 1.0.0 | Filesystem in v1; the adapter interface leaves room. |
+| D3 | **Object storage:** filesystem only in v1, or also S3/MinIO for package files. | 1.0.0 | Filesystem in v1; the adapter interface leaves room. |
 | D4 | **Publish strategy:** private workspace via path references, or publish `@reactive-lms/*` to a registry. | 1.0.0 | Publish at 1.0.0; path references until then. |
 | D5 | **Learning paths:** is `sort_order` + `availability_json` enough, or do we need a path entity. | 0.9.0 | Enough for v1. |
 | D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
@@ -169,6 +190,9 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 | D9 | **Portable column types.** Plan constraints say "no Postgres-only types in entities," yet §4.1 specifies `jsonb` and `bytea`. | 0.2.0 | Use TypeORM `simple-json`/`json` and `blob`; keep native types in the Postgres migration only. |
 | D10 | **Branch naming.** GROK_PLAN says `feature/...` from `dev` after confirmation; this repo currently merges `dev` straight to `main`. | 0.2.0 | Decide the convention before the first code PR. |
+| D11 | **Package-file storage contract.** `storage-adapters` is string key-value, not a fit for ZIPs and extracted trees. Own a streaming `BlobStorageAdapter`, or extend `storage-adapters` with a binary/stream adapter upstream. | 0.2.0 | Own interface now; revisit if the package gains binary support. |
+| D12 | **Error-log wiring.** Required peer dependency of `core`/`nest`, or optional with a console default. Which sink does standalone use by default. | 0.2.0 | Required dependency, injected; standalone defaults to console plus a JSON file with rotation. |
+| D13 | **Version pinning.** Both packages are pre-1.0 (0.20.0 and 0.15.0), so minor releases may break. | 0.2.0 | Pin exact versions; wrap each behind our own thin type in `shared` so a break touches one file. |
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
