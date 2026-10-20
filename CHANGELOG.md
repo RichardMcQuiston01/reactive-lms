@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- `ROADMAP.md` with milestones, exit criteria, and open design decisions.
+
 ## 0.1.0 - 2026-10-20
 
 ### Added
