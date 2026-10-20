@@ -11,6 +11,7 @@
 - Roadmap: decided the standards-support approach (D1).
 - Roadmap: decided the reusable `@reactive-lms/admin` package, first screens in
   0.3.0 (D2).
+- Roadmap: decided portable TypeORM column types in entities (D9).
 
 ### Added
 

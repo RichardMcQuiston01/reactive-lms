@@ -198,7 +198,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 | D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
 | D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
-| D9 | **Portable column types.** Plan constraints say "no Postgres-only types in entities," yet §4.1 specifies `jsonb` and `bytea`. | 0.2.0 | Use TypeORM `simple-json`/`json` and `blob`; keep native types in the Postgres migration only. |
 
 ### Decided
 
@@ -268,6 +267,12 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   - screen and action visibility through `CapabilityAdapter`
   Hosts embed it with `reactiveLmsAdminRoutes` and
   `provideReactiveLmsAdmin(config)`.
+- **D9 — Portable column types** (decided 2026-10-20). Entities use
+  TypeORM's portable column types: `json` / `simple-json` in place of
+  `jsonb`, and `blob` in place of `bytea`. Native Postgres types (`jsonb`,
+  `bytea`, UUID defaults) appear only in the Postgres migration. This keeps
+  the entity set usable by the later MySQL/MariaDB and SQLite drivers (D8) and
+  overrides the `jsonb` / `bytea` in GROK_PLAN §4.1.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
