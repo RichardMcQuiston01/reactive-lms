@@ -8,6 +8,7 @@
 - Roadmap: `error-log-adapter` is optional (D12); implementation starts once
   `storage-adapters` and `error-log-adapter` reach stable 1.0 (D13).
 - Roadmap: decided the git workflow (D10).
+- Roadmap: decided the standards-support approach (D1).
 
 ### Added
 

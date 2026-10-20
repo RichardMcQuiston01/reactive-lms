@@ -43,15 +43,15 @@ Boundaries, so the two don't blur:
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ waits for both packages at 1.0 |
 | 0.3.0   | Course container + HTML5    | 3                   | ⬜     |
-| 0.4.0   | SCORM 1.2                   | 4                   | ❓ D1  |
+| 0.4.0   | SCORM 1.2                   | 4                   | ⬜     |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
-| 0.6.0   | SCORM 2004 (CMI, linear nav)| 6a                  | ⬜     |
+| 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
 | 0.8.0   | LTI 1.3 Platform + Advantage| 8                   | ⬜     |
 | 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ❓ D2, D4, D5 |
 | 1.0.0   | Hardening, docs, first stable release | —         | ⬜     |
 | 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8, D9 |
-| later   | SCORM 2004 sequencing, certificates | 6b          | ❓ D6  |
+| later   | Certificates (and SCORM 2004 sequencing if the 0.6.0 spike fails) | 6b | ❓ D6 |
 
 Order notes: after 0.3.0, the cmi5, SCORM 2004, H5P, and LTI work depends only
 on the shared pipeline and can run in parallel; the order above is a default,
@@ -109,7 +109,7 @@ and `satisfied` statements.
 **Done when:** a cmi5 sample AU initializes, passes, terminates, and the
 registration satisfies per `moveOn=Passed`.
 
-## 0.6.0 — SCORM 2004 (CMI + linear navigation)
+## 0.6.0 — SCORM 2004 (CMI, navigation, sequencing spike)
 
 **Delivers:** `window.API_1484_11`, independent `completion_status` and
 `success_status`, Next/Previous/TOC from the activity tree.
@@ -162,7 +162,8 @@ Angular player without forking.
 
 ## Later
 
-- SCORM 2004 sequencing and navigation engine (own plan; ADL conformance suite)
+- SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
+  plan; no commercial engine unless the owner decides otherwise)
 - Certificates (D6)
 - S3/MinIO `BlobStorageAdapter` (D3)
 
@@ -180,7 +181,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D1 | **SCORM engine:** wrap `scorm-again` for the in-browser API object, or write our own. GROK_PLAN says both: wrap it, and also that `feature/lms-foundation` owns CMI in `shared`. That branch does not exist in this repo. | 0.4.0 | Wrap `scorm-again` for the browser API only; own the CMI store and persistence. |
 | D2 | **Standalone admin UI:** minimal admin (upload, place modules, enrol, report) vs API plus a thin demo player. | 0.9.0 | Minimal admin; it's the only way to demo the full flow. |
 | D3 | **Object storage:** filesystem only in v1, or also S3/MinIO for package files. | 1.0.0 | Filesystem in v1; the adapter interface leaves room. |
 | D4 | **Publish strategy:** private workspace via path references, or publish `@reactive-lms/*` to a registry. | 1.0.0 | Publish at 1.0.0; path references until then. |
@@ -219,6 +219,32 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   branches are not deleted after merging. Commits use Conventional Commits
   with a subject of 50 characters or fewer and a body that explains why.
   Supersedes the "after confirmation" wording in GROK_PLAN.md.
+- **D1 — Standards support** (decided 2026-10-20). One `ContentRuntime`
+  interface per format, mixing libraries with our own code. The server never
+  trusts the browser for scoring or completion; it re-validates every commit.
+
+  | Standard | Browser side | Server side (ours) |
+  | -------- | ------------ | ------------------ |
+  | SCORM 1.2 | `scorm-again` (MIT) | CMI validation and persistence |
+  | SCORM 2004 | `scorm-again`, including its sequencing | Manifest parser feeding the activity tree and sequencing rules; CMI persistence |
+  | xAPI | `@xapi/xapi` (MIT) | Own LRS |
+  | cmi5 | Own launch and token flow, `@xapi/xapi` | `cmi5.xml` import, statement guard, `moveOn` |
+  | H5P | `h5p-standalone` (MIT) | `.h5p` import; events forwarded to the LRS |
+  | LTI 1.3 | Own platform | `jose` (MIT) for JWT/OIDC; own AGS, NRPS, Deep Linking |
+  | HTML5 | Own `postMessage` contract | Own |
+
+  Rules that follow from it:
+  - `scorm-again` sits behind a thin wrapper in `core` (single-maintainer
+    dependency; limits the blast radius).
+  - No format is called supported until its fixture test is green; SCORM 1.2
+    and 2004 also pass ADL conformance before release.
+  - The 0.6.0 spike checks `scorm-again`'s sequencing against the ADL suite.
+    If it fails, 2004 CMI and linear navigation still ship and sequencing
+    moves to "Later".
+  - H5P uses `h5p-standalone` only. `@lumieducation/h5p-server` is
+    GPL-3.0-or-later and is excluded because this project is MIT.
+  - Supersedes GROK_PLAN §13 question 3 and its reference to
+    `feature/lms-foundation`, a branch that does not exist in this repo.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
