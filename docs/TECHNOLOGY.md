@@ -1,0 +1,21 @@
+# TECHNOLOGY
+
+## TECH STACK
+
+### BACKEND
+
+- TypeScript
+- NestJS
+- TypeORM
+- Support for Postgres to start, but it should eventually support multiple database types
+- Support for Redis caching down the line
+
+### FRONTEND DEMO
+
+- Angular 18+
+- TailwindCSS
+- RxJS
+
+### SHARE LIBRARY
+
+- Shared Interfaces, DTOs, etc. that could be useful on both frontend and backend projects

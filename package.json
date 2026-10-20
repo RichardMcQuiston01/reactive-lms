@@ -1,0 +1,16 @@
+{
+  "name": "reactive-lms",
+  "version": "0.1.0",
+  "description": "TypeScript LMS (SCORM, xAPI, cmi5, H5P, LTI) that runs standalone or embeds in a NestJS + Angular host.",
+  "private": true,
+  "license": "MIT",
+  "author": "Richard McQuiston",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RichardMcQuiston01/reactive-lms.git"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://donate.stripe.com/00w5kD3Gj1Xo9v7gVOcs800"
+  }
+}
