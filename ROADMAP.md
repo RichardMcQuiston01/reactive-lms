@@ -42,16 +42,19 @@ Boundaries, so the two don't blur:
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ waits for both packages at 1.0 |
-| 0.3.0   | Course container + HTML5    | 3                   | ⬜     |
-| 0.4.0   | SCORM 1.2                   | 4                   | ❓ D1  |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | ⬜     |
+| 0.4.0   | SCORM 1.2                   | 4                   | ⬜     |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
-| 0.6.0   | SCORM 2004 (CMI, linear nav)| 6a                  | ⬜     |
+| 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
 | 0.8.0   | LTI 1.3 Platform + Advantage| 8                   | ⬜     |
-| 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ❓ D2, D4, D5 |
+| 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ⬜     |
 | 1.0.0   | Hardening, docs, first stable release | —         | ⬜     |
-| 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8, D9 |
-| later   | SCORM 2004 sequencing, certificates | 6b          | ❓ D6  |
+| 1.1.0   | MySQL/MariaDB and SQLite dialects, opt-in Redis | 11 | ⬜     |
+| 1.2.0   | Reusable learning paths (D5)  | —                 | ⬜     |
+| 1.3.0   | Built-in certificates (D6, option C) | —               | ⬜     |
+| 1.4.0   | Open Badges 3.0 credentials (D6, option D) | —         | ⬜     |
+| later   | SCORM 2004 sequencing, only if the 0.6.0 spike fails | 6b | ⬜     |
 
 Order notes: after 0.3.0, the cmi5, SCORM 2004, H5P, and LTI work depends only
 on the shared pipeline and can run in parallel; the order above is a default,
@@ -66,18 +69,20 @@ not a constraint. LTI depends only on the schema (PR 2).
 
 **Delivers**
 
-- Bun workspace with seven packages: `shared`, `persistence`, `core`, `nest`,
-  `player`, `standalone-api`, `standalone-web`
+- Bun workspace with eight packages: `shared`, `persistence`, `core`, `nest`,
+  `player`, `admin`, `standalone-api`, `standalone-web`
 - `docs/STANDARDS.md` pinning exact spec versions
-- `@reactive-lms/shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
+- `@richardmcquiston01/reactive-lms-shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
   `IdentityAdapter`, `CapabilityAdapter`, `BlobStorageAdapter`, `CacheAdapter`
 - Optional `@richardmcquiston01/error-log-adapter` support as the operational
   error sink (see [Adopted packages](#adopted-packages))
-- `@reactive-lms/persistence`: LIS-shaped TypeORM entities, `0001` migration,
-  `createPersistenceDataSource`
+- `@richardmcquiston01/reactive-lms-persistence`: LIS-shaped TypeORM entities, `0001` migration,
+  `createPersistenceDataSource`, and the `PersistenceDialect` contract with a
+  dialect registry (D8). Postgres ships as the first dialect, and is
+  overridable like any other.
 
 **Done when:** migrations apply to an empty Postgres and the unique
-constraints exist; another package can import from `@reactive-lms/shared`.
+constraints exist; another package can import from `@richardmcquiston01/reactive-lms-shared`.
 
 **Guardrail:** dump the database and get an explicit OK before running
 migrations against any shared database.
@@ -89,8 +94,27 @@ outside the web root, course sections and modules, enrolment (`manual`,
 `self`, `group`), launch, the HTML5 `postMessage` contract, event log, and
 the first Angular player.
 
+**Admin library (D2):** the first `@richardmcquiston01/reactive-lms-admin` screens ship here:
+package upload, section and module placement, enrolment, and a basic section
+progress view. The extension points (navigation token, replaceable screens,
+content-projection slots, wrappable API client, `CapabilityAdapter`
+permissions) exist from this release so they are exercised before more
+formats arrive. `standalone-web` is a thin app composing `admin` and `player`.
+
+**Module structure and conditions (D5, option B):** modules form a tree
+through an optional `parent_module_id` (chapters or blocks), and
+`availability_json` is a versioned condition list, for example
+`{ version: 1, all: [...] }` with `any` also allowed. Condition types: previous
+module complete, date window, minimum score, group membership. Conditions are
+evaluated at launch, and the admin screens show the module tree. If 0.3.0
+grows, the chapter tree may slip to 0.9.0; the condition list stays.
+
 **Done when:** a section with one HTML5 module that posts `complete` marks the
-module and section `completed`; a two-module section requires both.
+module and section `completed`; a two-module section requires both; a module
+with an unmet condition refuses to launch; and the
+same flow works end to end through the admin screens in `standalone-web`; and
+the filesystem `BlobStorageAdapter` passes the shared adapter conformance
+suite (D3).
 
 ## 0.4.0 — SCORM 1.2
 
@@ -109,7 +133,7 @@ and `satisfied` statements.
 **Done when:** a cmi5 sample AU initializes, passes, terminates, and the
 registration satisfies per `moveOn=Passed`.
 
-## 0.6.0 — SCORM 2004 (CMI + linear navigation)
+## 0.6.0 — SCORM 2004 (CMI, navigation, sequencing spike)
 
 **Delivers:** `window.API_1484_11`, independent `completion_status` and
 `success_status`, Next/Previous/TOC from the activity tree.
@@ -139,9 +163,15 @@ appears on the registration.
 - `ReactiveLmsModule.registerAsync` with a copy-paste host example
 - Embeddable vs standalone migrations split
 - Complete OpenAPI
-- Packaged Angular library (`provideReactiveLms`), theme-free
-- Standalone Angular + Tailwind demo
+- Packaged Angular libraries (`provideReactiveLms`, `provideReactiveLmsAdmin`),
+  both theme-free
+- Admin screens extended for every implemented format, plus reports and
+  transcripts
+- Standalone Angular + Tailwind demo (Tailwind lives only here)
 - Progress stream (SSE), accessibility pass on the player
+- Completion events (D6, option B): `registration.completed`, module
+  completion, and similar events delivered to the host through an injected
+  event hook, so a host can issue its own certificates
 - GDPR export/forget, section export, section report and transcript endpoints
 
 **Done when:** a fresh clone can `bun install`, start standalone, and import
@@ -150,25 +180,71 @@ Angular player without forking.
 
 ## 1.0.0 — First stable release
 
-- Publish strategy executed (D4)
+- Publish strategy executed: stable 1.0.0 published as `latest` (D4)
+- S3-compatible `BlobStorageAdapter` (S3, MinIO, R2, Spaces), passing the
+  shared adapter conformance suite (D3)
 - Conformance fixtures green for every claimed format
 - Security review: ZIP handling, token scoping, LTI key handling
 - Docs: embedding guide, adapter guide, upgrade notes
 
 ## 1.1.0 — Portability
 
-- Additional TypeORM drivers (D8) and `RedisCacheAdapter`
+- MySQL/MariaDB dialects, then SQLite (D8), built on the dialect contract
+  from 0.2.0. MySQL and MariaDB are separate TypeORM drivers and both run in
+  CI. SQLite is documented as non-production for LRS-heavy workloads.
+- Dialect extension guide: how a host adds another TypeORM-supported database
+  (for example SQL Server) or overrides a built-in dialect
+- Opt-in Redis for `standalone-api` (D7): when `REDIS_URL` is set, the cache
+  uses `redisAdapter` from `@richardmcquiston01/storage-adapters` through an
+  `ioredis` client; unset, it stays in-memory. Docs say when to turn it on
+  (more than one API process).
 - Per-driver integration tests behind env flags
+
+## 1.2.0 — Learning paths (D5, option C)
+
+**Delivers:** a reusable, versioned `learning_path` entity with
+`learning_path_item` rows, attached to `course_template`. The item structure
+is the module tree and condition list from 0.3.0, extracted. A section either
+links to a path version or keeps ad-hoc modules as before.
+
+- Nullable `learning_path_id` (and pinned version) on `course_section`, so
+  sections built in 0.3.0 keep working untouched
+- Path API, admin screens, and section-to-path linking
+- Intentional post-1.0 scope addition: GROK_PLAN listed learning paths as a
+  non-goal for v1
+
+**Done when:** one path is linked to two sections; editing the path publishes
+a new version that sections can adopt; unlinked sections are unchanged.
+
+## 1.3.0 — Built-in certificates (D6, option C)
+
+**Delivers:** a certificate template per course or offering, issued on
+completion, with a unique verification code and a public verification
+endpoint. Optional expiry. Files stored through `BlobStorageAdapter`; admin
+screens for templates; PDF output with a lightweight library such as
+`pdf-lib` rather than a headless browser.
+
+- GDPR: the learner's name on a certificate is PII, so "forget" must
+  anonymise or revoke issued certificates; designed up front
+- Intentional post-1.0 scope addition: certificates were a v1 non-goal
+
+**Done when:** completing a section issues a certificate whose code verifies
+at the public endpoint, and forgetting the learner anonymises it.
+
+## 1.4.0 — Open Badges 3.0 credentials (D6, option D)
+
+**Delivers:** signed, verifiable credentials built on the 1.3.0 issuing flow,
+using the 1EdTech Open Badges 3.0 standard: issuer key management, credential
+signing, and a verification path. Extends C; it does not replace it.
 
 ## Later
 
-- SCORM 2004 sequencing and navigation engine (own plan; ADL conformance suite)
-- Certificates (D6)
-- S3/MinIO `BlobStorageAdapter` (D3)
+- SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
+  plan; no commercial engine unless the owner decides otherwise)
 
 ## Non-goals (v1)
 
-Native quizzes/QTI, forums/assignments/calendar/chat, badges and competencies,
+Native quizzes/QTI, forums/assignments/calendar/chat, competencies,
 content bank, plugin themes/blocks/formats, authoring, marketplace/e-commerce,
 social/gamification, built-in IdP, LIS SOAP/LDAP, LTI 1.1, LTI dynamic
 registration/proctoring/Caliper, acting as an LTI Tool, Moodle `.mbz`,
@@ -180,21 +256,12 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D1 | **SCORM engine:** wrap `scorm-again` for the in-browser API object, or write our own. GROK_PLAN says both: wrap it, and also that `feature/lms-foundation` owns CMI in `shared`. That branch does not exist in this repo. | 0.4.0 | Wrap `scorm-again` for the browser API only; own the CMI store and persistence. |
-| D2 | **Standalone admin UI:** minimal admin (upload, place modules, enrol, report) vs API plus a thin demo player. | 0.9.0 | Minimal admin; it's the only way to demo the full flow. |
-| D3 | **Object storage:** filesystem only in v1, or also S3/MinIO for package files. | 1.0.0 | Filesystem in v1; the adapter interface leaves room. |
-| D4 | **Publish strategy:** private workspace via path references, or publish `@reactive-lms/*` to a registry. | 1.0.0 | Publish at 1.0.0; path references until then. |
-| D5 | **Learning paths:** is `sort_order` + `availability_json` enough, or do we need a path entity. | 0.9.0 | Enough for v1. |
-| D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
-| D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
-| D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
-| D9 | **Portable column types.** Plan constraints say "no Postgres-only types in entities," yet §4.1 specifies `jsonb` and `bytea`. | 0.2.0 | Use TypeORM `simple-json`/`json` and `blob`; keep native types in the Postgres migration only. |
 
 ### Decided
 
 - **D11 — Own `BlobStorageAdapter`** (decided 2026-10-20). Package files
   (ZIPs, extracted trees, H5P libraries) go through a ReactiveLMS-owned
-  streaming binary interface in `@reactive-lms/shared`.
+  streaming binary interface in `@richardmcquiston01/reactive-lms-shared`.
   `@richardmcquiston01/storage-adapters` is used only for small key-value
   state behind `CacheAdapter`. Revisit if that package gains a binary/stream
   adapter.
@@ -202,8 +269,16 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   2026-10-20). `core` and `nest` code against an `ErrorLogAdapter` interface
   and run without the package installed, falling back to a built-in console
   logger. Hosts that want other sinks install the package and inject an
-  adapter. Open detail: which sink standalone-api defaults to once the package
-  is present (suggest console plus a rotating JSON file).
+  adapter.
+  - **Standalone default sink:** when the package is installed,
+    `standalone-api` logs through a `CompositeErrorAdapter` of
+    `ConsoleErrorAdapter` plus `JsonFileErrorAdapter` in NDJSON mode with size
+    rotation (`maxBytes`, `maxFiles`). The log directory is configurable and
+    defaults to a `logs` folder under the data directory, outside the web
+    root. Without the package, the built-in console fallback applies.
+  - Caveat from the package: file rotation assumes a single writing process.
+    Running several `standalone-api` processes (see D7) needs a different
+    sink per process or a shared one such as a webhook or database adapter.
 - **D13 — Start gate** (decided 2026-10-20). ReactiveLMS implementation
   (0.2.0) starts once both `@richardmcquiston01/storage-adapters` and
   `@richardmcquiston01/error-log-adapter` have stable 1.0 releases (currently
@@ -219,6 +294,133 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   branches are not deleted after merging. Commits use Conventional Commits
   with a subject of 50 characters or fewer and a body that explains why.
   Supersedes the "after confirmation" wording in GROK_PLAN.md.
+- **D1 — Standards support** (decided 2026-10-20). One `ContentRuntime`
+  interface per format, mixing libraries with our own code. The server never
+  trusts the browser for scoring or completion; it re-validates every commit.
+
+  | Standard | Browser side | Server side (ours) |
+  | -------- | ------------ | ------------------ |
+  | SCORM 1.2 | `scorm-again` (MIT) | CMI validation and persistence |
+  | SCORM 2004 | `scorm-again`, including its sequencing | Manifest parser feeding the activity tree and sequencing rules; CMI persistence |
+  | xAPI | `@xapi/xapi` (MIT) | Own LRS |
+  | cmi5 | Own launch and token flow, `@xapi/xapi` | `cmi5.xml` import, statement guard, `moveOn` |
+  | H5P | `h5p-standalone` (MIT) | `.h5p` import; events forwarded to the LRS |
+  | LTI 1.3 | Own platform | `jose` (MIT) for JWT/OIDC; own AGS, NRPS, Deep Linking |
+  | HTML5 | Own `postMessage` contract | Own |
+
+  Rules that follow from it:
+  - `scorm-again` sits behind a thin wrapper in `core` (single-maintainer
+    dependency; limits the blast radius).
+  - No format is called supported until its fixture test is green; SCORM 1.2
+    and 2004 also pass ADL conformance before release.
+  - The 0.6.0 spike checks `scorm-again`'s sequencing against the ADL suite.
+    If it fails, 2004 CMI and linear navigation still ship and sequencing
+    moves to "Later".
+  - H5P uses `h5p-standalone` only. `@lumieducation/h5p-server` is
+    GPL-3.0-or-later and is excluded because this project is MIT.
+  - Supersedes GROK_PLAN §13 question 3 and its reference to
+    `feature/lms-foundation`, a branch that does not exist in this repo.
+- **D2 — Admin UI as a reusable package** (decided 2026-10-20).
+  `@richardmcquiston01/reactive-lms-admin` is an Angular 18+ library of admin screens, usable
+  as-is or extended inside a larger app. It is theme-free: styling uses CSS
+  custom properties, and Tailwind stays in `standalone-web` only. First
+  screens ship in 0.3.0; later formats extend them. Extension points:
+  - a navigation injection token to add or hide menu items
+  - screens as standalone components that a host can replace through a token
+  - content-projection slots (extra report columns, extra course tabs)
+  - a typed API client service a host can wrap, for example to add auth
+    headers
+  - screen and action visibility through `CapabilityAdapter`
+  Hosts embed it with `reactiveLmsAdminRoutes` and
+  `provideReactiveLmsAdmin(config)`.
+- **D9 — Portable column types** (decided 2026-10-20). Entities use
+  TypeORM's portable column types: `json` / `simple-json` in place of
+  `jsonb`, and `blob` in place of `bytea`. Native Postgres types (`jsonb`,
+  `bytea`, UUID defaults) appear only in the Postgres migration. This keeps
+  the entity set usable by the later MySQL/MariaDB and SQLite drivers (D8) and
+  overrides the `jsonb` / `bytea` in GROK_PLAN §4.1.
+- **D3 — Object storage** (decided 2026-10-20). Filesystem
+  `BlobStorageAdapter` ships first; an S3-compatible adapter is a committed
+  1.0.0 deliverable. Constraints that follow:
+  - The contract is stream-based and key-based with prefix listing, and
+    exposes no local file paths, so a second adapter drops in.
+  - A shared adapter conformance suite ships with the filesystem adapter
+    (0.3.0) and is the pass bar for S3.
+  - SCORM and cmi5 content must be served from our origin, so the content
+    controller streams objects through the API; no redirects to presigned
+    URLs.
+  - Extraction to S3 batches uploads, and serving caches small files, since
+    packages are often hundreds of small objects.
+- **D4 — Publish strategy** (decided 2026-10-20). Packages are published to
+  public npm under the `@richardmcquiston01` scope, the same scope as
+  `storage-adapters` and `error-log-adapter`. Names replace the
+  `@reactive-lms/*` names used in GROK_PLAN.md:
+
+  | Workspace package | npm name |
+  | ----------------- | -------- |
+  | `shared` | `@richardmcquiston01/reactive-lms-shared` |
+  | `persistence` | `@richardmcquiston01/reactive-lms-persistence` |
+  | `core` | `@richardmcquiston01/reactive-lms-core` |
+  | `nest` | `@richardmcquiston01/reactive-lms-nest` |
+  | `player` | `@richardmcquiston01/reactive-lms-player` |
+  | `admin` | `@richardmcquiston01/reactive-lms-admin` |
+
+  `standalone-api` and `standalone-web` are apps and stay private. Names for
+  the six libraries were unused on npm when checked. Proposed, not yet
+  confirmed: workspace path references through 0.2.0, `next`-tagged
+  prereleases from 0.3.0, and 1.0.0 as the first `latest`, with independent
+  per-package versioning (for example Changesets) and releases tagged from
+  `main`.
+- **D5 — Learning paths** (decided 2026-10-20). Build option B in 0.3.0,
+  then option C in 1.2.0.
+  - **B (0.3.0):** `parent_module_id` tree plus a versioned, all/any
+    `availability_json` condition list; no path entity.
+  - **C (1.2.0):** reusable `learning_path` entity, extracted from B's
+    structure so nothing is discarded.
+  - **Reuse semantics:** a section links live to a pinned path version, not a
+    copy. Editing a path creates a new version; sections adopt it explicitly.
+  - Overrides GROK_PLAN §13 question 8 and its "no separate path entity"
+    default.
+- **D6 — Certificates** (decided 2026-10-20). Staged path B, then C, then D.
+  - **B (0.9.0):** completion events and transcript data for the host to
+    issue its own certificates.
+  - **C (1.3.0):** built-in certificates with verification codes, a public
+    verification endpoint, and GDPR handling designed up front.
+  - **D (1.4.0):** Open Badges 3.0 signed credentials, extending C.
+  - Overrides GROK_PLAN §13 question 7 ("v1.1, not v1") and moves
+    certificates and badges out of the v1 non-goals.
+- **D7 — Redis in standalone** (decided 2026-10-20). Stage A, then B.
+  - **A (through 1.0):** `standalone-api` uses the in-memory `CacheAdapter`.
+    A host embedding the Nest module can inject any `CacheAdapter`, Redis
+    included.
+  - **B (1.1.0):** opt-in via `REDIS_URL`, using `redisAdapter` from
+    `storage-adapters`. In-memory remains the default; Redis is never
+    required. No Redis client in the lockfile before 1.1.0.
+  - Without a shared cache, cmi5 one-time tokens and LTI nonces break across
+    multiple API processes, so the docs must say that.
+- **D8 — Databases** (decided 2026-10-20). MySQL/MariaDB first, then SQLite,
+  both in 1.1.0 after Postgres. The database layer is extensible and
+  overridable so a host can pick or replace a database to suit its needs.
+  - **Dialect contract (0.2.0):** a `PersistenceDialect` bundles the TypeORM
+    driver `type`, its connection options, and its migration set.
+    `createPersistenceDataSource({ url, dialect })` takes one, and a registry
+    resolves built-ins by name. Entities stay portable (D9); all
+    database-specific differences live in the dialect's migrations and
+    options, so they can be replaced without touching entities.
+  - **Overriding:** a host can register its own dialect under a new name
+    (SQL Server, CockroachDB, Oracle, or anything else TypeORM supports), or
+    replace a built-in one, including Postgres, by supplying different
+    migrations or options. A host may also skip our migrations and run its
+    own pipeline against the same entities.
+  - **Built-ins:** `postgres` (0.2.0), `mysql`, `mariadb`, `better-sqlite3`
+    (1.1.0).
+  - **Per-dialect care:** MySQL needs `char(36)` UUIDs, explicit timestamp
+    handling, and `longtext`/`longblob` for `suspend_data` and xAPI document
+    bodies. Each dialect passes the shared persistence test suite (unique
+    `(person_id, course_section_id)`, one package in two modules, no update
+    path for statements) behind env flags.
+  - Not scheduled: SQL Server and others, on demand through the extension
+    guide.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
