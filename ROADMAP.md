@@ -48,9 +48,10 @@ Boundaries, so the two don't blur:
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
 | 0.8.0   | LTI 1.3 Platform + Advantage| 8                   | ⬜     |
-| 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ❓ D4, D5 |
+| 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ⬜     |
 | 1.0.0   | Hardening, docs, first stable release | —         | ⬜     |
-| 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8, D9 |
+| 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8  |
+| 1.2.0   | Reusable learning paths (D5)  | —                 | ⬜     |
 | later   | Certificates (and SCORM 2004 sequencing if the 0.6.0 spike fails) | 6b | ❓ D6 |
 
 Order notes: after 0.3.0, the cmi5, SCORM 2004, H5P, and LTI work depends only
@@ -96,8 +97,17 @@ content-projection slots, wrappable API client, `CapabilityAdapter`
 permissions) exist from this release so they are exercised before more
 formats arrive. `standalone-web` is a thin app composing `admin` and `player`.
 
+**Module structure and conditions (D5, option B):** modules form a tree
+through an optional `parent_module_id` (chapters or blocks), and
+`availability_json` is a versioned condition list, for example
+`{ version: 1, all: [...] }` with `any` also allowed. Condition types: previous
+module complete, date window, minimum score, group membership. Conditions are
+evaluated at launch, and the admin screens show the module tree. If 0.3.0
+grows, the chapter tree may slip to 0.9.0; the condition list stays.
+
 **Done when:** a section with one HTML5 module that posts `complete` marks the
-module and section `completed`; a two-module section requires both; and the
+module and section `completed`; a two-module section requires both; a module
+with an unmet condition refuses to launch; and the
 same flow works end to end through the admin screens in `standalone-web`; and
 the filesystem `BlobStorageAdapter` passes the shared adapter conformance
 suite (D3).
@@ -175,6 +185,22 @@ Angular player without forking.
 - Additional TypeORM drivers (D8) and `RedisCacheAdapter`
 - Per-driver integration tests behind env flags
 
+## 1.2.0 — Learning paths (D5, option C)
+
+**Delivers:** a reusable, versioned `learning_path` entity with
+`learning_path_item` rows, attached to `course_template`. The item structure
+is the module tree and condition list from 0.3.0, extracted. A section either
+links to a path version or keeps ad-hoc modules as before.
+
+- Nullable `learning_path_id` (and pinned version) on `course_section`, so
+  sections built in 0.3.0 keep working untouched
+- Path API, admin screens, and section-to-path linking
+- Intentional post-1.0 scope addition: GROK_PLAN listed learning paths as a
+  non-goal for v1
+
+**Done when:** one path is linked to two sections; editing the path publishes
+a new version that sections can adopt; unlinked sections are unchanged.
+
 ## Later
 
 - SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
@@ -195,7 +221,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D5 | **Learning paths:** is `sort_order` + `availability_json` enough, or do we need a path entity. | 0.9.0 | Enough for v1. |
 | D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
 | D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
@@ -306,6 +331,16 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   prereleases from 0.3.0, and 1.0.0 as the first `latest`, with independent
   per-package versioning (for example Changesets) and releases tagged from
   `main`.
+- **D5 — Learning paths** (decided 2026-10-20). Build option B in 0.3.0,
+  then option C in 1.2.0.
+  - **B (0.3.0):** `parent_module_id` tree plus a versioned, all/any
+    `availability_json` condition list; no path entity.
+  - **C (1.2.0):** reusable `learning_path` entity, extracted from B's
+    structure so nothing is discarded.
+  - **Reuse semantics:** a section links live to a pinned path version, not a
+    copy. Editing a path creates a new version; sections adopt it explicitly.
+  - Overrides GROK_PLAN §13 question 8 and its "no separate path entity"
+    default.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).

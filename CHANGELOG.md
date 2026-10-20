@@ -15,6 +15,8 @@
 - Roadmap: decided filesystem blob storage first and S3-compatible storage
   in 1.0.0 (D3).
 - Roadmap: decided to publish under the `@richardmcquiston01` npm scope (D4).
+- Roadmap: decided learning paths: module tree and conditions in 0.3.0, reusable
+  path entity in 1.2.0 (D5).
 
 ### Added
 
