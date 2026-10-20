@@ -52,7 +52,9 @@ Boundaries, so the two don't blur:
 | 1.0.0   | Hardening, docs, first stable release | —         | ⬜     |
 | 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8  |
 | 1.2.0   | Reusable learning paths (D5)  | —                 | ⬜     |
-| later   | Certificates (and SCORM 2004 sequencing if the 0.6.0 spike fails) | 6b | ❓ D6 |
+| 1.3.0   | Built-in certificates (D6, option C) | —               | ⬜     |
+| 1.4.0   | Open Badges 3.0 credentials (D6, option D) | —         | ⬜     |
+| later   | SCORM 2004 sequencing, only if the 0.6.0 spike fails | 6b | ⬜     |
 
 Order notes: after 0.3.0, the cmi5, SCORM 2004, H5P, and LTI work depends only
 on the shared pipeline and can run in parallel; the order above is a default,
@@ -165,6 +167,9 @@ appears on the registration.
   transcripts
 - Standalone Angular + Tailwind demo (Tailwind lives only here)
 - Progress stream (SSE), accessibility pass on the player
+- Completion events (D6, option B): `registration.completed`, module
+  completion, and similar events delivered to the host through an injected
+  event hook, so a host can issue its own certificates
 - GDPR export/forget, section export, section report and transcript endpoints
 
 **Done when:** a fresh clone can `bun install`, start standalone, and import
@@ -201,15 +206,35 @@ links to a path version or keeps ad-hoc modules as before.
 **Done when:** one path is linked to two sections; editing the path publishes
 a new version that sections can adopt; unlinked sections are unchanged.
 
+## 1.3.0 — Built-in certificates (D6, option C)
+
+**Delivers:** a certificate template per course or offering, issued on
+completion, with a unique verification code and a public verification
+endpoint. Optional expiry. Files stored through `BlobStorageAdapter`; admin
+screens for templates; PDF output with a lightweight library such as
+`pdf-lib` rather than a headless browser.
+
+- GDPR: the learner's name on a certificate is PII, so "forget" must
+  anonymise or revoke issued certificates; designed up front
+- Intentional post-1.0 scope addition: certificates were a v1 non-goal
+
+**Done when:** completing a section issues a certificate whose code verifies
+at the public endpoint, and forgetting the learner anonymises it.
+
+## 1.4.0 — Open Badges 3.0 credentials (D6, option D)
+
+**Delivers:** signed, verifiable credentials built on the 1.3.0 issuing flow,
+using the 1EdTech Open Badges 3.0 standard: issuer key management, credential
+signing, and a verification path. Extends C; it does not replace it.
+
 ## Later
 
 - SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
   plan; no commercial engine unless the owner decides otherwise)
-- Certificates (D6)
 
 ## Non-goals (v1)
 
-Native quizzes/QTI, forums/assignments/calendar/chat, badges and competencies,
+Native quizzes/QTI, forums/assignments/calendar/chat, competencies,
 content bank, plugin themes/blocks/formats, authoring, marketplace/e-commerce,
 social/gamification, built-in IdP, LIS SOAP/LDAP, LTI 1.1, LTI dynamic
 registration/proctoring/Caliper, acting as an LTI Tool, Moodle `.mbz`,
@@ -221,7 +246,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
 | D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 
@@ -341,6 +365,14 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
     copy. Editing a path creates a new version; sections adopt it explicitly.
   - Overrides GROK_PLAN §13 question 8 and its "no separate path entity"
     default.
+- **D6 — Certificates** (decided 2026-10-20). Staged path B, then C, then D.
+  - **B (0.9.0):** completion events and transcript data for the host to
+    issue its own certificates.
+  - **C (1.3.0):** built-in certificates with verification codes, a public
+    verification endpoint, and GDPR handling designed up front.
+  - **D (1.4.0):** Open Badges 3.0 signed credentials, extending C.
+  - Overrides GROK_PLAN §13 question 7 ("v1.1, not v1") and moves
+    certificates and badges out of the v1 non-goals.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
