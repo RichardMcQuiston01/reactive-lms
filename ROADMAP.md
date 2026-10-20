@@ -4,13 +4,13 @@ Release plan for ReactiveLMS, derived from [GROK_PLAN.md](GROK_PLAN.md).
 The plan holds the detail (domain model, API surface, step lists); this file
 holds the order, the exit criteria, and the decisions still open.
 
-Status key: ✅ done · 🚧 in progress · ⬜ planned · ❓ blocked on a decision
+Status key: ✅ done · 🚧 in progress · ⬜ planned · ⏸ waiting · ❓ blocked on a decision
 
 ## Adopted packages
 
 | Package | Role in ReactiveLMS | Where |
 | ------- | ------------------- | ----- |
-| `@richardmcquiston01/error-log-adapter` | Operational error logging behind an injected `ErrorLogAdapter`. Adapters never throw, which fits the "catch everything, exit gracefully" rule. `LmsError` maps onto `ErrorLogEntry` (`code`, `message`, `cause`, `source`). Host chooses the sink (console, webhook, Postgres, S3, ...). | 0.2.0 |
+| `@richardmcquiston01/error-log-adapter` | Optional (D12): operational error logging behind an injected `ErrorLogAdapter`, with a built-in console fallback. Adapters never throw, which fits the "catch everything, exit gracefully" rule. `LmsError` maps onto `ErrorLogEntry` (`code`, `message`, `cause`, `source`). Host chooses the sink (console, webhook, Postgres, S3, ...). | 0.2.0 |
 | `@richardmcquiston01/storage-adapters` | Small key-value state behind `CacheAdapter` (`memoryAdapter` in v1; its Postgres/other adapters and `withReadCache`/`withRetry` wrappers for later). Typed results with revisions suit cmi5 token and LTI nonce handling. | 0.3.0 / 1.1.0 |
 
 Boundaries, so the two don't blur:
@@ -41,7 +41,7 @@ Boundaries, so the two don't blur:
 | Version | Theme                       | PRs (GROK_PLAN §14) | Status |
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
-| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⬜     |
+| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ starts after D13 gate |
 | 0.3.0   | Course container + HTML5    | 3                   | ⬜     |
 | 0.4.0   | SCORM 1.2                   | 4                   | ❓ D1  |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
@@ -71,8 +71,8 @@ not a constraint. LTI depends only on the schema (PR 2).
 - `docs/STANDARDS.md` pinning exact spec versions
 - `@reactive-lms/shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
   `IdentityAdapter`, `CapabilityAdapter`, `BlobStorageAdapter`, `CacheAdapter`
-- Adopt `@richardmcquiston01/error-log-adapter` as the operational error sink
-  (see [Adopted packages](#adopted-packages))
+- Optional `@richardmcquiston01/error-log-adapter` support as the operational
+  error sink (see [Adopted packages](#adopted-packages))
 - `@reactive-lms/persistence`: LIS-shaped TypeORM entities, `0001` migration,
   `createPersistenceDataSource`
 
@@ -190,8 +190,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 | D9 | **Portable column types.** Plan constraints say "no Postgres-only types in entities," yet §4.1 specifies `jsonb` and `bytea`. | 0.2.0 | Use TypeORM `simple-json`/`json` and `blob`; keep native types in the Postgres migration only. |
 | D10 | **Branch naming.** GROK_PLAN says `feature/...` from `dev` after confirmation; this repo currently merges `dev` straight to `main`. | 0.2.0 | Decide the convention before the first code PR. |
-| D12 | **Error-log wiring.** Required peer dependency of `core`/`nest`, or optional with a console default. Which sink does standalone use by default. | 0.2.0 | Required dependency, injected; standalone defaults to console plus a JSON file with rotation. |
-| D13 | **Version pinning.** Both packages are pre-1.0 (0.20.0 and 0.15.0), so minor releases may break. | 0.2.0 | Pin exact versions; wrap each behind our own thin type in `shared` so a break touches one file. |
 
 ### Decided
 
@@ -201,6 +199,18 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   `@richardmcquiston01/storage-adapters` is used only for small key-value
   state behind `CacheAdapter`. Revisit if that package gains a binary/stream
   adapter.
+- **D12 — `error-log-adapter` is an optional dependency** (decided
+  2026-10-20). `core` and `nest` code against an `ErrorLogAdapter` interface
+  and run without the package installed, falling back to a built-in console
+  logger. Hosts that want other sinks install the package and inject an
+  adapter. Open detail: which sink standalone-api defaults to once the package
+  is present (suggest console plus a rotating JSON file).
+- **D13 — Start gate** (decided 2026-10-20). ReactiveLMS implementation
+  (0.2.0) starts once both `@richardmcquiston01/storage-adapters` and
+  `@richardmcquiston01/error-log-adapter` are complete. No pre-1.0 version
+  pinning or wrapping is needed as a result; depend on released versions.
+  Open detail: "complete" is taken to mean a stable release of each (currently
+  0.20.0 and 0.15.0); confirm the bar.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
