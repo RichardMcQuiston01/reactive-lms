@@ -189,7 +189,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 | D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 | D9 | **Portable column types.** Plan constraints say "no Postgres-only types in entities," yet §4.1 specifies `jsonb` and `bytea`. | 0.2.0 | Use TypeORM `simple-json`/`json` and `blob`; keep native types in the Postgres migration only. |
-| D10 | **Branch naming.** GROK_PLAN says `feature/...` from `dev` after confirmation; this repo currently merges `dev` straight to `main`. | 0.2.0 | Decide the convention before the first code PR. |
 
 ### Decided
 
@@ -210,6 +209,16 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   `@richardmcquiston01/error-log-adapter` have stable 1.0 releases (currently
   0.20.0 and 0.15.0). No pre-1.0 version pinning or wrapping is needed as a
   result; depend on released 1.x versions.
+- **D10 — Git workflow** (decided 2026-10-20, per the owner's git-workflow
+  skill). Long-lived branches: `main` (production) and `dev` (development);
+  there is no `staging` branch. New work goes on `feature/<name>` off `dev`
+  and merges back to `dev` by PR; `dev` reaches `main` by PR. Fixes use
+  `hotfix/<name>` off the affected branch and merge back to it; a hotfix off
+  `main` is also merged into `dev`. PRs merge with a merge commit (no squash
+  or rebase), `dev` is fast-forwarded to `main` after a promotion, and
+  branches are not deleted after merging. Commits use Conventional Commits
+  with a subject of 50 characters or fewer and a body that explains why.
+  Supersedes the "after confirmation" wording in GROK_PLAN.md.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
