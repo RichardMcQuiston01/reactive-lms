@@ -9,6 +9,8 @@
   `storage-adapters` and `error-log-adapter` reach stable 1.0 (D13).
 - Roadmap: decided the git workflow (D10).
 - Roadmap: decided the standards-support approach (D1).
+- Roadmap: decided the reusable `@reactive-lms/admin` package, first screens in
+  0.3.0 (D2).
 
 ### Added
 

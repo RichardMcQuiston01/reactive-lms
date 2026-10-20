@@ -42,13 +42,13 @@ Boundaries, so the two don't blur:
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ waits for both packages at 1.0 |
-| 0.3.0   | Course container + HTML5    | 3                   | ⬜     |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | ⬜     |
 | 0.4.0   | SCORM 1.2                   | 4                   | ⬜     |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
 | 0.8.0   | LTI 1.3 Platform + Advantage| 8                   | ⬜     |
-| 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ❓ D2, D4, D5 |
+| 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ❓ D4, D5 |
 | 1.0.0   | Hardening, docs, first stable release | —         | ⬜     |
 | 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8, D9 |
 | later   | Certificates (and SCORM 2004 sequencing if the 0.6.0 spike fails) | 6b | ❓ D6 |
@@ -66,8 +66,8 @@ not a constraint. LTI depends only on the schema (PR 2).
 
 **Delivers**
 
-- Bun workspace with seven packages: `shared`, `persistence`, `core`, `nest`,
-  `player`, `standalone-api`, `standalone-web`
+- Bun workspace with eight packages: `shared`, `persistence`, `core`, `nest`,
+  `player`, `admin`, `standalone-api`, `standalone-web`
 - `docs/STANDARDS.md` pinning exact spec versions
 - `@reactive-lms/shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
   `IdentityAdapter`, `CapabilityAdapter`, `BlobStorageAdapter`, `CacheAdapter`
@@ -89,8 +89,16 @@ outside the web root, course sections and modules, enrolment (`manual`,
 `self`, `group`), launch, the HTML5 `postMessage` contract, event log, and
 the first Angular player.
 
+**Admin library (D2):** the first `@reactive-lms/admin` screens ship here:
+package upload, section and module placement, enrolment, and a basic section
+progress view. The extension points (navigation token, replaceable screens,
+content-projection slots, wrappable API client, `CapabilityAdapter`
+permissions) exist from this release so they are exercised before more
+formats arrive. `standalone-web` is a thin app composing `admin` and `player`.
+
 **Done when:** a section with one HTML5 module that posts `complete` marks the
-module and section `completed`; a two-module section requires both.
+module and section `completed`; a two-module section requires both; and the
+same flow works end to end through the admin screens in `standalone-web`.
 
 ## 0.4.0 — SCORM 1.2
 
@@ -139,8 +147,11 @@ appears on the registration.
 - `ReactiveLmsModule.registerAsync` with a copy-paste host example
 - Embeddable vs standalone migrations split
 - Complete OpenAPI
-- Packaged Angular library (`provideReactiveLms`), theme-free
-- Standalone Angular + Tailwind demo
+- Packaged Angular libraries (`provideReactiveLms`, `provideReactiveLmsAdmin`),
+  both theme-free
+- Admin screens extended for every implemented format, plus reports and
+  transcripts
+- Standalone Angular + Tailwind demo (Tailwind lives only here)
 - Progress stream (SSE), accessibility pass on the player
 - GDPR export/forget, section export, section report and transcript endpoints
 
@@ -181,7 +192,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D2 | **Standalone admin UI:** minimal admin (upload, place modules, enrol, report) vs API plus a thin demo player. | 0.9.0 | Minimal admin; it's the only way to demo the full flow. |
 | D3 | **Object storage:** filesystem only in v1, or also S3/MinIO for package files. | 1.0.0 | Filesystem in v1; the adapter interface leaves room. |
 | D4 | **Publish strategy:** private workspace via path references, or publish `@reactive-lms/*` to a registry. | 1.0.0 | Publish at 1.0.0; path references until then. |
 | D5 | **Learning paths:** is `sort_order` + `availability_json` enough, or do we need a path entity. | 0.9.0 | Enough for v1. |
@@ -245,6 +255,19 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
     GPL-3.0-or-later and is excluded because this project is MIT.
   - Supersedes GROK_PLAN §13 question 3 and its reference to
     `feature/lms-foundation`, a branch that does not exist in this repo.
+- **D2 — Admin UI as a reusable package** (decided 2026-10-20).
+  `@reactive-lms/admin` is an Angular 18+ library of admin screens, usable
+  as-is or extended inside a larger app. It is theme-free: styling uses CSS
+  custom properties, and Tailwind stays in `standalone-web` only. First
+  screens ship in 0.3.0; later formats extend them. Extension points:
+  - a navigation injection token to add or hide menu items
+  - screens as standalone components that a host can replace through a token
+  - content-projection slots (extra report columns, extra course tabs)
+  - a typed API client service a host can wrap, for example to add auth
+    headers
+  - screen and action visibility through `CapabilityAdapter`
+  Hosts embed it with `reactiveLmsAdminRoutes` and
+  `provideReactiveLmsAdmin(config)`.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
