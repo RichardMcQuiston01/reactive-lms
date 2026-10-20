@@ -23,6 +23,8 @@
   1.1.0 (D7).
 - Roadmap: decided MySQL/MariaDB then SQLite, behind an extensible dialect
   contract hosts can override (D8).
+- Roadmap: standalone-api logs to console plus a rotating JSON file by default
+  when `error-log-adapter` is installed (D12).
 
 ### Added
 

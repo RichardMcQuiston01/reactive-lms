@@ -269,8 +269,16 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   2026-10-20). `core` and `nest` code against an `ErrorLogAdapter` interface
   and run without the package installed, falling back to a built-in console
   logger. Hosts that want other sinks install the package and inject an
-  adapter. Open detail: which sink standalone-api defaults to once the package
-  is present (suggest console plus a rotating JSON file).
+  adapter.
+  - **Standalone default sink:** when the package is installed,
+    `standalone-api` logs through a `CompositeErrorAdapter` of
+    `ConsoleErrorAdapter` plus `JsonFileErrorAdapter` in NDJSON mode with size
+    rotation (`maxBytes`, `maxFiles`). The log directory is configurable and
+    defaults to a `logs` folder under the data directory, outside the web
+    root. Without the package, the built-in console fallback applies.
+  - Caveat from the package: file rotation assumes a single writing process.
+    Running several `standalone-api` processes (see D7) needs a different
+    sink per process or a shared one such as a webhook or database adapter.
 - **D13 — Start gate** (decided 2026-10-20). ReactiveLMS implementation
   (0.2.0) starts once both `@richardmcquiston01/storage-adapters` and
   `@richardmcquiston01/error-log-adapter` have stable 1.0 releases (currently
