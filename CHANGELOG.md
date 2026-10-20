@@ -17,6 +17,8 @@
 - Roadmap: decided to publish under the `@richardmcquiston01` npm scope (D4).
 - Roadmap: decided learning paths: module tree and conditions in 0.3.0, reusable
   path entity in 1.2.0 (D5).
+- Roadmap: decided certificates: completion events in 0.9.0, built-in
+  certificates in 1.3.0, Open Badges 3.0 in 1.4.0 (D6).
 
 ### Added
 
