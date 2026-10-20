@@ -8,6 +8,13 @@
 - Roadmap: `error-log-adapter` is optional (D12); implementation starts once
   `storage-adapters` and `error-log-adapter` reach stable 1.0 (D13).
 - Roadmap: decided the git workflow (D10).
+- Roadmap: decided the standards-support approach (D1).
+- Roadmap: decided the reusable `@reactive-lms/admin` package, first screens in
+  0.3.0 (D2).
+- Roadmap: decided portable TypeORM column types in entities (D9).
+- Roadmap: decided filesystem blob storage first and S3-compatible storage
+  in 1.0.0 (D3).
+- Roadmap: decided to publish under the `@richardmcquiston01` npm scope (D4).
 
 ### Added
 
