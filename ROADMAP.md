@@ -187,7 +187,11 @@ Angular player without forking.
 
 ## 1.1.0 — Portability
 
-- Additional TypeORM drivers (D8) and `RedisCacheAdapter`
+- Additional TypeORM drivers (D8)
+- Opt-in Redis for `standalone-api` (D7): when `REDIS_URL` is set, the cache
+  uses `redisAdapter` from `@richardmcquiston01/storage-adapters` through an
+  `ioredis` client; unset, it stays in-memory. Docs say when to turn it on
+  (more than one API process).
 - Per-driver integration tests behind env flags
 
 ## 1.2.0 — Learning paths (D5, option C)
@@ -246,7 +250,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
 | D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 
 ### Decided
@@ -373,6 +376,15 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   - **D (1.4.0):** Open Badges 3.0 signed credentials, extending C.
   - Overrides GROK_PLAN §13 question 7 ("v1.1, not v1") and moves
     certificates and badges out of the v1 non-goals.
+- **D7 — Redis in standalone** (decided 2026-10-20). Stage A, then B.
+  - **A (through 1.0):** `standalone-api` uses the in-memory `CacheAdapter`.
+    A host embedding the Nest module can inject any `CacheAdapter`, Redis
+    included.
+  - **B (1.1.0):** opt-in via `REDIS_URL`, using `redisAdapter` from
+    `storage-adapters`. In-memory remains the default; Redis is never
+    required. No Redis client in the lockfile before 1.1.0.
+  - Without a shared cache, cmi5 one-time tokens and LTI nonces break across
+    multiple API processes, so the docs must say that.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
