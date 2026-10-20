@@ -41,7 +41,7 @@ Boundaries, so the two don't blur:
 | Version | Theme                       | PRs (GROK_PLAN §14) | Status |
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
-| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ starts after D13 gate |
+| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ waits for both packages at 1.0 |
 | 0.3.0   | Course container + HTML5    | 3                   | ⬜     |
 | 0.4.0   | SCORM 1.2                   | 4                   | ❓ D1  |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
@@ -207,10 +207,9 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   is present (suggest console plus a rotating JSON file).
 - **D13 — Start gate** (decided 2026-10-20). ReactiveLMS implementation
   (0.2.0) starts once both `@richardmcquiston01/storage-adapters` and
-  `@richardmcquiston01/error-log-adapter` are complete. No pre-1.0 version
-  pinning or wrapping is needed as a result; depend on released versions.
-  Open detail: "complete" is taken to mean a stable release of each (currently
-  0.20.0 and 0.15.0); confirm the bar.
+  `@richardmcquiston01/error-log-adapter` have stable 1.0 releases (currently
+  0.20.0 and 0.15.0). No pre-1.0 version pinning or wrapping is needed as a
+  result; depend on released 1.x versions.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
