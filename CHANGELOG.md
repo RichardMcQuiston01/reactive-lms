@@ -14,6 +14,7 @@
 - Roadmap: decided portable TypeORM column types in entities (D9).
 - Roadmap: decided filesystem blob storage first and S3-compatible storage
   in 1.0.0 (D3).
+- Roadmap: decided to publish under the `@richardmcquiston01` npm scope (D4).
 
 ### Added
 

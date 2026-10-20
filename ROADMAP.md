@@ -69,15 +69,15 @@ not a constraint. LTI depends only on the schema (PR 2).
 - Bun workspace with eight packages: `shared`, `persistence`, `core`, `nest`,
   `player`, `admin`, `standalone-api`, `standalone-web`
 - `docs/STANDARDS.md` pinning exact spec versions
-- `@reactive-lms/shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
+- `@richardmcquiston01/reactive-lms-shared`: enums, DTOs, `LmsError`, `ContentRuntime`,
   `IdentityAdapter`, `CapabilityAdapter`, `BlobStorageAdapter`, `CacheAdapter`
 - Optional `@richardmcquiston01/error-log-adapter` support as the operational
   error sink (see [Adopted packages](#adopted-packages))
-- `@reactive-lms/persistence`: LIS-shaped TypeORM entities, `0001` migration,
+- `@richardmcquiston01/reactive-lms-persistence`: LIS-shaped TypeORM entities, `0001` migration,
   `createPersistenceDataSource`
 
 **Done when:** migrations apply to an empty Postgres and the unique
-constraints exist; another package can import from `@reactive-lms/shared`.
+constraints exist; another package can import from `@richardmcquiston01/reactive-lms-shared`.
 
 **Guardrail:** dump the database and get an explicit OK before running
 migrations against any shared database.
@@ -89,7 +89,7 @@ outside the web root, course sections and modules, enrolment (`manual`,
 `self`, `group`), launch, the HTML5 `postMessage` contract, event log, and
 the first Angular player.
 
-**Admin library (D2):** the first `@reactive-lms/admin` screens ship here:
+**Admin library (D2):** the first `@richardmcquiston01/reactive-lms-admin` screens ship here:
 package upload, section and module placement, enrolment, and a basic section
 progress view. The extension points (navigation token, replaceable screens,
 content-projection slots, wrappable API client, `CapabilityAdapter`
@@ -163,7 +163,7 @@ Angular player without forking.
 
 ## 1.0.0 — First stable release
 
-- Publish strategy executed (D4)
+- Publish strategy executed: stable 1.0.0 published as `latest` (D4)
 - S3-compatible `BlobStorageAdapter` (S3, MinIO, R2, Spaces), passing the
   shared adapter conformance suite (D3)
 - Conformance fixtures green for every claimed format
@@ -195,7 +195,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D4 | **Publish strategy:** private workspace via path references, or publish `@reactive-lms/*` to a registry. | 1.0.0 | Publish at 1.0.0; path references until then. |
 | D5 | **Learning paths:** is `sort_order` + `availability_json` enough, or do we need a path entity. | 0.9.0 | Enough for v1. |
 | D6 | **Certificates:** v1.1 or later. | post-1.0 | After 1.0; revisit on demand. |
 | D7 | **Redis in standalone:** inject only, or bundled. | 1.1.0 | Inject only. |
@@ -205,7 +204,7 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 - **D11 — Own `BlobStorageAdapter`** (decided 2026-10-20). Package files
   (ZIPs, extracted trees, H5P libraries) go through a ReactiveLMS-owned
-  streaming binary interface in `@reactive-lms/shared`.
+  streaming binary interface in `@richardmcquiston01/reactive-lms-shared`.
   `@richardmcquiston01/storage-adapters` is used only for small key-value
   state behind `CacheAdapter`. Revisit if that package gains a binary/stream
   adapter.
@@ -257,7 +256,7 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   - Supersedes GROK_PLAN §13 question 3 and its reference to
     `feature/lms-foundation`, a branch that does not exist in this repo.
 - **D2 — Admin UI as a reusable package** (decided 2026-10-20).
-  `@reactive-lms/admin` is an Angular 18+ library of admin screens, usable
+  `@richardmcquiston01/reactive-lms-admin` is an Angular 18+ library of admin screens, usable
   as-is or extended inside a larger app. It is theme-free: styling uses CSS
   custom properties, and Tailwind stays in `standalone-web` only. First
   screens ship in 0.3.0; later formats extend them. Extension points:
@@ -287,6 +286,26 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
     URLs.
   - Extraction to S3 batches uploads, and serving caches small files, since
     packages are often hundreds of small objects.
+- **D4 — Publish strategy** (decided 2026-10-20). Packages are published to
+  public npm under the `@richardmcquiston01` scope, the same scope as
+  `storage-adapters` and `error-log-adapter`. Names replace the
+  `@reactive-lms/*` names used in GROK_PLAN.md:
+
+  | Workspace package | npm name |
+  | ----------------- | -------- |
+  | `shared` | `@richardmcquiston01/reactive-lms-shared` |
+  | `persistence` | `@richardmcquiston01/reactive-lms-persistence` |
+  | `core` | `@richardmcquiston01/reactive-lms-core` |
+  | `nest` | `@richardmcquiston01/reactive-lms-nest` |
+  | `player` | `@richardmcquiston01/reactive-lms-player` |
+  | `admin` | `@richardmcquiston01/reactive-lms-admin` |
+
+  `standalone-api` and `standalone-web` are apps and stay private. Names for
+  the six libraries were unused on npm when checked. Proposed, not yet
+  confirmed: workspace path references through 0.2.0, `next`-tagged
+  prereleases from 0.3.0, and 1.0.0 as the first `latest`, with independent
+  per-package versioning (for example Changesets) and releases tagged from
+  `main`.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
