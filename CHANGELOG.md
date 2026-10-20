@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- `ROADMAP.md` with milestones, exit criteria, and open design decisions.
+- Roadmap adopts `@richardmcquiston01/error-log-adapter` and
+  `@richardmcquiston01/storage-adapters`.
+
 ## 0.1.0 - 2026-10-20
 
 ### Added
