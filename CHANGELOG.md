@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Roadmap: decided to keep an own `BlobStorageAdapter` for package files (D11).
+- Roadmap: `error-log-adapter` is optional (D12); implementation starts once
+  `storage-adapters` and `error-log-adapter` reach stable 1.0 (D13).
+- Roadmap: decided the git workflow (D10).
+
 ### Added
 
 - `ROADMAP.md` with milestones, exit criteria, and open design decisions.
