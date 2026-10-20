@@ -21,6 +21,8 @@
   certificates in 1.3.0, Open Badges 3.0 in 1.4.0 (D6).
 - Roadmap: decided Redis in standalone: in-memory through 1.0, opt-in Redis in
   1.1.0 (D7).
+- Roadmap: decided MySQL/MariaDB then SQLite, behind an extensible dialect
+  contract hosts can override (D8).
 
 ### Added
 

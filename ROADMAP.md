@@ -50,7 +50,7 @@ Boundaries, so the two don't blur:
 | 0.8.0   | LTI 1.3 Platform + Advantage| 8                   | ⬜     |
 | 0.9.0   | Nest module, Angular player, standalone demo, reporting | 9, 10 | ⬜     |
 | 1.0.0   | Hardening, docs, first stable release | —         | ⬜     |
-| 1.1.0   | Multi-DB drivers, Redis cache | 11                | ❓ D8  |
+| 1.1.0   | MySQL/MariaDB and SQLite dialects, opt-in Redis | 11 | ⬜     |
 | 1.2.0   | Reusable learning paths (D5)  | —                 | ⬜     |
 | 1.3.0   | Built-in certificates (D6, option C) | —               | ⬜     |
 | 1.4.0   | Open Badges 3.0 credentials (D6, option D) | —         | ⬜     |
@@ -77,7 +77,9 @@ not a constraint. LTI depends only on the schema (PR 2).
 - Optional `@richardmcquiston01/error-log-adapter` support as the operational
   error sink (see [Adopted packages](#adopted-packages))
 - `@richardmcquiston01/reactive-lms-persistence`: LIS-shaped TypeORM entities, `0001` migration,
-  `createPersistenceDataSource`
+  `createPersistenceDataSource`, and the `PersistenceDialect` contract with a
+  dialect registry (D8). Postgres ships as the first dialect, and is
+  overridable like any other.
 
 **Done when:** migrations apply to an empty Postgres and the unique
 constraints exist; another package can import from `@richardmcquiston01/reactive-lms-shared`.
@@ -187,7 +189,11 @@ Angular player without forking.
 
 ## 1.1.0 — Portability
 
-- Additional TypeORM drivers (D8)
+- MySQL/MariaDB dialects, then SQLite (D8), built on the dialect contract
+  from 0.2.0. MySQL and MariaDB are separate TypeORM drivers and both run in
+  CI. SQLite is documented as non-production for LRS-heavy workloads.
+- Dialect extension guide: how a host adds another TypeORM-supported database
+  (for example SQL Server) or overrides a built-in dialect
 - Opt-in Redis for `standalone-api` (D7): when `REDIS_URL` is set, the cache
   uses `redisAdapter` from `@richardmcquiston01/storage-adapters` through an
   `ioredis` client; unset, it stays in-memory. Docs say when to turn it on
@@ -250,7 +256,6 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
 
 | #  | Decision | Blocks | Recommendation |
 | -- | -------- | ------ | -------------- |
-| D8 | **Second database:** MySQL/MariaDB then SQLite, or another order. | 1.1.0 | MySQL/MariaDB, then SQLite for tests. |
 
 ### Decided
 
@@ -385,6 +390,29 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
     required. No Redis client in the lockfile before 1.1.0.
   - Without a shared cache, cmi5 one-time tokens and LTI nonces break across
     multiple API processes, so the docs must say that.
+- **D8 — Databases** (decided 2026-10-20). MySQL/MariaDB first, then SQLite,
+  both in 1.1.0 after Postgres. The database layer is extensible and
+  overridable so a host can pick or replace a database to suit its needs.
+  - **Dialect contract (0.2.0):** a `PersistenceDialect` bundles the TypeORM
+    driver `type`, its connection options, and its migration set.
+    `createPersistenceDataSource({ url, dialect })` takes one, and a registry
+    resolves built-ins by name. Entities stay portable (D9); all
+    database-specific differences live in the dialect's migrations and
+    options, so they can be replaced without touching entities.
+  - **Overriding:** a host can register its own dialect under a new name
+    (SQL Server, CockroachDB, Oracle, or anything else TypeORM supports), or
+    replace a built-in one, including Postgres, by supplying different
+    migrations or options. A host may also skip our migrations and run its
+    own pipeline against the same entities.
+  - **Built-ins:** `postgres` (0.2.0), `mysql`, `mariadb`, `better-sqlite3`
+    (1.1.0).
+  - **Per-dialect care:** MySQL needs `char(36)` UUIDs, explicit timestamp
+    handling, and `longtext`/`longblob` for `suspend_data` and xAPI document
+    bodies. Each dialect passes the shared persistence test suite (unique
+    `(person_id, course_section_id)`, one package in two modules, no update
+    path for statements) behind env flags.
+  - Not scheduled: SQL Server and others, on demand through the extension
+    guide.
 
 AICC is closed as out of scope. Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
