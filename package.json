@@ -21,10 +21,18 @@
     "typecheck": "tsc -b packages/shared packages/persistence packages/core packages/nest packages/player packages/standalone-api packages/standalone-web",
     "test": "bun test",
     "test:file": "bun test",
-    "lint": "echo \"lint not configured yet\"",
-    "lint:file": "echo \"lint not configured yet\""
+    "lint": "eslint .",
+    "lint:file": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "globals": "^17.13.0",
+    "prettier": "^3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8"
   }
 }

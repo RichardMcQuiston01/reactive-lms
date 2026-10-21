@@ -62,8 +62,7 @@ export async function bindScormFrame(
     bridge.uninstall(input.host);
     return {
       iframeSrc: null,
-      error:
-        error instanceof Error ? error.message : 'CMI hydrate failed.',
+      error: error instanceof Error ? error.message : 'CMI hydrate failed.',
     };
   }
 }

@@ -74,17 +74,12 @@ function hasHtmlFile(files: PackageFileIndex): boolean {
 }
 
 function detectScormPackageType(xml: string): 'scorm_12' | 'scorm_2004' {
-  const match = xml.match(
-    /<schemaversion\b[^>]*>([\s\S]*?)<\/schemaversion>/i,
-  );
+  const match = xml.match(/<schemaversion\b[^>]*>([\s\S]*?)<\/schemaversion>/i);
   const schemaversion = match?.[1]?.trim() ?? '';
   if (schemaversion.includes('1.2')) {
     return 'scorm_12';
   }
-  if (
-    schemaversion.includes('2004') ||
-    schemaversion.includes('CAM 1.3')
-  ) {
+  if (schemaversion.includes('2004') || schemaversion.includes('CAM 1.3')) {
     return 'scorm_2004';
   }
   return 'scorm_12';

@@ -238,7 +238,5 @@ function resolveStorage(opts: ReactiveLmsModuleOptions): StorageAdapter {
   if (opts.dataRoot) {
     return new FilesystemStorageAdapter(opts.dataRoot);
   }
-  throw new Error(
-    'ReactiveLmsModule requires storageAdapter or dataRoot.',
-  );
+  throw new Error('ReactiveLmsModule requires storageAdapter or dataRoot.');
 }

@@ -1,8 +1,8 @@
-export { EventLogService, type EventLogRecord } from './audit/event-log.service';
 export {
-  ModuleService,
-  type PlaceModuleInput,
-} from './courses/module-service';
+  EventLogService,
+  type EventLogRecord,
+} from './audit/event-log.service';
+export { ModuleService, type PlaceModuleInput } from './courses/module-service';
 export {
   EnrolmentService,
   type EnrolmentResult,
@@ -58,4 +58,3 @@ export {
   FilesystemStorageAdapter,
   type FilesystemStorageOptions,
 } from './storage/filesystem-storage.adapter';
-

@@ -68,8 +68,7 @@ export function parseImsmanifest(files: PackageFileIndex): ParsedPackage {
     attr(manifest, 'identifier') ||
     'SCORM package';
   const schemaversion = schemaVersionOf(manifest);
-  const version =
-    schemaversion || attr(manifest, 'version') || undefined;
+  const version = schemaversion || attr(manifest, 'version') || undefined;
 
   return {
     title,
@@ -95,14 +94,11 @@ function itemToActivity(
   resources: Map<string, ResourceRef>,
 ): ActivityNodeTree {
   const identifierref = attr(item, 'identifierref');
-  const resource = identifierref
-    ? resources.get(identifierref)
-    : undefined;
+  const resource = identifierref ? resources.get(identifierref) : undefined;
   const href = resource?.href;
   const childItems = childrenNamed(item, 'item');
   const launchData = textOf(item, 'datafromlms');
-  const scormType =
-    attr(item, 'scormtype') ?? resource?.scormType;
+  const scormType = attr(item, 'scormtype') ?? resource?.scormType;
   const metadata = metadataFrom({ scormType, launchData });
 
   const node: ActivityNodeTree = {
@@ -116,9 +112,7 @@ function itemToActivity(
     node.metadata = metadata;
   }
   if (childItems.length > 0) {
-    node.children = childItems.map((child) =>
-      itemToActivity(child, resources),
-    );
+    node.children = childItems.map((child) => itemToActivity(child, resources));
   }
   return node;
 }
@@ -175,10 +169,7 @@ function schemaVersionOf(manifest: XmlElement): string {
 }
 
 function detectScormType(schemaversion: string): 'scorm_12' | 'scorm_2004' {
-  if (
-    schemaversion.includes('2004') ||
-    schemaversion.includes('CAM 1.3')
-  ) {
+  if (schemaversion.includes('2004') || schemaversion.includes('CAM 1.3')) {
     return 'scorm_2004';
   }
   return 'scorm_12';
@@ -250,8 +241,7 @@ function parseXml(xml: string): XmlElement {
 
 function parseAttrs(raw: string): Record<string, string> {
   const attrs: Record<string, string> = {};
-  const re =
-    /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+)))?/g;
+  const re = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+)))?/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(raw))) {
     const name = match[1];
@@ -313,10 +303,7 @@ function findDescendant(
   return undefined;
 }
 
-function textOf(
-  element: XmlElement | undefined,
-  name: string,
-): string {
+function textOf(element: XmlElement | undefined, name: string): string {
   const child = firstChild(element, name);
   return child?.text.trim() ?? '';
 }

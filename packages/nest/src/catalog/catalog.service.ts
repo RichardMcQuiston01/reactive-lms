@@ -348,9 +348,7 @@ export class CatalogService {
    *
    * @param registrationId - Registration id
    */
-  async listProgress(
-    registrationId: string,
-  ): Promise<NormalizedProgressDto[]> {
+  async listProgress(registrationId: string): Promise<NormalizedProgressDto[]> {
     const registration = await this.dataSource.manager.findOne(Registration, {
       where: { id: registrationId },
     });

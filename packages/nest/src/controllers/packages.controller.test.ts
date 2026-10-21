@@ -56,10 +56,7 @@ describe('PackagesController', () => {
       },
     });
 
-    const result = await ctl.create(
-      { buffer: new Uint8Array([1, 2, 3]) },
-      {},
-    );
+    const result = await ctl.create({ buffer: new Uint8Array([1, 2, 3]) }, {});
 
     expect(imported).toHaveLength(1);
     expect(result).toEqual({

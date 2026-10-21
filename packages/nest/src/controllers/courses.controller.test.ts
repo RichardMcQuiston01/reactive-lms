@@ -35,16 +35,10 @@ describe('CoursesController', () => {
       id: 'tpl-1',
     });
     expect(
-      await ctl.createOffering(
-        { courseTemplateId: 'tpl-1', title: 'O' },
-        {},
-      ),
+      await ctl.createOffering({ courseTemplateId: 'tpl-1', title: 'O' }, {}),
     ).toEqual({ id: 'off-1' });
     expect(
-      await ctl.createSection(
-        { courseOfferingId: 'off-1', title: 'S' },
-        {},
-      ),
+      await ctl.createSection({ courseOfferingId: 'off-1', title: 'S' }, {}),
     ).toEqual({ id: 'sec-1' });
     expect(calls).toEqual(['template', 'offering', 'section']);
   });
@@ -64,11 +58,7 @@ describe('ModulesController', () => {
       request,
     );
 
-    const result = await ctl.place(
-      'sec-1',
-      { contentPackageId: 'pkg-1' },
-      {},
-    );
+    const result = await ctl.place('sec-1', { contentPackageId: 'pkg-1' }, {});
     expect(result).toEqual({ moduleId: 'mod-1' });
     expect(placed).toEqual([
       { sectionId: 'sec-1', input: { contentPackageId: 'pkg-1' } },

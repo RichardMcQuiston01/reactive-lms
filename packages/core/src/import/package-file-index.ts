@@ -26,10 +26,7 @@ export function createMemoryFileIndex(
     if (!normalized || normalized.endsWith('/')) {
       continue;
     }
-    map.set(
-      normalized,
-      typeof body === 'string' ? encoder.encode(body) : body,
-    );
+    map.set(normalized, typeof body === 'string' ? encoder.encode(body) : body);
   }
   return createMapFileIndex(map);
 }

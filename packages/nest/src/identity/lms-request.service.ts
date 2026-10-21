@@ -7,10 +7,7 @@ import {
   type LmsAction,
   type LmsResourceRef,
 } from '@reactive-lms/shared';
-import {
-  RLMS_CAPABILITY_ADAPTER,
-  RLMS_IDENTITY_ADAPTER,
-} from '../tokens';
+import { RLMS_CAPABILITY_ADAPTER, RLMS_IDENTITY_ADAPTER } from '../tokens';
 import { PersonDirectory } from './person-directory';
 
 /**

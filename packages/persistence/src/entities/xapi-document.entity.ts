@@ -4,10 +4,7 @@ import { TimestampedEntity } from './base.entity';
 /**
  * xAPI document resource kind (State / Agent Profile / Activity Profile).
  */
-export type XapiDocumentKind =
-  | 'state'
-  | 'agent_profile'
-  | 'activity_profile';
+export type XapiDocumentKind = 'state' | 'agent_profile' | 'activity_profile';
 
 /**
  * xAPI State, Agent Profile, or Activity Profile document.

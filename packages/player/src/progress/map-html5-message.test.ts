@@ -66,8 +66,9 @@ describe('mapHtml5Message', () => {
   });
 
   test('returns null for unrelated messages', () => {
-    expect(mapHtml5Message({ source: 'other', type: 'progress' }, CONTEXT))
-      .toBeNull();
+    expect(
+      mapHtml5Message({ source: 'other', type: 'progress' }, CONTEXT),
+    ).toBeNull();
     expect(mapHtml5Message('not-an-object', CONTEXT)).toBeNull();
     expect(mapHtml5Message(null, CONTEXT)).toBeNull();
   });

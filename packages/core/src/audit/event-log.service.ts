@@ -33,10 +33,7 @@ export class EventLogService {
    * @param input - Action, subject, and optional payload
    * @param manager - Transaction manager; defaults to `dataSource.manager`
    */
-  async record(
-    input: EventLogRecord,
-    manager?: EntityManager,
-  ): Promise<void> {
+  async record(input: EventLogRecord, manager?: EntityManager): Promise<void> {
     const em = manager ?? this.dataSource.manager;
     const row = em.create(EventLog, {
       personId: input.personId ?? null,

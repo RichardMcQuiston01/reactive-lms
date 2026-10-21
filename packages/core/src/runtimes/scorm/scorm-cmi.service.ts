@@ -166,9 +166,7 @@ function extractCmi(extras: Record<string, unknown> | null): CmiValues {
   const cmi = extras.cmi;
   if (cmi && typeof cmi === 'object' && !Array.isArray(cmi)) {
     const values: CmiValues = {};
-    for (const [key, value] of Object.entries(
-      cmi as Record<string, unknown>,
-    )) {
+    for (const [key, value] of Object.entries(cmi as Record<string, unknown>)) {
       const text = coerceCmiValue(value);
       if (text !== undefined) {
         values[key] = text;

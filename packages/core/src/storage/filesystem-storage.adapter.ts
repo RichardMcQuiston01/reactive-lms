@@ -15,10 +15,7 @@ import {
   assertZipNotBomb,
 } from '../import/zip-limits';
 
-export {
-  DEFAULT_MAX_ZIP_FILE_COUNT,
-  DEFAULT_MAX_ZIP_UNCOMPRESSED_BYTES,
-};
+export { DEFAULT_MAX_ZIP_FILE_COUNT, DEFAULT_MAX_ZIP_UNCOMPRESSED_BYTES };
 
 /** Public URL prefix used when no override is supplied. */
 export const DEFAULT_PUBLIC_URL_PREFIX = '/lms/content';
@@ -168,10 +165,7 @@ export class FilesystemStorageAdapter implements StorageAdapter {
     await rm(dest, { recursive: true, force: true });
   }
 
-  private async writeExtracted(
-    key: string,
-    body: Uint8Array,
-  ): Promise<void> {
+  private async writeExtracted(key: string, body: Uint8Array): Promise<void> {
     const dest = this.resolveKey(key);
     await mkdir(path.dirname(dest), { recursive: true });
     await writeFile(dest, body);

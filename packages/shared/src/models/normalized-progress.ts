@@ -2,10 +2,7 @@
  * Completion status for a registration × module × activity node.
  */
 export type CompletionStatus =
-  | 'unknown'
-  | 'not_attempted'
-  | 'incomplete'
-  | 'completed';
+  'unknown' | 'not_attempted' | 'incomplete' | 'completed';
 
 /**
  * Success (pass/fail) status for a registration × module × activity node.

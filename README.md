@@ -63,6 +63,20 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 | Tooling   | bun workspaces                                  |
 | Caching   | Redis later, behind a `CacheAdapter`            |
 
+## Development
+
+Requires [Bun](https://bun.sh). From the repository root:
+
+```bash
+bun install
+bun run typecheck
+bun run lint
+bun run format:check   # bun run format to fix
+bun test
+```
+
+CI runs the same four checks on every pull request.
+
 ## Documentation
 
 - [docs/DESIGN_CONSIDERATIONS.md](docs/DESIGN_CONSIDERATIONS.md) — product

@@ -38,10 +38,7 @@ describe('computeRegistrationStatus', () => {
       rule: { allModules: true },
       moduleIds: MODULE_IDS,
       progressByModuleId: progress([
-        [
-          MODULE_A,
-          { completionStatus: 'completed', successStatus: 'unknown' },
-        ],
+        [MODULE_A, { completionStatus: 'completed', successStatus: 'unknown' }],
       ]),
     });
     expect(status).toBe('in_progress');
@@ -52,14 +49,8 @@ describe('computeRegistrationStatus', () => {
       rule: { allModules: true },
       moduleIds: MODULE_IDS,
       progressByModuleId: progress([
-        [
-          MODULE_A,
-          { completionStatus: 'completed', successStatus: 'unknown' },
-        ],
-        [
-          MODULE_B,
-          { completionStatus: 'completed', successStatus: 'unknown' },
-        ],
+        [MODULE_A, { completionStatus: 'completed', successStatus: 'unknown' }],
+        [MODULE_B, { completionStatus: 'completed', successStatus: 'unknown' }],
       ]),
     });
     expect(status).toBe('completed');
@@ -69,14 +60,8 @@ describe('computeRegistrationStatus', () => {
     const status = computeRegistrationStatus({
       moduleIds: MODULE_IDS,
       progressByModuleId: progress([
-        [
-          MODULE_A,
-          { completionStatus: 'completed', successStatus: 'unknown' },
-        ],
-        [
-          MODULE_B,
-          { completionStatus: 'completed', successStatus: 'unknown' },
-        ],
+        [MODULE_A, { completionStatus: 'completed', successStatus: 'unknown' }],
+        [MODULE_B, { completionStatus: 'completed', successStatus: 'unknown' }],
       ]),
     });
     expect(status).toBe('completed');
@@ -87,14 +72,8 @@ describe('computeRegistrationStatus', () => {
       rule: { allModules: true },
       moduleIds: MODULE_IDS,
       progressByModuleId: progress([
-        [
-          MODULE_A,
-          { completionStatus: 'completed', successStatus: 'passed' },
-        ],
-        [
-          MODULE_B,
-          { completionStatus: 'completed', successStatus: 'unknown' },
-        ],
+        [MODULE_A, { completionStatus: 'completed', successStatus: 'passed' }],
+        [MODULE_B, { completionStatus: 'completed', successStatus: 'unknown' }],
       ]),
     });
     expect(status).toBe('passed');
@@ -105,14 +84,8 @@ describe('computeRegistrationStatus', () => {
       rule: { allModules: true },
       moduleIds: MODULE_IDS,
       progressByModuleId: progress([
-        [
-          MODULE_A,
-          { completionStatus: 'completed', successStatus: 'passed' },
-        ],
-        [
-          MODULE_B,
-          { completionStatus: 'completed', successStatus: 'failed' },
-        ],
+        [MODULE_A, { completionStatus: 'completed', successStatus: 'passed' }],
+        [MODULE_B, { completionStatus: 'completed', successStatus: 'failed' }],
       ]),
     });
     expect(status).toBe('failed');

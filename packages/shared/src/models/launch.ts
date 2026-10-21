@@ -10,11 +10,7 @@ export type LaunchMode = 'Normal' | 'Browse' | 'Review';
  * Player surface the Angular library should render for a launch.
  */
 export type PlayerKind =
-  | 'iframe'
-  | 'scorm-frame'
-  | 'h5p'
-  | 'lti-redirect'
-  | 'xapi-au';
+  'iframe' | 'scorm-frame' | 'h5p' | 'lti-redirect' | 'xapi-au';
 
 /**
  * Request to create a launch attempt for a registered learner on a module.

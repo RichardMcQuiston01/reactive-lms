@@ -272,21 +272,17 @@ function assertSelfWindow(
   if (openFrom) {
     const from = new Date(openFrom);
     if (!Number.isNaN(from.getTime()) && now.getTime() < from.getTime()) {
-      throw gate(
-        ENROLMENT_WINDOW_CLOSED,
-        'Self-enrolment is not open yet.',
-        { openFrom },
-      );
+      throw gate(ENROLMENT_WINDOW_CLOSED, 'Self-enrolment is not open yet.', {
+        openFrom,
+      });
     }
   }
   if (openUntil) {
     const until = new Date(openUntil);
     if (!Number.isNaN(until.getTime()) && now.getTime() > until.getTime()) {
-      throw gate(
-        ENROLMENT_WINDOW_CLOSED,
-        'Self-enrolment is no longer open.',
-        { openUntil },
-      );
+      throw gate(ENROLMENT_WINDOW_CLOSED, 'Self-enrolment is no longer open.', {
+        openUntil,
+      });
     }
   }
 }
@@ -302,7 +298,7 @@ function assertSelfKey(
   const expected =
     typeof requiresKey === 'string'
       ? requiresKey
-      : readString(config, 'key') ?? readString(config, 'enrolmentKey');
+      : (readString(config, 'key') ?? readString(config, 'enrolmentKey'));
   if (!expected || provided !== expected) {
     throw gate(
       ENROLMENT_KEY_REQUIRED,

@@ -84,20 +84,16 @@ const testDatabaseUrl = process.env.RLMS_TEST_DATABASE_URL;
 describe.skipIf(!testDatabaseUrl)('persistence integration', () => {
   test('applies migration, reuses a package, rejects duplicate registration', async () => {
     const { Person } = await import('./entities/person.entity');
-    const { CourseTemplate } = await import(
-      './entities/course-template.entity'
-    );
-    const { CourseOffering } = await import(
-      './entities/course-offering.entity'
-    );
+    const { CourseTemplate } =
+      await import('./entities/course-template.entity');
+    const { CourseOffering } =
+      await import('./entities/course-offering.entity');
     const { CourseSection } = await import('./entities/course-section.entity');
     const { CourseModule } = await import('./entities/course-module.entity');
-    const { ContentPackage } = await import(
-      './entities/content-package.entity'
-    );
-    const { Registration: RegistrationEntity } = await import(
-      './entities/registration.entity'
-    );
+    const { ContentPackage } =
+      await import('./entities/content-package.entity');
+    const { Registration: RegistrationEntity } =
+      await import('./entities/registration.entity');
 
     const dataSource = createPersistenceDataSource({
       url: testDatabaseUrl as string,
