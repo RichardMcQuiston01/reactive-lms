@@ -12,9 +12,9 @@ export class CourseOffering extends AuditedEntity {
   @Column({ name: 'title', type: 'text' })
   title!: string;
 
-  @Column({ name: 'starts_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'starts_at', type: Date, nullable: true })
   startsAt?: Date | null;
 
-  @Column({ name: 'ends_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'ends_at', type: Date, nullable: true })
   endsAt?: Date | null;
 }

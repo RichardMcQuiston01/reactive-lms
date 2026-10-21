@@ -55,7 +55,7 @@ characters or fewer.
 
 - [x] This document; roadmap milestone status updated
 
-### WP2: Package rename (D4)
+### WP2: Package rename (D4, PR 16)
 
 Commit scope `refactor(repo)`. Mechanical, so do it early.
 
@@ -72,16 +72,18 @@ references left outside `GROK_PLAN.md`.
 
 Commit scope `feat(persistence)`. Open question 1 applies.
 
-- [ ] Replace native types in entities with portable TypeORM types: `json` or
+- [x] Replace native types in entities with portable TypeORM types: `json` or
       `simple-json` for `jsonb`, `blob` for `bytea`, `decimal` for `numeric`,
       and a portable timestamp type for `timestamptz`
-- [ ] `PersistenceDialect` contract (driver type, options, migration set) and
+- [x] `PersistenceDialect` contract (driver type, options, migration set) and
       a registry; Postgres is the first dialect and replaceable by a host
-- [ ] `createPersistenceDataSource({ url, dialect, migrationsRun? })`
-- [ ] Keep native Postgres types and UUID defaults only in the Postgres
+- [x] `createPersistenceDataSource({ url, dialect, migrationsRun? })`
+- [x] Keep native Postgres types and UUID defaults only in the Postgres
       migration
-- [ ] Postgres service container in CI; the integration test runs there
-- [ ] Persistence test suite structured so later dialects reuse it
+- [x] Postgres service container in CI; the integration test runs there
+- [~] Persistence test suite structured so later dialects reuse it (the
+      portability check is dialect-neutral; the integration test still targets
+      Postgres)
 
 ### WP4: Blob storage contract (D11)
 
@@ -145,14 +147,12 @@ MariaDB, and SQLite dialects (1.1.0).
 
 ## Open questions
 
-1. **Editing `0001`:** has the foundation's `0001` migration been applied to
-   any database? If not, WP3 can edit it in place; if so, it needs a second
-   migration.
+1. ~~**Editing `0001`**~~ Answered: never applied, edited in place.
 2. **SCORM 1.2 engine:** D1 says wrap `scorm-again`; the foundation has its own
    tested CMI store and bridge. Proposal: keep the existing runtime for 1.2 and
    evaluate `scorm-again` for 2004 sequencing at 0.6.0. Needs confirmation.
 3. **D13 scope:** the gate applies only to WP7's package-backed pieces; all
    other work proceeds now. Needs confirmation.
-4. **Timestamp type:** which portable type for `timestamptz` columns, given
-   that MySQL lacks time-zone-aware timestamps? Proposal: store UTC in a
-   `datetime`/`timestamp` column and document it.
+4. ~~**Timestamp type**~~ Answered: store UTC. Entities declare `Date`; Postgres
+   keeps `timestamptz` (UTC instants) in its migration; MySQL and SQLite
+   dialects will use UTC `datetime`.

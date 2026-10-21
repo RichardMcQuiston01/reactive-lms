@@ -9,6 +9,6 @@ export class LtiLaunchNonce extends TimestampedEntity {
   @Column({ name: 'nonce', type: 'text', unique: true })
   nonce!: string;
 
-  @Column({ name: 'expires_at', type: 'timestamptz' })
+  @Column({ name: 'expires_at', type: Date })
   expiresAt!: Date;
 }

@@ -17,10 +17,10 @@ export abstract class IdentifiedEntity {
  * Identified row with created_at / updated_at.
  */
 export abstract class TimestampedEntity extends IdentifiedEntity {
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ name: 'created_at', type: Date })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ name: 'updated_at', type: Date })
   updatedAt!: Date;
 }
 

@@ -4,6 +4,11 @@
 
 ### Added
 
+- `PersistenceDialect` contract and `DialectRegistry` (D8). Postgres ships as
+  the built-in dialect; a host can register another or replace one.
+  `createPersistenceDataSource` takes a dialect object or registered name.
+- CI now runs the persistence integration tests against a Postgres 16 service,
+  including a round trip of JSON, UTC timestamps, and binary document bodies.
 - ESLint (flat config, typescript-eslint) and Prettier with an `.editorconfig`;
   `bun run lint`, `lint:file`, `format`, and `format:check`. A lint rule keeps
   the shared package free of Nest, Angular, TypeORM, Redis, and Tailwind
@@ -54,6 +59,13 @@
 
 ### Changed
 
+- Entities use portable TypeORM column types (D9): `json`, `decimal`, and
+  `Date` replace `jsonb`, `numeric`, and `timestamptz`; xAPI document bodies are
+  stored as base64 `text`. Native Postgres types stay in the Postgres migration,
+  which keeps `jsonb` and `timestamptz` (UTC instants).
+- The Postgres migration moved to `migrations/postgres/` and was edited in
+  place (never applied): its name now carries the timestamp TypeORM requires,
+  and `rlms_xapi_document.body` is `text`.
 - Packages renamed from `@reactive-lms/*` to `@richardmcquiston01/reactive-lms-*`
   (D4) and versioned 0.1.0. Entries below that predate this change use the old
   names.

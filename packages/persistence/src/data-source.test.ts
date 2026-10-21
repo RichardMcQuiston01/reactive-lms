@@ -2,9 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import { getMetadataArgsStorage } from 'typeorm';
 import {
   ALL_ENTITIES,
+  DialectRegistry,
   Registration,
   XapiDocument,
   createPersistenceDataSource,
+  type PersistenceDialect,
 } from './index';
 
 const EXPECTED_TABLE_NAMES = [
@@ -76,6 +78,61 @@ describe('entity metadata', () => {
     );
     expect(uniques).toEqual([]);
     expect(namedIndices).toEqual([]);
+  });
+});
+
+describe('createPersistenceDataSource dialects', () => {
+  test('defaults to postgres and the rlms migrations table', () => {
+    const dataSource = createPersistenceDataSource({
+      url: 'postgres://user:pass@localhost:5432/db',
+    });
+    expect(dataSource.options.type).toBe('postgres');
+    expect(dataSource.options.migrationsTableName).toBe('rlms_migrations');
+    expect(dataSource.options.synchronize).toBe(false);
+  });
+
+  test('accepts a host-supplied dialect object', () => {
+    const calls: string[] = [];
+    const dialect: PersistenceDialect = {
+      name: 'custom',
+      migrations: [],
+      driverOptions: ({ url }) => {
+        calls.push(url);
+        return { type: 'postgres', url };
+      },
+    };
+    const dataSource = createPersistenceDataSource({
+      url: 'postgres://example/db',
+      dialect,
+    });
+    expect(calls).toEqual(['postgres://example/db']);
+    expect(dataSource.options.migrations).toEqual([]);
+  });
+
+  test('resolves a dialect name from a supplied registry', () => {
+    const registry = new DialectRegistry();
+    registry.register({
+      name: 'custom',
+      migrations: [],
+      driverOptions: ({ url }) => ({ type: 'postgres', url }),
+    });
+    const dataSource = createPersistenceDataSource({
+      url: 'postgres://example/db',
+      dialect: 'custom',
+      registry,
+    });
+    expect(dataSource.options.type).toBe('postgres');
+  });
+
+  test('an unknown dialect name throws a descriptive error', () => {
+    expect(() =>
+      createPersistenceDataSource({
+        url: 'postgres://example/db',
+        dialect: 'oracle',
+      }),
+    ).toThrow(
+      'Unknown persistence dialect "oracle". Registered dialects: postgres.',
+    );
   });
 });
 
@@ -172,6 +229,70 @@ describe.skipIf(!testDatabaseUrl)('persistence integration', () => {
           (error as { driverError?: { code?: string } }).driverError?.code;
         expect(code).toBe('23505');
       }
+    } finally {
+      await dataSource.destroy();
+    }
+  });
+  test('portable column types round-trip JSON, UTC instants, and binary bodies', async () => {
+    const { CourseOffering } =
+      await import('./entities/course-offering.entity');
+    const { CourseTemplate } =
+      await import('./entities/course-template.entity');
+    const { ContentPackage } =
+      await import('./entities/content-package.entity');
+    const { XapiDocument: XapiDocumentEntity } =
+      await import('./entities/xapi-document.entity');
+
+    const dataSource = createPersistenceDataSource({
+      url: testDatabaseUrl as string,
+      migrationsRun: true,
+    });
+    await dataSource.initialize();
+
+    try {
+      const suffix = crypto.randomUUID();
+
+      const manifest = { items: [{ id: 'a', href: 'index.html' }], depth: 2 };
+      const contentPackage = await dataSource
+        .getRepository(ContentPackage)
+        .save({
+          packageType: 'html5',
+          title: 'JSON round trip',
+          storageKey: `packages/${suffix}.zip`,
+          manifestJson: manifest,
+        });
+      const reloadedPackage = await dataSource
+        .getRepository(ContentPackage)
+        .findOneByOrFail({ id: contentPackage.id });
+      expect(reloadedPackage.manifestJson).toEqual(manifest);
+
+      const template = await dataSource.getRepository(CourseTemplate).save({
+        code: `T-${suffix}`,
+        title: 'Template',
+      });
+      const startsAt = new Date('2026-10-21T01:02:03.000Z');
+      const offering = await dataSource.getRepository(CourseOffering).save({
+        courseTemplateId: template.id,
+        title: 'Offering',
+        startsAt,
+      });
+      const reloadedOffering = await dataSource
+        .getRepository(CourseOffering)
+        .findOneByOrFail({ id: offering.id });
+      expect(reloadedOffering.startsAt?.toISOString()).toBe(
+        startsAt.toISOString(),
+      );
+
+      const body = new Uint8Array([0, 1, 2, 253, 254, 255]);
+      const document = await dataSource.getRepository(XapiDocumentEntity).save({
+        documentKind: 'state',
+        stateId: `state-${suffix}`,
+        body,
+      });
+      const reloadedDocument = await dataSource
+        .getRepository(XapiDocumentEntity)
+        .findOneByOrFail({ id: document.id });
+      expect(Array.from(reloadedDocument.body ?? [])).toEqual(Array.from(body));
     } finally {
       await dataSource.destroy();
     }

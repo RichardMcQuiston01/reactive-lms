@@ -25,19 +25,49 @@ export class NormalizedProgress extends TimestampedEntity {
   @Column({ name: 'success_status', type: 'text' })
   successStatus!: SuccessStatus;
 
-  @Column({ name: 'score_scaled', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_scaled',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreScaled?: string | null;
 
-  @Column({ name: 'score_raw', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_raw',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreRaw?: string | null;
 
-  @Column({ name: 'score_min', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_min',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreMin?: string | null;
 
-  @Column({ name: 'score_max', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_max',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreMax?: string | null;
 
-  @Column({ name: 'progress_measure', type: 'numeric', nullable: true })
+  @Column({
+    name: 'progress_measure',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   progressMeasure?: string | null;
 
   @Column({ name: 'location', type: 'text', nullable: true })
@@ -49,6 +79,6 @@ export class NormalizedProgress extends TimestampedEntity {
   @Column({ name: 'suspend_data', type: 'text', nullable: true })
   suspendData?: string | null;
 
-  @Column({ name: 'extras_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'extras_json', type: 'json', nullable: true })
   extrasJson?: Record<string, unknown> | null;
 }

@@ -20,7 +20,13 @@ export class Registration extends AuditedEntity {
   @Column({ name: 'status', type: 'text' })
   status!: RegistrationStatus;
 
-  @Column({ name: 'score_scaled', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_scaled',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreScaled?: string | null;
 
   @Column({ name: 'duration_iso8601', type: 'text', nullable: true })

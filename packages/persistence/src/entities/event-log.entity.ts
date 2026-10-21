@@ -25,9 +25,9 @@ export class EventLog {
   @Column({ name: 'subject_id', type: 'uuid', nullable: true })
   subjectId?: string | null;
 
-  @Column({ name: 'payload_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'payload_json', type: 'json', nullable: true })
   payloadJson?: Record<string, unknown> | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ name: 'created_at', type: Date })
   createdAt!: Date;
 }

@@ -21,6 +21,6 @@ export class CourseSection extends AuditedEntity {
   @Column({ name: 'title', type: 'text' })
   title!: string;
 
-  @Column({ name: 'completion_rule', type: 'jsonb', nullable: true })
+  @Column({ name: 'completion_rule', type: 'json', nullable: true })
   completionRule?: CompletionRule | Record<string, unknown> | null;
 }

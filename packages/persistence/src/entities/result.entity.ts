@@ -12,10 +12,22 @@ export class Result extends AuditedEntity {
   @Column({ name: 'person_id', type: 'uuid' })
   personId!: string;
 
-  @Column({ name: 'score_given', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_given',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreGiven?: string | null;
 
-  @Column({ name: 'score_maximum', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_maximum',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreMaximum?: string | null;
 
   @Column({ name: 'activity_progress', type: 'text', nullable: true })

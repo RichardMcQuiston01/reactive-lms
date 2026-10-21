@@ -27,6 +27,6 @@ export class ActivityNode extends TimestampedEntity {
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number;
 
-  @Column({ name: 'metadata_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'metadata_json', type: 'json', nullable: true })
   metadataJson?: Record<string, unknown> | null;
 }

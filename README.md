@@ -75,7 +75,10 @@ bun run format:check   # bun run format to fix
 bun test
 ```
 
-CI runs the same four checks on every pull request.
+CI runs the same four checks on every pull request, against a Postgres 16
+service. To run the database-backed persistence tests locally, point
+`RLMS_TEST_DATABASE_URL` at an empty Postgres 13+ database; without it those
+tests are skipped.
 
 ## Documentation
 
