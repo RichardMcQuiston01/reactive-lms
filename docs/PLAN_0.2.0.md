@@ -147,7 +147,8 @@ Commit scope `feat(shared)`.
 
 ### Then, to finish 0.3.0 and 0.4.0
 
-- [ ] Admin screens and module-tree view
+- [ ] Admin screens: module-tree view done (read endpoint, tree screen);
+      package upload, placement, enrolment, and progress screens remain
 - [ ] SCORM 1.2 sample-package fixtures and an ADL conformance check
 - [ ] Release prep: version bump, changelog, roadmap update, tag from `main`
 
