@@ -1,0 +1,20 @@
+{
+  "name": "@reactive-lms/standalone-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@angular/core": "^18.2.13",
+    "@reactive-lms/player": "workspace:*",
+    "@reactive-lms/shared": "workspace:*"
+  }
+}
