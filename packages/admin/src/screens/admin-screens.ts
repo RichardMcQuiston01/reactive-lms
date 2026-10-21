@@ -1,7 +1,8 @@
 import { InjectionToken, type Type } from '@angular/core';
 
 /** Ids of the screens the admin package defines. */
-export type AdminScreenId = 'packages' | 'sections' | 'enrolments' | 'progress';
+export type AdminScreenId =
+  'packages' | 'sections' | 'module-tree' | 'enrolments' | 'progress';
 
 /**
  * Host replacements for built-in screens, keyed by {@link AdminScreenId}.

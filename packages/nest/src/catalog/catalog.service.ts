@@ -19,7 +19,9 @@ import {
   PACKAGE_NOT_FOUND,
   REGISTRATION_NOT_FOUND,
   httpStatusForLmsCode,
+  parseAvailability,
   type ContentPackageDto,
+  type CourseModuleDto,
   type NormalizedProgress as NormalizedProgressDto,
   type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -230,6 +232,34 @@ export class CatalogService {
     });
     const saved = await this.dataSource.manager.save(row);
     return { id: saved.id };
+  }
+
+  /**
+   * Lists every module and block of a section, ordered by `sort_order`, with
+   * availability read as version 1. Callers build the tree from
+   * `parentModuleId`.
+   *
+   * @param sectionId - Course section id
+   */
+  async listModules(sectionId: string): Promise<CourseModuleDto[]> {
+    const rows = await this.dataSource.manager.find(CourseModule, {
+      where: { courseSectionId: sectionId },
+      order: { sortOrder: 'ASC' },
+    });
+    return rows.map((row) => {
+      const parsed = parseAvailability(row.availabilityJson);
+      return {
+        id: row.id,
+        courseSectionId: row.courseSectionId,
+        parentModuleId: row.parentModuleId ?? null,
+        contentPackageId: row.contentPackageId ?? null,
+        title: row.title,
+        sortOrder: row.sortOrder,
+        isBlock: isBlockModule(row),
+        availability: parsed.ok ? parsed.value : null,
+        availabilityInvalid: !parsed.ok,
+      };
+    });
   }
 
   /**

@@ -1,13 +1,13 @@
 import type { CourseModule } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
+  MAX_MODULE_DEPTH,
   MODULE_NOT_FOUND,
   MODULE_TREE_INVALID,
   httpStatusForLmsCode,
 } from '@richardmcquiston01/reactive-lms-shared';
 
-/** Deepest module nesting accepted; a top-level module has depth 1. */
-export const MAX_MODULE_DEPTH = 5;
+export { MAX_MODULE_DEPTH };
 
 /**
  * The fields of a module that tree rules read.

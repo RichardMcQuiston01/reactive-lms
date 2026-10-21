@@ -4,6 +4,18 @@
 
 ### Added
 
+- Admin module-tree screen (`sections/:sectionId/modules`): shows a section's
+  modules and blocks as an indented tree with each module's availability
+  summary, and lets an administrator add blocks, rename, move earlier or
+  later, move into another block (only valid blocks are offered), and remove.
+  The server's message is shown when it refuses a change. It resolves through
+  `ADMIN_SCREEN_OVERRIDES` as `module-tree`. A simple `sections` screen opens a
+  section by id until a section list endpoint exists.
+- `GET course-sections/:id/modules` returns a section's modules as
+  `CourseModuleDto` (flat; the client builds the tree), flagging blocks and
+  reporting stored rules that cannot be read (`availabilityInvalid`).
+  `MAX_MODULE_DEPTH` moved to `shared` so the admin screen applies the same
+  limit.
 - ROADMAP records D14, an opt-in learner engagement extension package
   (spaced repetition and lightweight gamification) targeted at 1.5.0, and
   narrows the "social/gamification" non-goal to allow it in that package only.

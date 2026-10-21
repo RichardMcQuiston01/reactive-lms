@@ -99,3 +99,48 @@ describe('CatalogService module tree', () => {
     expect(rows).toHaveLength(0);
   });
 });
+
+describe('CatalogService.listModules', () => {
+  test('maps rows to DTOs, flagging blocks and reading rules as version 1', async () => {
+    const block = moduleRow('block', {
+      contentPackageId: null,
+      availabilityJson: {
+        version: 1,
+        all: [{ type: 'date_window', from: '2026-01-01T00:00:00.000Z' }],
+      },
+    });
+    const leaf = moduleRow('leaf', { parentModuleId: 'block', sortOrder: 2 });
+    const { service } = setup([block, leaf]);
+
+    const modules = await service.listModules(SECTION_ID);
+
+    expect(modules).toHaveLength(2);
+    expect(modules[0]).toMatchObject({
+      id: 'block',
+      isBlock: true,
+      parentModuleId: null,
+      contentPackageId: null,
+    });
+    expect(modules[0]?.availability?.version).toBe(1);
+    expect(modules[1]).toMatchObject({
+      id: 'leaf',
+      isBlock: false,
+      parentModuleId: 'block',
+      sortOrder: 2,
+      availability: null,
+      availabilityInvalid: false,
+    });
+  });
+
+  test('flags unreadable stored rules instead of hiding them', async () => {
+    const leaf = moduleRow('leaf', {
+      availabilityJson: { version: 9 } as never,
+    });
+    const { service } = setup([leaf]);
+
+    const [module] = await service.listModules(SECTION_ID);
+
+    expect(module?.availability).toBeNull();
+    expect(module?.availabilityInvalid).toBe(true);
+  });
+});

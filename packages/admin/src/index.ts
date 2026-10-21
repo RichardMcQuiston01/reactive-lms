@@ -23,3 +23,15 @@ export {
   type AdminScreenId,
 } from './screens/admin-screens';
 export { AdminShellComponent } from './shell/admin-shell.component';
+export { ModuleAdminService } from './modules/module-admin.service';
+export {
+  buildModuleTree,
+  describeAvailability,
+  flattenModuleTree,
+  parentChoices,
+  planSiblingMove,
+  type ModuleTreeNode,
+  type SortOrderPatch,
+} from './modules/module-tree';
+export { ModuleTreeScreenComponent } from './screens/module-tree-screen.component';
+export { SectionsScreenComponent } from './screens/sections-screen.component';

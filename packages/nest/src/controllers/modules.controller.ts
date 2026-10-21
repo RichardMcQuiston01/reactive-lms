@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   Param,
   Patch,
@@ -9,6 +10,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import type { CourseModuleDto } from '@richardmcquiston01/reactive-lms-shared';
 import {
   ModuleService,
   type PlaceBlockInput,
@@ -36,6 +38,27 @@ export class ModulesController {
     private readonly catalog: CatalogService,
     private readonly request: LmsRequestService,
   ) {}
+
+  /**
+   * Lists a section's modules and blocks (flat; build the tree from
+   * `parentModuleId`).
+   *
+   * @param id - Course section id
+   * @param req - Host request
+   */
+  @Get('course-sections/:id/modules')
+  @ApiOperation({ summary: "List a section's modules and blocks" })
+  @ApiParam({ name: 'id' })
+  async list(
+    @Param('id') id: string,
+    @Req() req: unknown,
+  ): Promise<CourseModuleDto[]> {
+    await this.request.assertCan(req, 'module.manage', {
+      type: 'course_section',
+      id,
+    });
+    return this.catalog.listModules(id);
+  }
 
   /**
    * Places an imported package (or node) into a section.

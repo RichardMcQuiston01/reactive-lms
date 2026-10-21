@@ -1,7 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 /**
- * Stand-in for a screen that ships in 0.3.0. Replace it through
+ * Stand-in for a screen that has not shipped yet. Replace it through
  * `ADMIN_SCREEN_OVERRIDES` or wait for the real screen.
  */
 @Component({
@@ -12,5 +13,7 @@ import { Component, Input } from '@angular/core';
   </p>`,
 })
 export class AdminPlaceholderScreenComponent {
-  @Input() title = 'This screen';
+  readonly title: string =
+    (inject(ActivatedRoute).snapshot.data['title'] as string | undefined) ??
+    'This screen';
 }
