@@ -5,7 +5,7 @@ import type { ReactiveLmsConfig } from '../provide-reactive-lms';
  *
  * @param config - Base URL and token getter
  * @param path - Path under `apiBaseUrl` (must start with `/`)
- * @param init - Optional `fetch` init (JSON body is stringified)
+ * @param init - Optional `fetch` init; a string body is sent as JSON
  */
 export async function lmsFetch<T>(
   config: ReactiveLmsConfig,
@@ -18,7 +18,9 @@ export async function lmsFetch<T>(
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  if (init?.body !== undefined && !headers.has('Content-Type')) {
+  // Only string bodies are JSON. For FormData and other bodies the browser
+  // sets the content type itself (a multipart upload needs its boundary).
+  if (typeof init?.body === 'string' && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 

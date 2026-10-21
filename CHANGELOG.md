@@ -4,6 +4,13 @@
 
 ### Added
 
+- Admin package upload: the `packages` screen imports a ZIP archive, shows the
+  detected type, and reloads the list. A file that is empty or not a `.zip` is
+  refused before sending, and the server's message (for example "Uploaded file
+  is not a valid ZIP archive.") is shown when it refuses an import.
+  `lmsFetch` now sets `Content-Type: application/json` only for string bodies,
+  so a `FormData` body gets its multipart boundary from the browser.
+  `POST packages` is typed as `ImportPackageResultDto` in `shared`.
 - Admin section list, package list, and package placement. The `sections`
   screen lists sections and opens a section's module tree (the open-by-id box
   stays for long lists); the `packages` screen lists imported packages; the

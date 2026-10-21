@@ -42,7 +42,7 @@ Boundaries, so the two don't blur:
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | 🚧 built on `lms-foundation`; reconciling with decisions (see `docs/PLAN_0.2.0.md`) |
-| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list, and placement screens built; package upload, enrolment, and progress screens remain |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, and placement screens built; enrolment and progress screens remain |
 | 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, and player bridge built; sample-package fixtures and conformance check remain |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
