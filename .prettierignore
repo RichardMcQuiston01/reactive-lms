@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+bun.lock
+*.md
+donate.svg
+.worktrees
+.superpowers

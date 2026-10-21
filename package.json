@@ -25,6 +25,12 @@
     "lint:file": "echo \"lint not configured yet\""
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "globals": "^17.13.0",
+    "prettier": "^3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8"
   }
 }
