@@ -43,7 +43,8 @@
   `@reactive-lms/standalone-web`
 - Root scripts: `typecheck`, `test`, `test:file`, `lint`, `lint:file`
 - `tsconfig.base.json`, `.env.example`, and `docs/STANDARDS.md`
-- `docs/PLAN_0.2.0.md`: task breakdown for the 0.2.0 milestone.
+- `docs/PLAN_0.2.0.md`: plan for reconciling the foundation workspace with the
+  roadmap decisions.
 
 ### Changed
 
