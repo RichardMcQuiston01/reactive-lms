@@ -18,7 +18,13 @@ export class LineItem extends AuditedEntity {
   @Column({ name: 'label', type: 'text' })
   label!: string;
 
-  @Column({ name: 'score_maximum', type: 'numeric', nullable: true })
+  @Column({
+    name: 'score_maximum',
+    type: 'decimal',
+    precision: 14,
+    scale: 6,
+    nullable: true,
+  })
   scoreMaximum?: string | null;
 
   @Column({ name: 'resource_id', type: 'text', nullable: true })

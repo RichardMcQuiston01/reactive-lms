@@ -17,7 +17,7 @@ export class EnrolmentMethod extends AuditedEntity {
   @Column({ name: 'method', type: 'text' })
   method!: EnrolmentMethodKind;
 
-  @Column({ name: 'config_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'config_json', type: 'json', nullable: true })
   configJson?: Record<string, unknown> | null;
 
   @Column({ name: 'is_enabled', type: 'boolean', default: true })

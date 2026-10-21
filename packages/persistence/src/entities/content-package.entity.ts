@@ -25,7 +25,7 @@ export class ContentPackage extends AuditedEntity {
   @Column({ name: 'extracted_key', type: 'text', nullable: true })
   extractedKey?: string | null;
 
-  @Column({ name: 'manifest_json', type: 'jsonb' })
+  @Column({ name: 'manifest_json', type: 'json' })
   manifestJson!: Record<string, unknown>;
 
   @Column({ name: 'checksum_sha256', type: 'text', nullable: true })

@@ -1,5 +1,6 @@
 import { Column, Entity } from 'typeorm';
 import { TimestampedEntity } from './base.entity';
+import { base64BinaryTransformer } from './column-transformers';
 
 /**
  * xAPI document resource kind (State / Agent Profile / Activity Profile).
@@ -22,7 +23,7 @@ export class XapiDocument extends TimestampedEntity {
   @Column({ name: 'activity_iri', type: 'text', nullable: true })
   activityIri?: string | null;
 
-  @Column({ name: 'agent_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'agent_json', type: 'json', nullable: true })
   agentJson?: Record<string, unknown> | null;
 
   @Column({ name: 'registration_id', type: 'uuid', nullable: true })
@@ -37,7 +38,12 @@ export class XapiDocument extends TimestampedEntity {
   @Column({ name: 'content_type', type: 'text', nullable: true })
   contentType?: string | null;
 
-  @Column({ name: 'body', type: 'bytea', nullable: true })
+  @Column({
+    name: 'body',
+    type: 'text',
+    nullable: true,
+    transformer: base64BinaryTransformer,
+  })
   body?: Uint8Array | null;
 
   @Column({ name: 'etag', type: 'text', nullable: true })

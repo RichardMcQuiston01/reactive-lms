@@ -31,6 +31,6 @@ export class CourseModule extends AuditedEntity {
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number;
 
-  @Column({ name: 'availability_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'availability_json', type: 'json', nullable: true })
   availabilityJson?: ModuleAvailability | Record<string, unknown> | null;
 }

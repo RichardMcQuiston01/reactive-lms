@@ -4,7 +4,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Creates the initial LIS-shaped `rlms_*` schema.
  */
 export class InitialSchema0001 implements MigrationInterface {
-  name = '0001-initial-schema';
+  // TypeORM orders migrations by the 13-digit timestamp at the end of `name`.
+  name = 'InitialSchema1760000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // gen_random_uuid() is in core PostgreSQL 13+; do not CREATE EXTENSION.
@@ -305,7 +306,7 @@ export class InitialSchema0001 implements MigrationInterface {
         "state_id" text,
         "profile_id" text,
         "content_type" text,
-        "body" bytea,
+        "body" text,
         "etag" text,
         "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),

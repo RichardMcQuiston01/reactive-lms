@@ -19,36 +19,36 @@ export class XapiStatement {
   @Column({ name: 'attempt_id', type: 'uuid', nullable: true })
   attemptId?: string | null;
 
-  @Column({ name: 'actor_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'actor_json', type: 'json', nullable: true })
   actorJson?: Record<string, unknown> | null;
 
   @Column({ name: 'verb_iri', type: 'text', nullable: true })
   verbIri?: string | null;
 
-  @Column({ name: 'object_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'object_json', type: 'json', nullable: true })
   objectJson?: Record<string, unknown> | null;
 
-  @Column({ name: 'result_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'result_json', type: 'json', nullable: true })
   resultJson?: Record<string, unknown> | null;
 
-  @Column({ name: 'context_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'context_json', type: 'json', nullable: true })
   contextJson?: Record<string, unknown> | null;
 
-  @Column({ name: 'timestamp', type: 'timestamptz', nullable: true })
+  @Column({ name: 'timestamp', type: Date, nullable: true })
   timestamp?: Date | null;
 
-  @Column({ name: 'stored_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'stored_at', type: Date, nullable: true })
   storedAt?: Date | null;
 
-  @Column({ name: 'authority_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'authority_json', type: 'json', nullable: true })
   authorityJson?: Record<string, unknown> | null;
 
   @Column({ name: 'voided', type: 'boolean', default: false })
   voided!: boolean;
 
-  @Column({ name: 'raw_json', type: 'jsonb' })
+  @Column({ name: 'raw_json', type: 'json' })
   rawJson!: Record<string, unknown>;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ name: 'created_at', type: Date })
   createdAt!: Date;
 }

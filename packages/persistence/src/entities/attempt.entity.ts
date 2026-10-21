@@ -27,10 +27,10 @@ export class Attempt extends TimestampedEntity {
   @Column({ name: 'launch_mode', type: 'text' })
   launchMode!: LaunchMode;
 
-  @Column({ name: 'started_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'started_at', type: Date, nullable: true })
   startedAt?: Date | null;
 
-  @Column({ name: 'ended_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'ended_at', type: Date, nullable: true })
   endedAt?: Date | null;
 
   @Column({ name: 'termination', type: 'text', nullable: true })

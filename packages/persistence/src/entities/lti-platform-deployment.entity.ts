@@ -24,7 +24,7 @@ export class LtiPlatformDeployment extends AuditedEntity {
   @Column({ name: 'jwks_url', type: 'text' })
   jwksUrl!: string;
 
-  @Column({ name: 'tool_jwks_json', type: 'jsonb', nullable: true })
+  @Column({ name: 'tool_jwks_json', type: 'json', nullable: true })
   toolJwksJson?: Record<string, unknown> | null;
 
   @Column({ name: 'platform_key_id', type: 'text', nullable: true })
