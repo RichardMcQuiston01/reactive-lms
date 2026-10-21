@@ -14,6 +14,24 @@
         "typescript-eslint": "^8",
       },
     },
+    "packages/admin": {
+      "name": "@richardmcquiston01/reactive-lms-admin",
+      "version": "0.1.0",
+      "dependencies": {
+        "@angular/common": "^18.2.13",
+        "@angular/core": "^18.2.13",
+        "@angular/router": "^18.2.13",
+        "@richardmcquiston01/reactive-lms-player": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
+        "rxjs": "^7.8.2",
+      },
+      "peerDependencies": {
+        "@angular/common": "^18.0.0 || ^19.0.0 || ^20.0.0",
+        "@angular/core": "^18.0.0 || ^19.0.0 || ^20.0.0",
+        "@angular/router": "^18.0.0 || ^19.0.0 || ^20.0.0",
+        "rxjs": "^7.8.0",
+      },
+    },
     "packages/core": {
       "name": "@richardmcquiston01/reactive-lms-core",
       "version": "0.1.0",
@@ -107,6 +125,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@angular/core": "^18.2.13",
+        "@richardmcquiston01/reactive-lms-admin": "workspace:*",
         "@richardmcquiston01/reactive-lms-player": "workspace:*",
         "@richardmcquiston01/reactive-lms-shared": "workspace:*",
       },
@@ -116,6 +135,10 @@
     "@angular/common": ["@angular/common@18.2.14", "", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "@angular/core": "18.2.14", "rxjs": "^6.5.3 || ^7.4.0" } }, "sha512-ZPRswzaVRiqcfZoowuAM22Hr2/z10ajWOUoFDoQ9tWqz/fH/773kJv2F9VvePIekgNPCzaizqv9gF6tGNqaAwg=="],
 
     "@angular/core": ["@angular/core@18.2.14", "", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "rxjs": "^6.5.3 || ^7.4.0", "zone.js": "~0.14.10" } }, "sha512-BIPrCs93ZZTY9ym7yfoTgAQ5rs706yoYeAdrgc8kh/bDbM9DawxKlgeKBx2FLt09Y0YQ1bFhKVp0cV4gDEaMxQ=="],
+
+    "@angular/platform-browser": ["@angular/platform-browser@18.2.14", "", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "@angular/animations": "18.2.14", "@angular/common": "18.2.14", "@angular/core": "18.2.14" }, "optionalPeers": ["@angular/animations"] }, "sha512-W+JTxI25su3RiZVZT3Yrw6KNUCmOIy7OZIZ+612skPgYK2f2qil7VclnW1oCwG896h50cMJU/lnAfxZxefQgyQ=="],
+
+    "@angular/router": ["@angular/router@18.2.14", "", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "@angular/common": "18.2.14", "@angular/core": "18.2.14", "@angular/platform-browser": "18.2.14", "rxjs": "^6.5.3 || ^7.4.0" } }, "sha512-v/gweh8MBjjDfh1QssuyjISa+6SVVIvIZox7MaMs81RkaoVHwS9grDtPud1pTKHzms2KxSVpvwwyvkRJQplueg=="],
 
     "@borewit/text-codec": ["@borewit/text-codec@0.2.2", "", {}, "sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ=="],
 
@@ -164,6 +187,8 @@
     "@nestjs/swagger": ["@nestjs/swagger@11.4.6", "", { "dependencies": { "@microsoft/tsdoc": "0.16.0", "@nestjs/mapped-types": "2.1.1", "js-yaml": "5.2.1", "lodash": "4.18.1", "path-to-regexp": "8.4.2", "swagger-ui-dist": "5.32.8" }, "peerDependencies": { "@fastify/static": "^8.0.0 || ^9.0.0 || ^10.0.0", "@nestjs/common": "^11.0.1", "@nestjs/core": "^11.0.1", "class-transformer": "*", "class-validator": "*", "reflect-metadata": "^0.1.12 || ^0.2.0" }, "optionalPeers": ["@fastify/static", "class-transformer", "class-validator"] }, "sha512-Le136h2WC7HGsd70+WyK1qrm+Zq7kFxBLkYC1JgAVqNRCt8kNh7bMF7Qkn65D5j2t/aks0+VbWmUVlYIwPrs3A=="],
 
     "@pkgjs/parseargs": ["@pkgjs/parseargs@0.11.0", "", {}, "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="],
+
+    "@richardmcquiston01/reactive-lms-admin": ["@richardmcquiston01/reactive-lms-admin@workspace:packages/admin"],
 
     "@richardmcquiston01/reactive-lms-core": ["@richardmcquiston01/reactive-lms-core@workspace:packages/core"],
 

@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@angular/core": "^18.2.13",
+    "@richardmcquiston01/reactive-lms-admin": "workspace:*",
     "@richardmcquiston01/reactive-lms-player": "workspace:*",
     "@richardmcquiston01/reactive-lms-shared": "workspace:*"
   }

@@ -12,6 +12,9 @@
     },
     {
       "path": "../player"
+    },
+    {
+      "path": "../admin"
     }
   ]
 }
