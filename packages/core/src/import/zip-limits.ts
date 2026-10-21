@@ -3,7 +3,7 @@ import {
   PACKAGE_INVALID_ZIP,
   PACKAGE_ZIP_BOMB,
   httpStatusForLmsCode,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { unzipSync } from 'fflate';
 
 /** Default uncompressed ZIP size limit (200 MiB). */

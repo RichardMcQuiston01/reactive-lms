@@ -1,7 +1,10 @@
 import { Body, Controller, HttpCode, Param, Post, Req } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { LaunchService } from '@reactive-lms/core';
-import type { CreateLaunchDto, LaunchDto } from '@reactive-lms/shared';
+import { LaunchService } from '@richardmcquiston01/reactive-lms-core';
+import type {
+  CreateLaunchDto,
+  LaunchDto,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { LmsRequestService } from '../identity/lms-request.service';
 
 /**

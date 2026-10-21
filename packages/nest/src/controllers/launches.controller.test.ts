@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import type { LaunchService } from '@reactive-lms/core';
-import type { LaunchDto, LearnerRef } from '@reactive-lms/shared';
+import type { LaunchService } from '@richardmcquiston01/reactive-lms-core';
+import type {
+  LaunchDto,
+  LearnerRef,
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { LmsRequestService } from '../identity/lms-request.service';
 import { LaunchesController } from './launches.controller';
 

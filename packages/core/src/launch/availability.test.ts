@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { LmsError } from '@reactive-lms/shared';
-import type { CourseModule } from '@reactive-lms/persistence';
+import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
+import type { CourseModule } from '@richardmcquiston01/reactive-lms-persistence';
 import { assertAvailable } from './availability';
 import type { AvailabilityProgress } from './availability';
 

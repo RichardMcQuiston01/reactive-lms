@@ -15,11 +15,11 @@
       },
     },
     "packages/core": {
-      "name": "@reactive-lms/core",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-core",
+      "version": "0.1.0",
       "dependencies": {
-        "@reactive-lms/persistence": "workspace:*",
-        "@reactive-lms/shared": "workspace:*",
+        "@richardmcquiston01/reactive-lms-persistence": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
         "fflate": "^0.8.3",
         "typeorm": "^0.3.31",
       },
@@ -28,16 +28,16 @@
       },
     },
     "packages/nest": {
-      "name": "@reactive-lms/nest",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-nest",
+      "version": "0.1.0",
       "dependencies": {
         "@nestjs/common": "^11.1.6",
         "@nestjs/core": "^11.1.6",
         "@nestjs/platform-express": "^11.1.6",
         "@nestjs/swagger": "^11.2.0",
-        "@reactive-lms/core": "workspace:*",
-        "@reactive-lms/persistence": "workspace:*",
-        "@reactive-lms/shared": "workspace:*",
+        "@richardmcquiston01/reactive-lms-core": "workspace:*",
+        "@richardmcquiston01/reactive-lms-persistence": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2",
         "typeorm": "^0.3.31",
@@ -49,10 +49,10 @@
       },
     },
     "packages/persistence": {
-      "name": "@reactive-lms/persistence",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-persistence",
+      "version": "0.1.0",
       "dependencies": {
-        "@reactive-lms/shared": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
         "pg": "^8.23.0",
         "reflect-metadata": "^0.2.2",
         "typeorm": "^0.3.31",
@@ -62,12 +62,12 @@
       },
     },
     "packages/player": {
-      "name": "@reactive-lms/player",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-player",
+      "version": "0.1.0",
       "dependencies": {
         "@angular/common": "^18.2.13",
         "@angular/core": "^18.2.13",
-        "@reactive-lms/shared": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
         "rxjs": "^7.8.2",
       },
       "peerDependencies": {
@@ -77,21 +77,21 @@
       },
     },
     "packages/shared": {
-      "name": "@reactive-lms/shared",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-shared",
+      "version": "0.1.0",
     },
     "packages/standalone-api": {
-      "name": "@reactive-lms/standalone-api",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-standalone-api",
+      "version": "0.1.0",
       "dependencies": {
         "@nestjs/common": "^11.1.6",
         "@nestjs/core": "^11.1.6",
         "@nestjs/platform-express": "^11.1.6",
         "@nestjs/swagger": "^11.2.0",
-        "@reactive-lms/core": "workspace:*",
-        "@reactive-lms/nest": "workspace:*",
-        "@reactive-lms/persistence": "workspace:*",
-        "@reactive-lms/shared": "workspace:*",
+        "@richardmcquiston01/reactive-lms-core": "workspace:*",
+        "@richardmcquiston01/reactive-lms-nest": "workspace:*",
+        "@richardmcquiston01/reactive-lms-persistence": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
         "pg": "^8.23.0",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2",
@@ -103,12 +103,12 @@
       },
     },
     "packages/standalone-web": {
-      "name": "@reactive-lms/standalone-web",
-      "version": "0.0.0",
+      "name": "@richardmcquiston01/reactive-lms-standalone-web",
+      "version": "0.1.0",
       "dependencies": {
         "@angular/core": "^18.2.13",
-        "@reactive-lms/player": "workspace:*",
-        "@reactive-lms/shared": "workspace:*",
+        "@richardmcquiston01/reactive-lms-player": "workspace:*",
+        "@richardmcquiston01/reactive-lms-shared": "workspace:*",
       },
     },
   },
@@ -165,19 +165,19 @@
 
     "@pkgjs/parseargs": ["@pkgjs/parseargs@0.11.0", "", {}, "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="],
 
-    "@reactive-lms/core": ["@reactive-lms/core@workspace:packages/core"],
+    "@richardmcquiston01/reactive-lms-core": ["@richardmcquiston01/reactive-lms-core@workspace:packages/core"],
 
-    "@reactive-lms/nest": ["@reactive-lms/nest@workspace:packages/nest"],
+    "@richardmcquiston01/reactive-lms-nest": ["@richardmcquiston01/reactive-lms-nest@workspace:packages/nest"],
 
-    "@reactive-lms/persistence": ["@reactive-lms/persistence@workspace:packages/persistence"],
+    "@richardmcquiston01/reactive-lms-persistence": ["@richardmcquiston01/reactive-lms-persistence@workspace:packages/persistence"],
 
-    "@reactive-lms/player": ["@reactive-lms/player@workspace:packages/player"],
+    "@richardmcquiston01/reactive-lms-player": ["@richardmcquiston01/reactive-lms-player@workspace:packages/player"],
 
-    "@reactive-lms/shared": ["@reactive-lms/shared@workspace:packages/shared"],
+    "@richardmcquiston01/reactive-lms-shared": ["@richardmcquiston01/reactive-lms-shared@workspace:packages/shared"],
 
-    "@reactive-lms/standalone-api": ["@reactive-lms/standalone-api@workspace:packages/standalone-api"],
+    "@richardmcquiston01/reactive-lms-standalone-api": ["@richardmcquiston01/reactive-lms-standalone-api@workspace:packages/standalone-api"],
 
-    "@reactive-lms/standalone-web": ["@reactive-lms/standalone-web@workspace:packages/standalone-web"],
+    "@richardmcquiston01/reactive-lms-standalone-web": ["@richardmcquiston01/reactive-lms-standalone-web@workspace:packages/standalone-web"],
 
     "@scarf/scarf": ["@scarf/scarf@1.4.0", "", {}, "sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ=="],
 

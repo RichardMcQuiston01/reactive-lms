@@ -43,7 +43,7 @@ Postgres integration test is skipped without a database URL).
 One `feature/` branch and one PR each, in this order. Subjects stay at 50
 characters or fewer.
 
-### WP0: Lint, format, CI (PR 14, in review)
+### WP0: Lint, format, CI (PR 14, merged)
 
 - [x] Prettier, `.editorconfig`, ESLint with a guard keeping `shared` free of
       framework imports
@@ -51,7 +51,7 @@ characters or fewer.
 - [ ] Add a Postgres service to CI and run the persistence integration test,
       so the migration and unique constraints are verified (follow-up in WP3)
 
-### WP1: Plan and roadmap rewrite (this PR)
+### WP1: Plan and roadmap rewrite (PR 15, merged)
 
 - [x] This document; roadmap milestone status updated
 
@@ -59,10 +59,10 @@ characters or fewer.
 
 Commit scope `refactor(repo)`. Mechanical, so do it early.
 
-- [ ] Rename to `@richardmcquiston01/reactive-lms-{shared,persistence,core,nest,player}`;
-      `standalone-api` and `standalone-web` stay private apps
-- [ ] Update imports, `workspace:*` dependencies, tsconfig references, README,
-      and docs; set versions to 0.1.0 until the release PR
+- [x] Rename to `@richardmcquiston01/reactive-lms-{shared,persistence,core,nest,player}`;
+      `standalone-api` and `standalone-web` take the same scheme and stay private
+- [x] Update imports, `workspace:*` dependencies, lockfile, and README; set
+      versions to 0.1.0 until the release PR
 - [ ] Add the `admin` package name to the workspace list (empty scaffold in WP6)
 
 **Done when:** typecheck, lint, and all tests pass with no `@reactive-lms/`

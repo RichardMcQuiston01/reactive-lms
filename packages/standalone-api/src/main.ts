@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { DataSource } from 'typeorm';
-import { RLMS_DATA_SOURCE } from '@reactive-lms/nest';
+import { RLMS_DATA_SOURCE } from '@richardmcquiston01/reactive-lms-nest';
 import { AppModule } from './app.module';
 
 /**

@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Put, Req } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { ScormCmiService } from '@reactive-lms/core';
-import type { ScormCmiDto } from '@reactive-lms/shared';
+import { ScormCmiService } from '@richardmcquiston01/reactive-lms-core';
+import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
 import { LmsRequestService } from '../identity/lms-request.service';
 
 /**

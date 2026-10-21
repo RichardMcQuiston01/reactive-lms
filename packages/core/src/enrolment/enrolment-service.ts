@@ -3,8 +3,8 @@ import {
   EnrolmentMethod,
   Membership,
   Registration,
-} from '@reactive-lms/persistence';
-import type { EnrolmentMethodKind } from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
+import type { EnrolmentMethodKind } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   ENROLMENT_GROUP_REQUIRED,
   ENROLMENT_KEY_REQUIRED,
@@ -12,7 +12,7 @@ import {
   ENROLMENT_WINDOW_CLOSED,
   LmsError,
   httpStatusForLmsCode,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource, EntityManager } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 

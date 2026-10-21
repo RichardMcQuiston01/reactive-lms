@@ -1,9 +1,9 @@
-import type { CompletionRule } from '@reactive-lms/persistence';
+import type { CompletionRule } from '@richardmcquiston01/reactive-lms-persistence';
 import type {
   CompletionStatus,
   RegistrationStatus,
   SuccessStatus,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 
 /**
  * Per-module progress used when rolling up {@link RegistrationStatus}.

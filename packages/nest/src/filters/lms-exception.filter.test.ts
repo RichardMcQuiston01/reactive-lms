@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import type { ArgumentsHost } from '@nestjs/common';
-import { LmsError, PACKAGE_NOT_FOUND } from '@reactive-lms/shared';
+import {
+  LmsError,
+  PACKAGE_NOT_FOUND,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { LmsExceptionFilter } from './lms-exception.filter';
 
 describe('LmsExceptionFilter', () => {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { LmsError } from '@reactive-lms/shared';
+import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
 import { zipSync, strToU8 } from 'fflate';
 import {
   DEFAULT_MAX_ZIP_FILE_COUNT,

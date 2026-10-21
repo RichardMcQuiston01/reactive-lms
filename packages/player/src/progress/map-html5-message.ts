@@ -1,4 +1,4 @@
-import type { NormalizedProgress } from '@reactive-lms/shared';
+import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
 
 /**
  * HTML5 content → player postMessage envelope.

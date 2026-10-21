@@ -12,7 +12,7 @@ import {
   type CompletionRule,
   type EnrolmentMethodKind,
   type ModuleAvailability,
-} from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
   MODULE_NOT_FOUND,
@@ -22,7 +22,7 @@ import {
   type ContentPackageDto,
   type NormalizedProgress as NormalizedProgressDto,
   type StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { RLMS_DATA_SOURCE, RLMS_STORAGE_ADAPTER } from '../tokens';
@@ -95,7 +95,7 @@ export interface CreateEnrolmentMethodInput {
 
 /**
  * Thin TypeORM catalog used by Nest controllers.
- * Import, place, enrol, launch, and progress stay in `@reactive-lms/core`.
+ * Import, place, enrol, launch, and progress stay in `@richardmcquiston01/reactive-lms-core`.
  */
 @Injectable()
 export class CatalogService {

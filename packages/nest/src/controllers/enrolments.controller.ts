@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, Param, Post, Req } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { EnrolmentService } from '@reactive-lms/core';
-import type { EnrolmentMethodKind } from '@reactive-lms/persistence';
+import { EnrolmentService } from '@richardmcquiston01/reactive-lms-core';
+import type { EnrolmentMethodKind } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   CatalogService,
   type CreateEnrolmentMethodInput,

@@ -6,20 +6,20 @@ import {
   CourseModule,
   NormalizedProgress as NormalizedProgressRow,
   Registration,
-} from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
 import type {
   ContentRuntime,
   LaunchDescriptor,
   LaunchRequest,
   StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import {
   LAUNCH_NOT_IMPLEMENTED,
   LmsError,
   MODULE_NOT_FOUND,
   REGISTRATION_NOT_FOUND,
   httpStatusForLmsCode,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';

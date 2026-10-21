@@ -7,8 +7,8 @@ import {
   NormalizedProgress,
   Person,
   Registration,
-} from '@reactive-lms/persistence';
-import { LmsError } from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-persistence';
+import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../../audit/event-log.service';
 import { ProgressSinkService } from '../../progress/progress-sink';

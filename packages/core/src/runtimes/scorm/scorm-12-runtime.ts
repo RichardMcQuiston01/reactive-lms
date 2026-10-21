@@ -8,7 +8,7 @@ import {
   type LaunchRequest,
   type PackageFileIndex,
   type ParsedPackage,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { detectPackageType } from '../../import/detect-package-type';
 import { joinStorageKey } from '../html5/html5-runtime';
 import { parseImsmanifest } from './parse-imsmanifest';

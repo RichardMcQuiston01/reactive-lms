@@ -6,7 +6,7 @@ import type { ParsedPackage } from '../models/parsed-package';
 
 /**
  * Format-specific runtime: detect, parse, and create launches for one PackageType.
- * Implementations live in `@reactive-lms/core`; this contract is the only shared surface.
+ * Implementations live in `@richardmcquiston01/reactive-lms-core`; this contract is the only shared surface.
  */
 export interface ContentRuntime {
   /** Package format this runtime handles. */

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { EnrolmentService } from '@reactive-lms/core';
-import type { ModuleService } from '@reactive-lms/core';
+import type { EnrolmentService } from '@richardmcquiston01/reactive-lms-core';
+import type { ModuleService } from '@richardmcquiston01/reactive-lms-core';
 import type { CatalogService } from '../catalog/catalog.service';
 import type { LmsRequestService } from '../identity/lms-request.service';
 import { CoursesController } from './courses.controller';

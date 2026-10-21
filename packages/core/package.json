@@ -1,6 +1,6 @@
 {
-  "name": "@reactive-lms/core",
-  "version": "0.0.0",
+  "name": "@richardmcquiston01/reactive-lms-core",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,8 +13,8 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@reactive-lms/persistence": "workspace:*",
-    "@reactive-lms/shared": "workspace:*",
+    "@richardmcquiston01/reactive-lms-persistence": "workspace:*",
+    "@richardmcquiston01/reactive-lms-shared": "workspace:*",
     "fflate": "^0.8.3",
     "typeorm": "^0.3.31"
   },

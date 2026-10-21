@@ -1,4 +1,7 @@
-import type { CompletionStatus, SuccessStatus } from '@reactive-lms/shared';
+import type {
+  CompletionStatus,
+  SuccessStatus,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { Column, Entity } from 'typeorm';
 import { TimestampedEntity } from './base.entity';
 

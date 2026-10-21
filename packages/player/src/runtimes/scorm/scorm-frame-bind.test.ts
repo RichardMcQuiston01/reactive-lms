@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { ScormCmiDto } from '@reactive-lms/shared';
+import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
 import { bindScormFrame } from './scorm-frame-bind';
 
 describe('bindScormFrame', () => {

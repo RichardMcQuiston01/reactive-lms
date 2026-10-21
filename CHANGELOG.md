@@ -54,6 +54,9 @@
 
 ### Changed
 
+- Packages renamed from `@reactive-lms/*` to `@richardmcquiston01/reactive-lms-*`
+  (D4) and versioned 0.1.0. Entries below that predate this change use the old
+  names.
 - Roadmap: decided to keep an own `BlobStorageAdapter` for package files (D11).
 - Roadmap: `error-log-adapter` is optional (D12); implementation starts once
   `storage-adapters` and `error-log-adapter` reach stable 1.0 (D13).

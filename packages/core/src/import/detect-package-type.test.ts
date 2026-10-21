@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import type { PackageFileIndex } from '@reactive-lms/shared';
-import { LmsError, PACKAGE_NOT_DETECTED } from '@reactive-lms/shared';
+import type { PackageFileIndex } from '@richardmcquiston01/reactive-lms-shared';
+import {
+  LmsError,
+  PACKAGE_NOT_DETECTED,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { detectPackageType } from './detect-package-type';
 
 function memoryIndex(files: Record<string, string>): PackageFileIndex {

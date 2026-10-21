@@ -7,7 +7,7 @@ import {
   type OnDestroy,
   type OnInit,
 } from '@angular/core';
-import type { ScormCmiDto } from '@reactive-lms/shared';
+import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
 import { lmsFetch } from '../../http/lms-http';
 import { REACTIVE_LMS_CONFIG } from '../../provide-reactive-lms';
 import { bindScormFrame } from './scorm-frame-bind';

@@ -1,4 +1,7 @@
-import { CmiStore, type ScormCmiDto } from '@reactive-lms/shared';
+import {
+  CmiStore,
+  type ScormCmiDto,
+} from '@richardmcquiston01/reactive-lms-shared';
 
 /**
  * SCORM 1.2 `window.API` surface the SCO looks up via findAPI.

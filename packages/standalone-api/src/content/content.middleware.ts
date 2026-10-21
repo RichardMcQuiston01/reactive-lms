@@ -2,14 +2,14 @@ import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import {
   RLMS_IDENTITY_ADAPTER,
   RLMS_STORAGE_ADAPTER,
-} from '@reactive-lms/nest';
+} from '@richardmcquiston01/reactive-lms-nest';
 import {
   LmsError,
   STORAGE_KEY_NOT_FOUND,
   httpStatusForLmsCode,
   type IdentityAdapter,
   type StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { NextFunction, Request, Response } from 'express';
 
 /**

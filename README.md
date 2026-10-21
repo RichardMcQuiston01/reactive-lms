@@ -11,14 +11,14 @@ an existing NestJS + TypeORM API and Angular frontend.
 
 | Mode | What you run | When to use it |
 | --- | --- | --- |
-| **Standalone** | `@reactive-lms/standalone-api` + `@reactive-lms/standalone-web` | Demo, evaluation, or a self-contained LMS process |
-| **Embed** | Import `@reactive-lms/nest` into a host NestJS app and `@reactive-lms/player` into a host Angular app | Host already owns identity, auth, and UI shell |
+| **Standalone** | `@richardmcquiston01/reactive-lms-standalone-api` + `@richardmcquiston01/reactive-lms-standalone-web` | Demo, evaluation, or a self-contained LMS process |
+| **Embed** | Import `@richardmcquiston01/reactive-lms-nest` into a host NestJS app and `@richardmcquiston01/reactive-lms-player` into a host Angular app | Host already owns identity, auth, and UI shell |
 
 Standalone boots the same Nest module and Angular player with thin local adapters (identity, storage). Embed reuses TypeORM entities/migrations and shared DTOs without owning host users.
 
 A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`) or SCORM 1.2 (`playerKind: 'scorm-frame'`). Module availability (`afterModuleId`, date window, `minScore`) is enforced at launch. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed). SCORM 1.2 commits map `cmi.core.lesson_status` and `cmi.core.score.raw` onto that sink.
 
-Those services are also exposed over HTTP by `@reactive-lms/nest` (`ReactiveLmsModule.registerAsync`, default prefix `/lms`). `@reactive-lms/player` ships `provideReactiveLms` and `<rlms-player>` which launches a module, iframes `contentUrl`, and posts HTML5 `postMessage` progress.
+Those services are also exposed over HTTP by `@richardmcquiston01/reactive-lms-nest` (`ReactiveLmsModule.registerAsync`, default prefix `/lms`). `@richardmcquiston01/reactive-lms-player` ships `provideReactiveLms` and `<rlms-player>` which launches a module, iframes `contentUrl`, and posts HTML5 `postMessage` progress.
 
 ## Monorepo map
 
@@ -26,13 +26,13 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 
 | Package | Name | Responsibility |
 | --- | --- | --- |
-| `packages/shared` | `@reactive-lms/shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
-| `packages/persistence` | `@reactive-lms/persistence` | LIS-shaped TypeORM `rlms_*` entities, `createPersistenceDataSource` factory, and `0001-initial-schema` migration |
-| `packages/core` | `@reactive-lms/core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 and SCORM 1.2 ZIP import (`PackageImporter`, `Html5Runtime`, `Scorm12Runtime`, `FilesystemStorageAdapter`), CMI store + persist (`ScormCmiService`), module placement (`ModuleService`), enrolment (`manual` / `self` / `group`), iframe / scorm-frame launch, and course-completion rollup are implemented; 2004 / cmi5 / H5P / LTI are detected but not yet parsed. |
-| `packages/nest` | `@reactive-lms/nest` | Embeddable NestJS module, REST + OpenAPI over the 3b/4 services, `LmsError` JSON filter |
-| `packages/player` | `@reactive-lms/player` | Angular standalone `RlmsPlayerComponent`, `provideReactiveLms`, HTML5 postMessage mapper, SCORM `window.API` bridge |
-| `packages/standalone-api` | `@reactive-lms/standalone-api` | Nest bootstrap, filesystem dataroot, demo identity, `/health`, `/lms/content/**` |
-| `packages/standalone-web` | `@reactive-lms/standalone-web` | Thin demo entry that re-exports the Angular player |
+| `packages/shared` | `@richardmcquiston01/reactive-lms-shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
+| `packages/persistence` | `@richardmcquiston01/reactive-lms-persistence` | LIS-shaped TypeORM `rlms_*` entities, `createPersistenceDataSource` factory, and `0001-initial-schema` migration |
+| `packages/core` | `@richardmcquiston01/reactive-lms-core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 and SCORM 1.2 ZIP import (`PackageImporter`, `Html5Runtime`, `Scorm12Runtime`, `FilesystemStorageAdapter`), CMI store + persist (`ScormCmiService`), module placement (`ModuleService`), enrolment (`manual` / `self` / `group`), iframe / scorm-frame launch, and course-completion rollup are implemented; 2004 / cmi5 / H5P / LTI are detected but not yet parsed. |
+| `packages/nest` | `@richardmcquiston01/reactive-lms-nest` | Embeddable NestJS module, REST + OpenAPI over the 3b/4 services, `LmsError` JSON filter |
+| `packages/player` | `@richardmcquiston01/reactive-lms-player` | Angular standalone `RlmsPlayerComponent`, `provideReactiveLms`, HTML5 postMessage mapper, SCORM `window.API` bridge |
+| `packages/standalone-api` | `@richardmcquiston01/reactive-lms-standalone-api` | Nest bootstrap, filesystem dataroot, demo identity, `/health`, `/lms/content/**` |
+| `packages/standalone-web` | `@richardmcquiston01/reactive-lms-standalone-web` | Thin demo entry that re-exports the Angular player |
 
 > Package names above are the current workspace names. They move to the
 > `@richardmcquiston01/reactive-lms-*` scope when 0.2.0 is reconciled with the
@@ -59,7 +59,7 @@ Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for inst
 | --------- | ----------------------------------------------- |
 | Backend   | TypeScript, NestJS, TypeORM (Postgres first)    |
 | Demo UI   | Angular 18+, TailwindCSS, RxJS                  |
-| Shared    | Interfaces and DTOs (`@reactive-lms/shared`)    |
+| Shared    | Interfaces and DTOs (`@richardmcquiston01/reactive-lms-shared`)    |
 | Tooling   | bun workspaces                                  |
 | Caching   | Redis later, behind a `CacheAdapter`            |
 

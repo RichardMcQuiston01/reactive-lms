@@ -1,4 +1,7 @@
-import type { IdentityAdapter, LearnerRef } from '@reactive-lms/shared';
+import type {
+  IdentityAdapter,
+  LearnerRef,
+} from '@richardmcquiston01/reactive-lms-shared';
 
 /**
  * Fixed demo learner used until standalone auth is wired.

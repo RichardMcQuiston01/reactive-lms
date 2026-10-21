@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { ProgressSinkService } from '@reactive-lms/core';
-import type { NormalizedProgress } from '@reactive-lms/shared';
+import type { ProgressSinkService } from '@richardmcquiston01/reactive-lms-core';
+import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
 import type { CatalogService } from '../catalog/catalog.service';
 import type { LmsRequestService } from '../identity/lms-request.service';
 import { ProgressController } from './progress.controller';

@@ -3,7 +3,7 @@ import {
   LmsError,
   PACKAGE_NOT_DETECTED,
   type LaunchRequest,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { createMemoryFileIndex } from '../../import/package-file-index';
 import { Html5Runtime } from './html5-runtime';
 

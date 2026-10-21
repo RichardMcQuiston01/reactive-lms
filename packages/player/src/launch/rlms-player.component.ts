@@ -9,7 +9,10 @@ import {
   type OnDestroy,
   type OnInit,
 } from '@angular/core';
-import type { CreateLaunchDto, LaunchDto } from '@reactive-lms/shared';
+import type {
+  CreateLaunchDto,
+  LaunchDto,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { lmsFetch } from '../http/lms-http';
 import { isContentFrameMessage } from '../progress/is-content-frame-message';
 import { mapHtml5Message } from '../progress/map-html5-message';
