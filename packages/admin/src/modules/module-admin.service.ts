@@ -47,6 +47,33 @@ export class ModuleAdminService {
   }
 
   /**
+   * Places an imported package in a section.
+   *
+   * @param sectionId - Course section id
+   * @param contentPackageId - Imported package to place
+   * @param title - Title override; the server defaults to the package title
+   * @param parentModuleId - Block to place it in, or `null` for the top level
+   */
+  place(
+    sectionId: string,
+    contentPackageId: string,
+    title: string | null,
+    parentModuleId: string | null,
+  ): Promise<{ moduleId: string }> {
+    return this.client.request<{ moduleId: string }>(
+      `/course-sections/${encodeURIComponent(sectionId)}/modules`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          contentPackageId,
+          ...(title === null ? {} : { title }),
+          ...(parentModuleId === null ? {} : { parentModuleId }),
+        }),
+      },
+    );
+  }
+
+  /**
    * Renames a module or block.
    *
    * @param moduleId - Course module id

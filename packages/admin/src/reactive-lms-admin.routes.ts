@@ -8,6 +8,7 @@ import {
   type AdminScreenId,
 } from './screens/admin-screens';
 import { ModuleTreeScreenComponent } from './screens/module-tree-screen.component';
+import { PackagesScreenComponent } from './screens/packages-screen.component';
 import { SectionsScreenComponent } from './screens/sections-screen.component';
 
 interface ScreenRoute {
@@ -23,7 +24,7 @@ const SCREENS: readonly ScreenRoute[] = [
     id: 'packages',
     path: 'packages',
     title: 'Packages',
-    builtIn: AdminPlaceholderScreenComponent,
+    builtIn: PackagesScreenComponent,
   },
   {
     id: 'module-tree',

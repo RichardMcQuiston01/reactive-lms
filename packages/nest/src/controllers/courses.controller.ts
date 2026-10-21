@@ -1,5 +1,14 @@
-import { Body, Controller, HttpCode, Post, Req } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import type { CourseSectionDto } from '@richardmcquiston01/reactive-lms-shared';
 import {
   CatalogService,
   type CreateOfferingInput,
@@ -84,5 +93,37 @@ export class CoursesController {
     });
     const actorPersonId = await this.request.ensurePersonId(req);
     return this.catalog.createSection(body, actorPersonId);
+  }
+
+  /**
+   * Lists course sections by title.
+   *
+   * @param req - Host request
+   * @param courseOfferingId - Only sections of this offering
+   * @param limit - Rows to return (default 200, at most 500)
+   * @param offset - Rows to skip
+   */
+  @Get('course-sections')
+  @ApiOperation({ summary: 'List course sections' })
+  @ApiQuery({ name: 'courseOfferingId', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'offset', required: false })
+  async listSections(
+    @Req() req: unknown,
+    @Query('courseOfferingId') courseOfferingId?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ): Promise<CourseSectionDto[]> {
+    await this.request.assertCan(req, 'section.manage', {
+      type: 'course_section',
+      id: '*',
+    });
+    return this.catalog.listSections(
+      {
+        limit: limit === undefined ? undefined : Number(limit),
+        offset: offset === undefined ? undefined : Number(offset),
+      },
+      courseOfferingId || undefined,
+    );
   }
 }

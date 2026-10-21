@@ -35,3 +35,5 @@ export {
 } from './modules/module-tree';
 export { ModuleTreeScreenComponent } from './screens/module-tree-screen.component';
 export { SectionsScreenComponent } from './screens/sections-screen.component';
+export { CatalogAdminService } from './modules/catalog-admin.service';
+export { PackagesScreenComponent } from './screens/packages-screen.component';

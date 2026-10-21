@@ -8,9 +8,16 @@ import {
   UploadedFile,
   UseInterceptors,
   Param,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   PackageImporter,
   type ImportPackageResult,
@@ -19,6 +26,7 @@ import {
   LmsError,
   PACKAGE_NOT_DETECTED,
   httpStatusForLmsCode,
+  type ContentPackageDto,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
   CatalogService,
@@ -72,6 +80,32 @@ export class PackagesController {
     const createdByUserId = await this.request.ensurePersonId(req);
     const result = await this.importer.import(file.buffer, { createdByUserId });
     return { ...result, id: result.packageId };
+  }
+
+  /**
+   * Lists imported packages, newest first.
+   *
+   * @param limit - Rows to return (default 200, at most 500)
+   * @param offset - Rows to skip
+   * @param req - Host request
+   */
+  @Get()
+  @ApiOperation({ summary: 'List content packages' })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'offset', required: false })
+  async list(
+    @Req() req: unknown,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ): Promise<ContentPackageDto[]> {
+    await this.request.assertCan(req, 'module.manage', {
+      type: 'content_package',
+      id: '*',
+    });
+    return this.catalog.listPackages({
+      limit: limit === undefined ? undefined : Number(limit),
+      offset: offset === undefined ? undefined : Number(offset),
+    });
   }
 
   /**
