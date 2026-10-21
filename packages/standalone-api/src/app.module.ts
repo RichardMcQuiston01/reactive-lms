@@ -44,9 +44,11 @@ export class AppModule implements NestModule {
    * @param consumer - Nest middleware consumer
    */
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(ContentMiddleware).forRoutes(
-      { path: 'lms/content', method: RequestMethod.GET },
-      { path: 'lms/content/*path', method: RequestMethod.GET },
-    );
+    consumer
+      .apply(ContentMiddleware)
+      .forRoutes(
+        { path: 'lms/content', method: RequestMethod.GET },
+        { path: 'lms/content/*path', method: RequestMethod.GET },
+      );
   }
 }

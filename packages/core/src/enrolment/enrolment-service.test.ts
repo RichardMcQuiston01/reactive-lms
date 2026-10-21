@@ -17,7 +17,9 @@ const ACTOR_ID = '55555555-5555-4555-8555-555555555555';
 const GROUP_ID = '66666666-6666-4666-8666-666666666666';
 const OTHER_GROUP = '77777777-7777-4777-8777-777777777777';
 
-function serviceOf(ds: ReturnType<typeof createMockDataSource>): EnrolmentService {
+function serviceOf(
+  ds: ReturnType<typeof createMockDataSource>,
+): EnrolmentService {
   return new EnrolmentService(
     ds as unknown as DataSource,
     new EventLogService(ds as unknown as DataSource),

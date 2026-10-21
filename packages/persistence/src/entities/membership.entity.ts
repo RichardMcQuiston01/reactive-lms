@@ -5,10 +5,7 @@ import { AuditedEntity } from './base.entity';
  * Contextual role a person holds in a group or course section.
  */
 export type MembershipRole =
-  | 'learner'
-  | 'instructor'
-  | 'administrator'
-  | 'content_developer';
+  'learner' | 'instructor' | 'administrator' | 'content_developer';
 
 /**
  * Collection a membership row points at.

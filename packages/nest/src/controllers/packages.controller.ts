@@ -10,22 +10,17 @@ import {
   Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiConsumes,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-} from '@nestjs/swagger';
-import {
-  PackageImporter,
-  type ImportPackageResult,
-} from '@reactive-lms/core';
+import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { PackageImporter, type ImportPackageResult } from '@reactive-lms/core';
 import {
   LmsError,
   PACKAGE_NOT_DETECTED,
   httpStatusForLmsCode,
 } from '@reactive-lms/shared';
-import { CatalogService, type ContentPackageDetail } from '../catalog/catalog.service';
+import {
+  CatalogService,
+  type ContentPackageDetail,
+} from '../catalog/catalog.service';
 import { LmsRequestService } from '../identity/lms-request.service';
 
 /**
@@ -98,10 +93,7 @@ export class PackagesController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a content package' })
   @ApiParam({ name: 'id' })
-  async remove(
-    @Param('id') id: string,
-    @Req() req: unknown,
-  ): Promise<void> {
+  async remove(@Param('id') id: string, @Req() req: unknown): Promise<void> {
     await this.request.assertCan(req, 'package.delete', {
       type: 'content_package',
       id,

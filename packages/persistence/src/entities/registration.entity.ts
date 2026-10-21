@@ -6,10 +6,7 @@ import { AuditedEntity } from './base.entity';
  * One person enrolled on one course section.
  */
 @Entity({ name: 'rlms_registration' })
-@Unique('uq_rlms_registration_person_section', [
-  'personId',
-  'courseSectionId',
-])
+@Unique('uq_rlms_registration_person_section', ['personId', 'courseSectionId'])
 export class Registration extends AuditedEntity {
   @Column({ name: 'person_id', type: 'uuid' })
   personId!: string;

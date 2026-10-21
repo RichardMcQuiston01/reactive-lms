@@ -94,10 +94,7 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
       previous: this.bridge,
       shouldApply: () => gen === this.attachGen,
       getCmi: () =>
-        lmsFetch<ScormCmiDto>(
-          this.config,
-          `/scorm/attempts/${attemptId}/cmi`,
-        ),
+        lmsFetch<ScormCmiDto>(this.config, `/scorm/attempts/${attemptId}/cmi`),
       putCmi: async (body) => {
         await lmsFetch<ScormCmiDto>(
           this.config,

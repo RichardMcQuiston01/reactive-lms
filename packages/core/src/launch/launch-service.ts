@@ -224,8 +224,7 @@ async function createRuntimeLaunch(
   if (runtime instanceof Scorm12Runtime) {
     return runtime.createLaunch(request, context);
   }
-  const html5 =
-    runtime instanceof Html5Runtime ? runtime : new Html5Runtime();
+  const html5 = runtime instanceof Html5Runtime ? runtime : new Html5Runtime();
   return html5.createLaunch(request, context);
 }
 
@@ -235,8 +234,7 @@ function progressMapFromRows(
   const map = new Map<string, AvailabilityProgress>();
   for (const row of rows) {
     const current = map.get(row.courseModuleId);
-    const score =
-      row.scoreScaled == null ? undefined : Number(row.scoreScaled);
+    const score = row.scoreScaled == null ? undefined : Number(row.scoreScaled);
     const next: AvailabilityProgress = {
       completionStatus: row.completionStatus,
       scoreScaled: Number.isFinite(score) ? score : undefined,
@@ -257,10 +255,7 @@ function progressMapFromRows(
   return map;
 }
 
-function maxOptional(
-  left?: number,
-  right?: number,
-): number | undefined {
+function maxOptional(left?: number, right?: number): number | undefined {
   if (typeof left === 'number' && typeof right === 'number') {
     return Math.max(left, right);
   }

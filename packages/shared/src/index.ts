@@ -25,10 +25,7 @@ export type {
   PlayerKind,
 } from './models/launch';
 export type { PackageFileIndex } from './models/package-file-index';
-export type {
-  ActivityNodeTree,
-  ParsedPackage,
-} from './models/parsed-package';
+export type { ActivityNodeTree, ParsedPackage } from './models/parsed-package';
 
 // Contracts
 export type { ContentRuntime, ProgressSink } from './contracts/content-runtime';

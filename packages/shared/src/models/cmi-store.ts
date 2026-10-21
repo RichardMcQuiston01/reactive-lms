@@ -456,7 +456,9 @@ export function addCmiTimespans(left: string, right: string): string {
  *
  * @param value - `HHHH:MM:SS.SS`
  */
-export function cmiTimespanToIso8601(value: string | undefined): string | undefined {
+export function cmiTimespanToIso8601(
+  value: string | undefined,
+): string | undefined {
   if (!value) {
     return undefined;
   }
@@ -485,9 +487,10 @@ function resolveElement(element: string): ElementDef | undefined {
   if (known) {
     return known;
   }
-  const objective = /^cmi\.objectives\.(\d+)\.(id|status|score(?:\._children|\.raw|\.min|\.max)?)$/.exec(
-    element,
-  );
+  const objective =
+    /^cmi\.objectives\.(\d+)\.(id|status|score(?:\._children|\.raw|\.min|\.max)?)$/.exec(
+      element,
+    );
   if (!objective) {
     return undefined;
   }
@@ -512,10 +515,7 @@ function resolveElement(element: string): ElementDef | undefined {
 
 function isEmptyParam(param: unknown): boolean {
   return (
-    param === '' ||
-    param === 'null' ||
-    param === null ||
-    param === undefined
+    param === '' || param === 'null' || param === null || param === undefined
   );
 }
 
@@ -543,10 +543,9 @@ function isTimespan(value: string): boolean {
   return TIMESPAN_RE.test(value);
 }
 
-function mapLessonStatus(status: string): Pick<
-  NormalizedProgress,
-  'completionStatus' | 'successStatus'
-> {
+function mapLessonStatus(
+  status: string,
+): Pick<NormalizedProgress, 'completionStatus' | 'successStatus'> {
   switch (status) {
     case 'passed':
       return { completionStatus: 'completed', successStatus: 'passed' };

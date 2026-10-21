@@ -1,5 +1,8 @@
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
-import { RLMS_IDENTITY_ADAPTER, RLMS_STORAGE_ADAPTER } from '@reactive-lms/nest';
+import {
+  RLMS_IDENTITY_ADAPTER,
+  RLMS_STORAGE_ADAPTER,
+} from '@reactive-lms/nest';
 import {
   LmsError,
   STORAGE_KEY_NOT_FOUND,

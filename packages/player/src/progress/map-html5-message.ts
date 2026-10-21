@@ -43,8 +43,7 @@ export function mapHtml5Message(
     return {
       registrationId: context.registrationId,
       courseModuleId: context.courseModuleId,
-      activityNodeId:
-        data.payload?.activityNodeId ?? context.activityNodeId,
+      activityNodeId: data.payload?.activityNodeId ?? context.activityNodeId,
       completionStatus: 'completed',
       successStatus: data.payload?.successStatus ?? 'unknown',
     };
@@ -54,8 +53,7 @@ export function mapHtml5Message(
     ...data.payload,
     registrationId: context.registrationId,
     courseModuleId: context.courseModuleId,
-    activityNodeId:
-      data.payload?.activityNodeId ?? context.activityNodeId,
+    activityNodeId: data.payload?.activityNodeId ?? context.activityNodeId,
   };
 }
 

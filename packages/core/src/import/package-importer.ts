@@ -94,9 +94,7 @@ export class PackageImporter {
     const packagePrefix = `packages/${packageId}`;
     const storageKey = `${packagePrefix}/original.zip`;
     const extractedKey = `${packagePrefix}/content`;
-    const checksumSha256 = createHash('sha256')
-      .update(buffer)
-      .digest('hex');
+    const checksumSha256 = createHash('sha256').update(buffer).digest('hex');
     const flattened = flattenActivities(parsed.activities, parsed.entryHref);
     const activityNodeId = flattened.defaultNodeId;
 
@@ -185,10 +183,7 @@ function flattenActivities(
   const nodes: FlattenedActivity[] = [];
   let sortOrder = 0;
 
-  const walk = (
-    items: ActivityNodeTree[],
-    parentId: string | null,
-  ): void => {
+  const walk = (items: ActivityNodeTree[], parentId: string | null): void => {
     for (const item of items) {
       const id = randomUUID();
       nodes.push({

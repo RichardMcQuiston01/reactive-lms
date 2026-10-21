@@ -77,8 +77,7 @@ export class ModuleService {
       }
 
       const sortOrder =
-        input.sortOrder ??
-        (await nextSortOrder(manager, sectionId));
+        input.sortOrder ?? (await nextSortOrder(manager, sectionId));
 
       const availabilityJson = toAvailability(input.availability);
       const module = manager.create(CourseModule, {

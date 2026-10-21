@@ -26,10 +26,7 @@ describe('createZipFileIndex', () => {
     });
     const index = createZipFileIndex(buffer);
     expect(index.has('index.html')).toBe(true);
-    expect([...index.paths].sort()).toEqual([
-      'assets/app.js',
-      'index.html',
-    ]);
+    expect([...index.paths].sort()).toEqual(['assets/app.js', 'index.html']);
   });
 
   test('detects html5 from ZIP names without inflating payloads', () => {

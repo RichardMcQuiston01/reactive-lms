@@ -17,7 +17,10 @@ export interface MockDataSource {
     run: (manager: MockEntityManager) => Promise<T>,
   ) => Promise<T>;
   /** Insert a row before the unit under test runs. */
-  seed: (entity: MockEntityClass, row: Record<string, unknown>) => Record<string, unknown>;
+  seed: (
+    entity: MockEntityClass,
+    row: Record<string, unknown>,
+  ) => Record<string, unknown>;
   /** Snapshot of persisted rows for an entity class. */
   rowsOf: (entity: MockEntityClass) => Record<string, unknown>[];
 }
@@ -27,9 +30,7 @@ export interface MockDataSource {
  */
 export interface MockRepository {
   create: (plain: Record<string, unknown>) => Record<string, unknown>;
-  save: (
-    entity: Record<string, unknown>,
-  ) => Promise<Record<string, unknown>>;
+  save: (entity: Record<string, unknown>) => Promise<Record<string, unknown>>;
   find: (options?: MockFindOptions) => Promise<Record<string, unknown>[]>;
   findOne: (
     options?: MockFindOptions,
@@ -143,8 +144,7 @@ export function createMockDataSource(): MockDataSource {
         if (leftValue === rightValue) {
           continue;
         }
-        const cmp =
-          String(leftValue) < String(rightValue) ? -1 : 1;
+        const cmp = String(leftValue) < String(rightValue) ? -1 : 1;
         return direction === 'DESC' || direction === 'desc' ? -cmp : cmp;
       }
       return 0;
@@ -155,7 +155,9 @@ export function createMockDataSource(): MockDataSource {
     create: (plain) => ({ ...plain }),
     save: async (row) => persist(entity, row),
     find: async (options) => {
-      const found = rowsOf(entity).filter((row) => matches(row, options?.where));
+      const found = rowsOf(entity).filter((row) =>
+        matches(row, options?.where),
+      );
       return applyOrder(found, options?.order);
     },
     findOne: async (options) => {
@@ -199,7 +201,8 @@ export function createMockDataSource(): MockDataSource {
       }
       return persist(ctor, row);
     },
-    find: async (entityClass, options) => repositoryFor(entityClass).find(options),
+    find: async (entityClass, options) =>
+      repositoryFor(entityClass).find(options),
     findOne: async (entityClass, options) =>
       repositoryFor(entityClass).findOne(options),
     update: async (entityClass, criteria, partial) =>

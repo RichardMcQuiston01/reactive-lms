@@ -5,9 +5,7 @@ import { AuditedEntity } from './base.entity';
  * Section completion rule over placed modules.
  */
 export type CompletionRule =
-  | { allModules: true }
-  | { anyOf: string[] }
-  | { minCompleted: number };
+  { allModules: true } | { anyOf: string[] } | { minCompleted: number };
 
 /**
  * Enrollable unit (LIS CourseSection) that holds course modules.

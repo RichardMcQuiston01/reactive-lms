@@ -1,7 +1,4 @@
-import {
-  CmiStore,
-  type ScormCmiDto,
-} from '@reactive-lms/shared';
+import { CmiStore, type ScormCmiDto } from '@reactive-lms/shared';
 
 /**
  * SCORM 1.2 `window.API` surface the SCO looks up via findAPI.
@@ -58,10 +55,7 @@ export class ScormApiBridge {
   private installedApi?: Scorm12Api;
   private timer: unknown;
   private readonly debounceMs: number;
-  private readonly setTimeoutFn: (
-    handler: () => void,
-    ms: number,
-  ) => unknown;
+  private readonly setTimeoutFn: (handler: () => void, ms: number) => unknown;
   private readonly clearTimeoutFn: (handle: unknown) => void;
 
   /**
@@ -70,8 +64,7 @@ export class ScormApiBridge {
   constructor(private readonly options: ScormApiBridgeOptions) {
     this.debounceMs = options.debounceMs ?? 500;
     this.setTimeoutFn =
-      options.setTimeoutFn ??
-      ((handler, ms) => setTimeout(handler, ms));
+      options.setTimeoutFn ?? ((handler, ms) => setTimeout(handler, ms));
     this.clearTimeoutFn =
       options.clearTimeoutFn ??
       ((handle) => {
@@ -95,8 +88,7 @@ export class ScormApiBridge {
       LMSInitialize: (param) => this.store.LMSInitialize(param),
       LMSFinish: (param) => this.onFinish(param),
       LMSGetValue: (element) => this.store.LMSGetValue(element),
-      LMSSetValue: (element, value) =>
-        this.store.LMSSetValue(element, value),
+      LMSSetValue: (element, value) => this.store.LMSSetValue(element, value),
       LMSCommit: (param) => this.onCommit(param),
       LMSGetLastError: () => this.store.LMSGetLastError(),
       LMSGetErrorString: (code) => this.store.LMSGetErrorString(code),

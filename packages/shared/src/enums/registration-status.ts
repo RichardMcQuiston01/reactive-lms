@@ -3,9 +3,4 @@
  * Values match `registration.status` persistence.
  */
 export type RegistrationStatus =
-  | 'not_started'
-  | 'in_progress'
-  | 'completed'
-  | 'passed'
-  | 'failed'
-  | 'waived';
+  'not_started' | 'in_progress' | 'completed' | 'passed' | 'failed' | 'waived';

@@ -54,11 +54,10 @@ describe('PackageImporter', () => {
     dataRoot = await mkdtemp(path.join(tmpdir(), 'rlms-import-'));
     storage = new FilesystemStorageAdapter(dataRoot);
     saved = [];
-    importer = new PackageImporter(
-      createMockDataSource(saved),
-      storage,
-      [new Html5Runtime(), new Scorm12Runtime()],
-    );
+    importer = new PackageImporter(createMockDataSource(saved), storage, [
+      new Html5Runtime(),
+      new Scorm12Runtime(),
+    ]);
   });
 
   afterEach(async () => {
@@ -88,9 +87,7 @@ describe('PackageImporter', () => {
 
     const original = await storage.get(pkg!.storageKey!);
     expect(original.byteLength).toBe(buffer.byteLength);
-    const extracted = await storage.get(
-      `${pkg!.extractedKey}/index.html`,
-    );
+    const extracted = await storage.get(`${pkg!.extractedKey}/index.html`);
     expect(new TextDecoder().decode(extracted)).toContain('Demo');
     expect(saved.some((row) => row.action === 'package.imported')).toBe(true);
   });
@@ -201,10 +198,12 @@ describe('PackageImporter', () => {
   test('removes stored keys when persist fails after extract', async () => {
     const failing = new PackageImporter(
       {
-        transaction: async (run: (manager: {
-          create: <T extends object>(_c: unknown, plain: T) => T;
-          save: <T>(entity: T) => Promise<T>;
-        }) => Promise<unknown>) =>
+        transaction: async (
+          run: (manager: {
+            create: <T extends object>(_c: unknown, plain: T) => T;
+            save: <T>(entity: T) => Promise<T>;
+          }) => Promise<unknown>,
+        ) =>
           run({
             create: (_c, plain) => ({ ...plain }),
             save: async () => {

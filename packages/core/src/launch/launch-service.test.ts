@@ -8,7 +8,11 @@ import {
   NormalizedProgress,
   Registration,
 } from '@reactive-lms/persistence';
-import { LmsError, type LaunchRequest, type StorageAdapter } from '@reactive-lms/shared';
+import {
+  LmsError,
+  type LaunchRequest,
+  type StorageAdapter,
+} from '@reactive-lms/shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
@@ -41,7 +45,9 @@ function storage(): StorageAdapter {
   };
 }
 
-function launchService(ds: ReturnType<typeof createMockDataSource>): LaunchService {
+function launchService(
+  ds: ReturnType<typeof createMockDataSource>,
+): LaunchService {
   return new LaunchService(
     ds as unknown as DataSource,
     storage(),

@@ -1,4 +1,7 @@
-import type { CourseModule, ModuleAvailability } from '@reactive-lms/persistence';
+import type {
+  CourseModule,
+  ModuleAvailability,
+} from '@reactive-lms/persistence';
 import type { CompletionStatus } from '@reactive-lms/shared';
 import {
   LmsError,

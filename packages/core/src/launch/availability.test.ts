@@ -104,10 +104,7 @@ describe('assertAvailable', () => {
       assertAvailable(
         module({ afterModuleId: AFTER_ID, minScore: 0.8 }),
         progress([
-          [
-            AFTER_ID,
-            { completionStatus: 'completed', scoreScaled: 0.5 },
-          ],
+          [AFTER_ID, { completionStatus: 'completed', scoreScaled: 0.5 }],
         ]),
         NOW,
       );
@@ -126,10 +123,7 @@ describe('assertAvailable', () => {
       assertAvailable(
         module({ afterModuleId: AFTER_ID, minScore: 0.8 }),
         progress([
-          [
-            AFTER_ID,
-            { completionStatus: 'completed', scoreScaled: 0.8 },
-          ],
+          [AFTER_ID, { completionStatus: 'completed', scoreScaled: 0.8 }],
         ]),
         NOW,
       ),

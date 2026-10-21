@@ -42,9 +42,9 @@ describe('CmiStore', () => {
   test('coerces numeric LMSSetValue arguments to strings', () => {
     const store = new CmiStore();
     store.LMSInitialize('');
-    expect(store.LMSSetValue('cmi.core.score.raw', 80 as unknown as string)).toBe(
-      'true',
-    );
+    expect(
+      store.LMSSetValue('cmi.core.score.raw', 80 as unknown as string),
+    ).toBe('true');
     expect(store.LMSGetValue('cmi.core.score.raw')).toBe('80');
     expect(store.snapshot()['cmi.core.score.raw']).toBe('80');
   });
@@ -222,9 +222,7 @@ describe('CmiStore', () => {
     const store = new CmiStore();
     store.LMSInitialize('');
     expect(store.LMSSetValue('cmi.objectives.0.id', 'obj-1')).toBe('true');
-    expect(store.LMSSetValue('cmi.objectives.0.status', 'passed')).toBe(
-      'true',
-    );
+    expect(store.LMSSetValue('cmi.objectives.0.status', 'passed')).toBe('true');
     expect(store.LMSSetValue('cmi.objectives.0.score.raw', '1')).toBe('true');
     expect(store.LMSGetValue('cmi.objectives.0.id')).toBe('obj-1');
     expect(store.LMSGetValue('cmi.objectives._count')).toBe('1');

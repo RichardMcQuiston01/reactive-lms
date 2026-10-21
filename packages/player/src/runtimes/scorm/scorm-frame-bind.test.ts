@@ -72,7 +72,9 @@ describe('bindScormFrame', () => {
     expect(second.iframeSrc).toBe('/lms/content/b.html');
     expect(second.error).toBeNull();
     expect(
-      puts.some((body) => body.values['cmi.core.lesson_location'] === 'keep-me'),
+      puts.some(
+        (body) => body.values['cmi.core.lesson_location'] === 'keep-me',
+      ),
     ).toBe(true);
   });
 

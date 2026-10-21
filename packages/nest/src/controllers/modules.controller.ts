@@ -88,10 +88,7 @@ export class ModulesController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a course module placement' })
   @ApiParam({ name: 'id' })
-  async remove(
-    @Param('id') id: string,
-    @Req() req: unknown,
-  ): Promise<void> {
+  async remove(@Param('id') id: string, @Req() req: unknown): Promise<void> {
     await this.request.assertCan(req, 'module.manage', {
       type: 'course_module',
       id,
