@@ -10,12 +10,14 @@ import {
   httpStatusForLmsCode,
   type ActivityNodeTree,
   type ContentRuntime,
+  type BlobStorageAdapter,
   type PackageType,
-  type StorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { detectPackageType } from './detect-package-type';
+import { requireBlob } from '../storage/require-blob';
 import { createZipFileIndex } from './package-file-index';
+import { extractZipToStorage, type ZipExtractionLimits } from './zip-extractor';
 
 /**
  * Optional fields applied when persisting an imported package.
@@ -23,6 +25,17 @@ import { createZipFileIndex } from './package-file-index';
 export interface ImportPackageOptions {
   /** Host audit user stored on the content package. */
   createdByUserId?: string;
+}
+
+/**
+ * Safety hooks applied to every uploaded archive.
+ */
+export interface PackageImporterOptions extends ZipExtractionLimits {
+  /**
+   * Called with the uploaded archive before anything is stored. Throw to
+   * reject the upload (for example when an antivirus scan finds a threat).
+   */
+  antivirusScan?: (archive: Uint8Array) => Promise<void>;
 }
 
 /**
@@ -48,11 +61,13 @@ export class PackageImporter {
    * @param dataSource - Caller-owned TypeORM DataSource (not a global)
    * @param storage - Blob store for the original ZIP and extracted files
    * @param runtimes - Registered content runtimes (HTML5 + SCORM 1.2)
+   * @param options - Antivirus hook and zip-bomb limits
    */
   constructor(
     private readonly dataSource: DataSource,
-    private readonly storage: StorageAdapter,
+    private readonly storage: BlobStorageAdapter,
     private readonly runtimes: ContentRuntime[],
+    private readonly options: PackageImporterOptions = {},
   ) {}
 
   /**
@@ -66,6 +81,7 @@ export class PackageImporter {
     buffer: Uint8Array,
     options?: ImportPackageOptions,
   ): Promise<ImportPackageResult> {
+    await this.options.antivirusScan?.(buffer);
     const files = createZipFileIndex(buffer);
     const packageType = detectPackageType(files);
     if (!IMPORTABLE.has(packageType)) {
@@ -100,8 +116,15 @@ export class PackageImporter {
 
     try {
       await this.dataSource.transaction(async (manager) => {
-        await this.storage.put(storageKey, buffer);
-        await this.storage.extractZip(storageKey, extractedKey);
+        requireBlob(
+          await this.storage.put(storageKey, buffer, {
+            contentType: 'application/zip',
+          }),
+        );
+        await extractZipToStorage(this.storage, buffer, extractedKey, {
+          maxFileCount: this.options.maxFileCount,
+          maxUncompressedBytes: this.options.maxUncompressedBytes,
+        });
 
         const contentPackage = manager.create(ContentPackage, {
           id: packageId,
@@ -150,11 +173,9 @@ export class PackageImporter {
         await manager.save(imported);
       });
     } catch (error) {
-      try {
-        await this.storage.remove(packagePrefix);
-      } catch {
-        // Compensation must not hide the persist/store failure.
-      }
+      // Compensation must not hide the persist/store failure, so its own
+      // result is deliberately not checked.
+      await this.storage.removePrefix(`${packagePrefix}/`);
       throw error;
     }
 

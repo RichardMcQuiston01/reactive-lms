@@ -1,15 +1,22 @@
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import {
+  blobErrorToLmsError,
+  contentTypeForKey,
+  parseByteRange,
+} from '@richardmcquiston01/reactive-lms-core';
+import {
+  RLMS_BLOB_STORAGE_ADAPTER,
   RLMS_IDENTITY_ADAPTER,
-  RLMS_STORAGE_ADAPTER,
 } from '@richardmcquiston01/reactive-lms-nest';
 import {
   LmsError,
   STORAGE_KEY_NOT_FOUND,
+  STORAGE_RANGE_INVALID,
   httpStatusForLmsCode,
+  type BlobStorageAdapter,
   type IdentityAdapter,
-  type StorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
+import { Readable } from 'node:stream';
 import type { NextFunction, Request, Response } from 'express';
 
 /**
@@ -23,14 +30,15 @@ export class ContentMiddleware implements NestMiddleware {
    * @param identity - Standalone identity adapter
    */
   constructor(
-    @Inject(RLMS_STORAGE_ADAPTER)
-    private readonly storage: StorageAdapter,
+    @Inject(RLMS_BLOB_STORAGE_ADAPTER)
+    private readonly storage: BlobStorageAdapter,
     @Inject(RLMS_IDENTITY_ADAPTER)
     private readonly identity: IdentityAdapter,
   ) {}
 
   /**
-   * Resolves the learner, then streams the storage object.
+   * Resolves the learner, then streams the storage object. Supports a single
+   * `Range` header so media can seek.
    *
    * @param req - Express request
    * @param res - Express response
@@ -40,9 +48,56 @@ export class ContentMiddleware implements NestMiddleware {
     try {
       await this.identity.resolveLearner(req);
       const key = contentKey(req);
-      const body = await this.storage.get(key);
-      res.setHeader('Content-Type', contentTypeFor(key));
-      res.status(200).end(Buffer.from(body));
+
+      const info = await this.storage.head(key);
+      if (!info.ok) {
+        throw blobErrorToLmsError(info.error);
+      }
+      const range = parseByteRange(req.headers.range, info.value.size);
+      if (range.kind === 'unsatisfiable') {
+        res.setHeader('Content-Range', `bytes */${info.value.size}`);
+        throw new LmsError({
+          status: httpStatusForLmsCode(STORAGE_RANGE_INVALID),
+          code: STORAGE_RANGE_INVALID,
+          message: `Range "${req.headers.range}" is outside "${key}" (${info.value.size} bytes).`,
+        });
+      }
+
+      const object = await this.storage.get(
+        key,
+        range.kind === 'range'
+          ? { range: { start: range.start, end: range.end } }
+          : {},
+      );
+      if (!object.ok) {
+        throw blobErrorToLmsError(object.error);
+      }
+
+      res.setHeader('Content-Type', contentTypeForKey(key));
+      res.setHeader('Accept-Ranges', 'bytes');
+      if (range.kind === 'range') {
+        res.status(206);
+        res.setHeader(
+          'Content-Range',
+          `bytes ${range.start}-${range.end}/${info.value.size}`,
+        );
+        res.setHeader('Content-Length', String(range.end - range.start + 1));
+      } else {
+        res.status(200);
+        res.setHeader('Content-Length', String(info.value.size));
+      }
+
+      // Stream to the client; destroy the source if the client disconnects.
+      const source = Readable.from(object.value.body);
+      res.on('close', () => source.destroy());
+      source.on('error', (error) => {
+        if (res.headersSent) {
+          res.destroy(error);
+        } else {
+          next(error);
+        }
+      });
+      source.pipe(res);
     } catch (error) {
       next(error);
     }
@@ -63,42 +118,4 @@ function contentKey(req: Request): string {
     });
   }
   return key;
-}
-
-function contentTypeFor(key: string): string {
-  const lower = key.toLowerCase();
-  if (lower.endsWith('.html') || lower.endsWith('.htm')) {
-    return 'text/html; charset=utf-8';
-  }
-  if (lower.endsWith('.css')) {
-    return 'text/css; charset=utf-8';
-  }
-  if (lower.endsWith('.js') || lower.endsWith('.mjs')) {
-    return 'text/javascript; charset=utf-8';
-  }
-  if (lower.endsWith('.json')) {
-    return 'application/json; charset=utf-8';
-  }
-  if (lower.endsWith('.svg')) {
-    return 'image/svg+xml';
-  }
-  if (lower.endsWith('.png')) {
-    return 'image/png';
-  }
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
-    return 'image/jpeg';
-  }
-  if (lower.endsWith('.gif')) {
-    return 'image/gif';
-  }
-  if (lower.endsWith('.webp')) {
-    return 'image/webp';
-  }
-  if (lower.endsWith('.woff2')) {
-    return 'font/woff2';
-  }
-  if (lower.endsWith('.wasm')) {
-    return 'application/wasm';
-  }
-  return 'application/octet-stream';
 }

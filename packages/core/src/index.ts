@@ -13,6 +13,7 @@ export {
   PackageImporter,
   type ImportPackageOptions,
   type ImportPackageResult,
+  type PackageImporterOptions,
 } from './import/package-importer';
 export {
   createMemoryFileIndex,
@@ -24,7 +25,10 @@ export {
   type AvailabilityModule,
   type AvailabilityProgress,
 } from './launch/availability';
-export { LaunchService } from './launch/launch-service';
+export {
+  LaunchService,
+  type LaunchServiceOptions,
+} from './launch/launch-service';
 export {
   computeRegistrationStatus,
   type ComputeRegistrationStatusInput,
@@ -51,10 +55,21 @@ export {
   type Scorm12LaunchContext,
 } from './runtimes/scorm/scorm-12-runtime';
 export { ScormCmiService } from './runtimes/scorm/scorm-cmi.service';
+export { FilesystemBlobStorageAdapter } from './storage/filesystem-blob-storage.adapter';
+export { MemoryBlobStorageAdapter } from './storage/memory-blob-storage.adapter';
+export { blobErrorToLmsError, requireBlob } from './storage/require-blob';
 export {
   DEFAULT_MAX_ZIP_FILE_COUNT,
   DEFAULT_MAX_ZIP_UNCOMPRESSED_BYTES,
-  DEFAULT_PUBLIC_URL_PREFIX,
-  FilesystemStorageAdapter,
-  type FilesystemStorageOptions,
-} from './storage/filesystem-storage.adapter';
+} from './import/zip-limits';
+export {
+  extractZipToStorage,
+  type ZipExtractionLimits,
+} from './import/zip-extractor';
+export {
+  DEFAULT_CONTENT_URL_PREFIX,
+  contentTypeForKey,
+  contentUrlForKey,
+  parseByteRange,
+  type ByteRangeResult,
+} from './content/content-serving';

@@ -21,11 +21,12 @@ import {
   httpStatusForLmsCode,
   type ContentPackageDto,
   type NormalizedProgress as NormalizedProgressDto,
-  type StorageAdapter,
+  type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
+import { requireBlob } from '@richardmcquiston01/reactive-lms-core';
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
-import { RLMS_DATA_SOURCE, RLMS_STORAGE_ADAPTER } from '../tokens';
+import { RLMS_DATA_SOURCE, RLMS_BLOB_STORAGE_ADAPTER } from '../tokens';
 
 /**
  * Imported package plus flattened activity nodes.
@@ -106,8 +107,8 @@ export class CatalogService {
   constructor(
     @Inject(RLMS_DATA_SOURCE)
     private readonly dataSource: DataSource,
-    @Inject(RLMS_STORAGE_ADAPTER)
-    private readonly storage: StorageAdapter,
+    @Inject(RLMS_BLOB_STORAGE_ADAPTER)
+    private readonly storage: BlobStorageAdapter,
   ) {}
 
   /**
@@ -158,7 +159,7 @@ export class CatalogService {
       await manager.delete(ActivityNode, { contentPackageId: id });
       await manager.delete(ContentPackage, { id });
     });
-    await this.storage.remove(`packages/${id}`);
+    requireBlob(await this.storage.removePrefix(`packages/${id}/`));
   }
 
   /**

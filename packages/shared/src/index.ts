@@ -36,7 +36,25 @@ export type {
   LmsResourceRef,
 } from './contracts/capability-adapter';
 export type { EnrolmentAdapter } from './contracts/enrolment-adapter';
-export type { StorageAdapter } from './contracts/storage-adapter';
+export type {
+  BlobAbortSignal,
+  BlobBody,
+  BlobError,
+  BlobErrorCode,
+  BlobInfo,
+  BlobObject,
+  BlobResult,
+  BlobStorageAdapter,
+  GetBlobOptions,
+  ListBlobOptions,
+  PutBlobOptions,
+} from './contracts/blob-storage-adapter';
+export {
+  collectBlobBody,
+  compareBlobKeys,
+  normalizeBlobKey,
+  normalizeBlobPrefix,
+} from './blob-keys';
 
 // DTOs
 export type { ContentPackageDto } from './dto/content-package.dto';
@@ -64,7 +82,9 @@ export {
   PACKAGE_ZIP_BOMB,
   REGISTRATION_NOT_FOUND,
   ATTEMPT_NOT_FOUND,
+  STORAGE_IO_ERROR,
   STORAGE_KEY_INVALID,
+  STORAGE_RANGE_INVALID,
   STORAGE_KEY_NOT_FOUND,
   httpStatusForLmsCode,
 } from './errors/lms-error';

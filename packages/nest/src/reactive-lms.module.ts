@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   EnrolmentService,
-  FilesystemStorageAdapter,
+  FilesystemBlobStorageAdapter,
   Html5Runtime,
   LaunchService,
   ModuleService,
@@ -19,9 +19,9 @@ import {
   ScormCmiService,
 } from '@richardmcquiston01/reactive-lms-core';
 import type {
+  BlobStorageAdapter,
   CapabilityAdapter,
   IdentityAdapter,
-  StorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { CatalogService } from './catalog/catalog.service';
@@ -41,7 +41,7 @@ import {
   RLMS_DATA_SOURCE,
   RLMS_IDENTITY_ADAPTER,
   RLMS_MODULE_OPTIONS,
-  RLMS_STORAGE_ADAPTER,
+  RLMS_BLOB_STORAGE_ADAPTER,
 } from './tokens';
 
 /**
@@ -53,9 +53,15 @@ export interface ReactiveLmsModuleOptions {
   /** Optional host capability checks. */
   capabilityAdapter?: CapabilityAdapter;
   /** Blob store; created from `dataRoot` when omitted. */
-  storageAdapter?: StorageAdapter;
-  /** Filesystem dataroot used when `storageAdapter` is omitted. */
+  blobStorage?: BlobStorageAdapter;
+  /** Filesystem dataroot used when `blobStorage` is omitted. */
   dataRoot?: string;
+  /** Called with each uploaded archive before it is stored; throw to reject. */
+  antivirusScan?: (archive: Uint8Array) => Promise<void>;
+  /** Maximum total uncompressed size of an uploaded archive. Default 200 MiB. */
+  maxUncompressedBytes?: number;
+  /** Maximum number of files in an uploaded archive. Default 10,000. */
+  maxFileCount?: number;
   /** URL prefix for LMS routes. Default `lms`. */
   routePrefix?: string;
   /** Caller-owned TypeORM DataSource. */
@@ -151,18 +157,32 @@ function buildModule(input: {
       inject: [RLMS_MODULE_OPTIONS],
     },
     {
-      provide: RLMS_STORAGE_ADAPTER,
+      provide: RLMS_BLOB_STORAGE_ADAPTER,
       useFactory: (opts: ReactiveLmsModuleOptions) => resolveStorage(opts),
       inject: [RLMS_MODULE_OPTIONS],
     },
     {
       provide: PackageImporter,
-      useFactory: (dataSource: DataSource, storage: StorageAdapter) =>
-        new PackageImporter(dataSource, storage, [
-          new Html5Runtime(),
-          new Scorm12Runtime(),
-        ]),
-      inject: [RLMS_DATA_SOURCE, RLMS_STORAGE_ADAPTER],
+      useFactory: (
+        dataSource: DataSource,
+        storage: BlobStorageAdapter,
+        opts: ReactiveLmsModuleOptions,
+      ) =>
+        new PackageImporter(
+          dataSource,
+          storage,
+          [new Html5Runtime(), new Scorm12Runtime()],
+          {
+            antivirusScan: opts.antivirusScan,
+            maxUncompressedBytes: opts.maxUncompressedBytes,
+            maxFileCount: opts.maxFileCount,
+          },
+        ),
+      inject: [
+        RLMS_DATA_SOURCE,
+        RLMS_BLOB_STORAGE_ADAPTER,
+        RLMS_MODULE_OPTIONS,
+      ],
     },
     {
       provide: ModuleService,
@@ -176,12 +196,12 @@ function buildModule(input: {
     },
     {
       provide: LaunchService,
-      useFactory: (dataSource: DataSource, storage: StorageAdapter) =>
-        new LaunchService(dataSource, storage, [
+      useFactory: (dataSource: DataSource) =>
+        new LaunchService(dataSource, [
           new Html5Runtime(),
           new Scorm12Runtime(),
         ]),
-      inject: [RLMS_DATA_SOURCE, RLMS_STORAGE_ADAPTER],
+      inject: [RLMS_DATA_SOURCE],
     },
     {
       provide: ProgressSinkService,
@@ -226,17 +246,17 @@ function buildModule(input: {
       RLMS_DATA_SOURCE,
       RLMS_IDENTITY_ADAPTER,
       RLMS_CAPABILITY_ADAPTER,
-      RLMS_STORAGE_ADAPTER,
+      RLMS_BLOB_STORAGE_ADAPTER,
     ],
   };
 }
 
-function resolveStorage(opts: ReactiveLmsModuleOptions): StorageAdapter {
-  if (opts.storageAdapter) {
-    return opts.storageAdapter;
+function resolveStorage(opts: ReactiveLmsModuleOptions): BlobStorageAdapter {
+  if (opts.blobStorage) {
+    return opts.blobStorage;
   }
   if (opts.dataRoot) {
-    return new FilesystemStorageAdapter(opts.dataRoot);
+    return new FilesystemBlobStorageAdapter(opts.dataRoot);
   }
-  throw new Error('ReactiveLmsModule requires storageAdapter or dataRoot.');
+  throw new Error('ReactiveLmsModule requires blobStorage or dataRoot.');
 }
