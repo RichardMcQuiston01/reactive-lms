@@ -4,6 +4,14 @@
 
 ### Added
 
+- Admin section list, package list, and package placement. The `sections`
+  screen lists sections and opens a section's module tree (the open-by-id box
+  stays for long lists); the `packages` screen lists imported packages; the
+  module-tree screen can place a package, with an optional title and target
+  block. New `GET course-sections` (optional `courseOfferingId`) and
+  `GET packages`, both paged with `limit` (default 200, at most 500) and
+  `offset`; unusable paging values fall back to the defaults. Package upload,
+  enrolment, and progress screens remain.
 - Admin module-tree screen (`sections/:sectionId/modules`): shows a section's
   modules and blocks as an indented tree with each module's availability
   summary, and lets an administrator add blocks, rename, move earlier or

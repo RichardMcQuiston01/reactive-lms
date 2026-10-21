@@ -22,6 +22,7 @@ import {
   parseAvailability,
   type ContentPackageDto,
   type CourseModuleDto,
+  type CourseSectionDto,
   type NormalizedProgress as NormalizedProgressDto,
   type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -36,6 +37,46 @@ import {
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { RLMS_DATA_SOURCE, RLMS_BLOB_STORAGE_ADAPTER } from '../tokens';
+
+/** Rows returned by a list call when the caller gives no `limit`. */
+export const DEFAULT_LIST_LIMIT = 200;
+
+/** Most rows a list call returns, whatever `limit` asks for. */
+export const MAX_LIST_LIMIT = 500;
+
+/**
+ * Paging for list calls.
+ */
+export interface ListPage {
+  /** Rows to return; defaults to {@link DEFAULT_LIST_LIMIT}, capped at {@link MAX_LIST_LIMIT}. */
+  limit?: number;
+  /** Rows to skip; defaults to 0. */
+  offset?: number;
+}
+
+/**
+ * Turns caller-supplied paging into safe numbers: whole, non-negative, and
+ * capped. Anything unusable falls back to the default rather than failing.
+ *
+ * @param page - Raw paging (query-string values may arrive as numbers or strings)
+ */
+export function clampPage(page: ListPage): { take: number; skip: number } {
+  const whole = (value: unknown): number | undefined => {
+    const parsed = typeof value === 'string' ? Number(value) : value;
+    return typeof parsed === 'number' && Number.isInteger(parsed)
+      ? parsed
+      : undefined;
+  };
+  const limit = whole(page.limit);
+  const offset = whole(page.offset);
+  return {
+    take:
+      limit === undefined || limit < 1
+        ? DEFAULT_LIST_LIMIT
+        : Math.min(limit, MAX_LIST_LIMIT),
+    skip: offset === undefined || offset < 0 ? 0 : offset,
+  };
+}
 
 /**
  * Imported package plus flattened activity nodes.
@@ -146,6 +187,43 @@ export class CatalogService {
         sortOrder: node.sortOrder,
       })),
     };
+  }
+
+  /**
+   * Lists imported packages, newest first.
+   *
+   * @param page - Paging
+   */
+  async listPackages(page: ListPage = {}): Promise<ContentPackageDto[]> {
+    const rows = await this.dataSource.manager.find(ContentPackage, {
+      order: { createdAt: 'DESC' },
+      ...clampPage(page),
+    });
+    return rows.map(toPackageDto);
+  }
+
+  /**
+   * Lists course sections by title.
+   *
+   * @param page - Paging
+   * @param courseOfferingId - Only sections of this offering
+   */
+  async listSections(
+    page: ListPage = {},
+    courseOfferingId?: string,
+  ): Promise<CourseSectionDto[]> {
+    const rows = await this.dataSource.manager.find(CourseSection, {
+      ...(courseOfferingId ? { where: { courseOfferingId } } : {}),
+      order: { title: 'ASC' },
+      ...clampPage(page),
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      courseOfferingId: row.courseOfferingId,
+      title: row.title,
+      createdAt: toIso(row.createdAt),
+      updatedAt: toIso(row.updatedAt),
+    }));
   }
 
   /**

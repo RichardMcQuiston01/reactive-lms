@@ -6,7 +6,11 @@ import {
   type OnInit,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import type { CourseModuleDto } from '@richardmcquiston01/reactive-lms-shared';
+import type {
+  ContentPackageDto,
+  CourseModuleDto,
+} from '@richardmcquiston01/reactive-lms-shared';
+import { CatalogAdminService } from '../modules/catalog-admin.service';
 import { ModuleAdminService } from '../modules/module-admin.service';
 import {
   buildModuleTree,
@@ -166,6 +170,32 @@ import {
       </ul>
     }
 
+    <form (submit)="place($event, placePackage, placeTitle, placeParent)">
+      <h3>Place a package</h3>
+      <select #placePackage aria-label="Package">
+        <option value="">Choose a package…</option>
+        @for (item of packages(); track item.id) {
+          <option [value]="item.id">
+            {{ item.title }} ({{ item.packageType }})
+          </option>
+        }
+      </select>
+      <input
+        #placeTitle
+        placeholder="Title (optional)"
+        aria-label="Module title"
+      />
+      <select #placeParent aria-label="Place in block">
+        <option value="">(top level)</option>
+        @for (choice of blockParents(); track choice.module.id) {
+          <option [value]="choice.module.id">
+            {{ indent(choice.depth) }}{{ choice.module.title }}
+          </option>
+        }
+      </select>
+      <button type="submit" [disabled]="busy()">Place</button>
+    </form>
+
     <form (submit)="addBlock($event, blockTitle, blockParent)">
       <h3>Add a block</h3>
       <input #blockTitle placeholder="Block title" aria-label="Block title" />
@@ -184,10 +214,12 @@ import {
 export class ModuleTreeScreenComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(ModuleAdminService);
+  private readonly catalog = inject(CatalogAdminService);
 
   /** Section shown, taken from the `sectionId` route parameter. */
   readonly sectionId = signal<string>('');
   readonly modules = signal<CourseModuleDto[]>([]);
+  readonly packages = signal<ContentPackageDto[]>([]);
   readonly loading = signal<boolean>(true);
   readonly busy = signal<boolean>(false);
   readonly error = signal<string>('');
@@ -201,6 +233,7 @@ export class ModuleTreeScreenComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    void this.loadPackages();
     this.route.paramMap.subscribe((params) => {
       this.sectionId.set(params.get('sectionId') ?? '');
       void this.reload();
@@ -263,6 +296,30 @@ export class ModuleTreeScreenComponent implements OnInit {
     return this.run(() => this.service.remove(module.id));
   }
 
+  place(
+    event: Event,
+    packageSelect: HTMLSelectElement,
+    titleInput: HTMLInputElement,
+    parentSelect: HTMLSelectElement,
+  ): Promise<void> {
+    event.preventDefault();
+    if (packageSelect.value === '') {
+      this.error.set('Choose a package to place.');
+      return Promise.resolve();
+    }
+    const title = titleInput.value.trim();
+    return this.run(async () => {
+      await this.service.place(
+        this.sectionId(),
+        packageSelect.value,
+        title === '' ? null : title,
+        parentSelect.value === '' ? null : parentSelect.value,
+      );
+      titleInput.value = '';
+      packageSelect.value = '';
+    });
+  }
+
   addBlock(
     event: Event,
     titleInput: HTMLInputElement,
@@ -302,6 +359,19 @@ export class ModuleTreeScreenComponent implements OnInit {
     } finally {
       await this.reload();
       this.busy.set(false);
+    }
+  }
+
+  /** Loads the package picker; a failure leaves it empty and says why. */
+  private async loadPackages(): Promise<void> {
+    try {
+      this.packages.set(await this.catalog.listPackages());
+    } catch (failure) {
+      this.error.set(
+        failure instanceof Error
+          ? `Could not load packages: ${failure.message}`
+          : 'Could not load packages.',
+      );
     }
   }
 
