@@ -4,6 +4,7 @@ import {
   Attempt,
   ContentPackage,
   CourseModule,
+  Membership,
   EventLog,
   NormalizedProgress,
   Registration,
@@ -26,6 +27,8 @@ const MODULE_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const PRIOR_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const PACKAGE_ID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 const NODE_ID = '12121212-1212-4121-8121-121212121212';
+
+const GROUP_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
 const REQUEST: LaunchRequest = {
   registrationId: REG_ID,
@@ -225,5 +228,61 @@ describe('LaunchService', () => {
         status: 404,
       });
     }
+  });
+
+  test('launches when the learner belongs to the required group', async () => {
+    const ds = createMockDataSource();
+    seedLaunchable(ds, {
+      version: 1,
+      all: [{ type: 'group_member', groupId: GROUP_ID }],
+    });
+    ds.seed(Membership, {
+      personId: PERSON_ID,
+      collectionType: 'group',
+      collectionId: GROUP_ID,
+      role: 'learner',
+    });
+
+    const descriptor = await launchService(ds).launch(REQUEST);
+
+    expect(descriptor.playerKind).toBe('iframe');
+  });
+
+  test('refuses launch when the learner is not in the required group', async () => {
+    const ds = createMockDataSource();
+    seedLaunchable(ds, {
+      version: 1,
+      all: [{ type: 'group_member', groupId: GROUP_ID }],
+    });
+    ds.seed(Membership, {
+      personId: PERSON_ID,
+      collectionType: 'group',
+      collectionId: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+      role: 'learner',
+    });
+
+    await expect(launchService(ds).launch(REQUEST)).rejects.toMatchObject({
+      code: 'MODULE_NOT_AVAILABLE',
+      status: 403,
+    });
+    expect(ds.rowsOf(Attempt)).toEqual([]);
+  });
+
+  test('ignores course-section memberships when checking a group', async () => {
+    const ds = createMockDataSource();
+    seedLaunchable(ds, {
+      version: 1,
+      all: [{ type: 'group_member', groupId: GROUP_ID }],
+    });
+    ds.seed(Membership, {
+      personId: PERSON_ID,
+      collectionType: 'course_section',
+      collectionId: GROUP_ID,
+      role: 'learner',
+    });
+
+    await expect(launchService(ds).launch(REQUEST)).rejects.toMatchObject({
+      code: 'MODULE_NOT_AVAILABLE',
+    });
   });
 });

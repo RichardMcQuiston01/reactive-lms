@@ -11,7 +11,6 @@ import {
   Registration,
   type CompletionRule,
   type EnrolmentMethodKind,
-  type ModuleAvailability,
 } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
@@ -23,7 +22,11 @@ import {
   type NormalizedProgress as NormalizedProgressDto,
   type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
-import { requireBlob } from '@richardmcquiston01/reactive-lms-core';
+import {
+  normalizeAvailabilityInput,
+  requireBlob,
+  type AvailabilityInput,
+} from '@richardmcquiston01/reactive-lms-core';
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { RLMS_DATA_SOURCE, RLMS_BLOB_STORAGE_ADAPTER } from '../tokens';
@@ -77,12 +80,8 @@ export interface CreateSectionInput {
 export interface UpdateModuleInput {
   title?: string;
   sortOrder?: number;
-  availability?: {
-    afterModuleId?: string;
-    availableFrom?: string;
-    availableUntil?: string;
-    minScore?: number;
-  };
+  /** Version 1 rules, the older single-object form, or `null` to clear. */
+  availability?: AvailabilityInput | null;
 }
 
 /**
@@ -252,7 +251,7 @@ export class CatalogService {
       row.sortOrder = input.sortOrder;
     }
     if (input.availability !== undefined) {
-      row.availabilityJson = toAvailability(input.availability);
+      row.availabilityJson = normalizeAvailabilityInput(input.availability);
     }
     await this.dataSource.manager.save(row);
     return { id: row.id };
@@ -396,28 +395,6 @@ function toProgressDto(row: NormalizedProgress): NormalizedProgressDto {
     totalTime: row.totalTimeIso8601 ?? undefined,
     suspendData: row.suspendData ?? undefined,
   };
-}
-
-function toAvailability(
-  availability: UpdateModuleInput['availability'],
-): ModuleAvailability | null {
-  if (!availability) {
-    return null;
-  }
-  const cleaned: ModuleAvailability = {};
-  if (availability.afterModuleId) {
-    cleaned.afterModuleId = availability.afterModuleId;
-  }
-  if (availability.availableFrom) {
-    cleaned.availableFrom = availability.availableFrom;
-  }
-  if (availability.availableUntil) {
-    cleaned.availableUntil = availability.availableUntil;
-  }
-  if (typeof availability.minScore === 'number') {
-    cleaned.minScore = availability.minScore;
-  }
-  return Object.keys(cleaned).length > 0 ? cleaned : null;
 }
 
 function parseDate(value?: string): Date | null {

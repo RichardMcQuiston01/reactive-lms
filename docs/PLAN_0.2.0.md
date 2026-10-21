@@ -97,17 +97,28 @@ Commit scope `feat(shared)` then `refactor(core)`.
       bootstrap
 - [x] Shared adapter conformance suite (the pass bar for the 1.0.0 S3 adapter)
 
-### WP5: Module tree and conditions (D5 option B)
+### WP5: Module conditions and tree (D5 option B)
 
-Commit scope `feat(core)`.
+Split in two PRs.
 
-- [ ] `parent_module_id` on `course_module`
-- [ ] `availability_json` as `{ version: 1, all: [...] }` with `any`; condition
+**WP5a: versioned conditions (PR 19)**
+
+- [x] `availability_json` as `{ version: 1, all | any: [...] }`; condition
       types: previous module complete, date window, minimum score, group
-      membership
-- [ ] Read the current single-object shape as version 0 and upcast it, so
+      membership; nested groups
+- [x] Read the current single-object shape as version 0 and upcast it, so
       existing rows keep working
-- [ ] Tests for each condition and for nesting
+- [x] Validate on write with per-path errors; fail closed on invalid stored
+      rules
+- [x] Tests for each condition, nesting, upcast, and group membership at launch
+
+**WP5b: module tree (next)**
+
+- [ ] `parent_module_id` on `course_module`, with container modules (blocks)
+      that have no content package
+- [ ] A module is available only if its ancestors' rules hold too
+- [ ] Blocks are not launchable and do not count toward section completion
+- [ ] Place and reorder within a parent; tests for nesting
 
 ### WP6: Admin package scaffold (D2)
 

@@ -4,6 +4,13 @@
 
 ### Added
 
+- Versioned module availability conditions (D5): `{ version: 1, all | any: [...] }`
+  with nested groups and four condition types: `module_completed`,
+  `date_window`, `min_score`, and `group_member`. Rules are validated on write
+  (`AVAILABILITY_INVALID`, 400, listing every problem with its path) and
+  evaluated at launch; a failed launch reports every unmet condition in
+  `details.unmet`. The older single-object shape is still accepted, upcast on
+  write, and read as version 1; invalid stored rules fail closed.
 - `BlobStorageAdapter` (D11) replaces `StorageAdapter`: stream-based and
   key-based, with `put`, `get` (optional byte range), `head`, `list`, `remove`,
   and `removePrefix`. It returns results instead of throwing, exposes no local

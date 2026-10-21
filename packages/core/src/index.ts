@@ -22,8 +22,15 @@ export {
 } from './import/package-file-index';
 export {
   assertAvailable,
+  evaluateAvailability,
+  normalizeAvailabilityInput,
+  readStoredAvailability,
+  type AvailabilityContext,
+  type AvailabilityEvaluation,
+  type AvailabilityInput,
   type AvailabilityModule,
   type AvailabilityProgress,
+  type UnmetCondition,
 } from './launch/availability';
 export {
   LaunchService,
