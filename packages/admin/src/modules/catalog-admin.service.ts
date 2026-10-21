@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import type {
   ContentPackageDto,
   CourseSectionDto,
+  ImportPackageResultDto,
 } from '@richardmcquiston01/reactive-lms-shared';
 import { ADMIN_API_CLIENT } from '../api/admin-api-client.token';
 
@@ -24,6 +25,21 @@ export class CatalogAdminService {
       ? `?courseOfferingId=${encodeURIComponent(courseOfferingId)}`
       : '';
     return this.client.request<CourseSectionDto[]>(`/course-sections${query}`);
+  }
+
+  /**
+   * Uploads a package archive for import. The body is multipart, so the HTTP
+   * client leaves the content type to the browser.
+   *
+   * @param file - ZIP archive chosen by the administrator
+   */
+  importPackage(file: File): Promise<ImportPackageResultDto> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.client.request<ImportPackageResultDto>('/packages', {
+      method: 'POST',
+      body: form,
+    });
   }
 
   /** Lists imported content packages, newest first. */

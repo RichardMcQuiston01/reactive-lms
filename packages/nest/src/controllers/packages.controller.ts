@@ -18,15 +18,13 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  PackageImporter,
-  type ImportPackageResult,
-} from '@richardmcquiston01/reactive-lms-core';
+import { PackageImporter } from '@richardmcquiston01/reactive-lms-core';
 import {
   LmsError,
   PACKAGE_NOT_DETECTED,
   httpStatusForLmsCode,
   type ContentPackageDto,
+  type ImportPackageResultDto,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
   CatalogService,
@@ -65,7 +63,7 @@ export class PackagesController {
   async create(
     @UploadedFile() file: { buffer?: Uint8Array } | undefined,
     @Req() req: unknown,
-  ): Promise<ImportPackageResult & { id: string }> {
+  ): Promise<ImportPackageResultDto> {
     await this.request.assertCan(req, 'package.import', {
       type: 'content_package',
       id: '*',
