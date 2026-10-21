@@ -4,6 +4,12 @@
 
 ### Added
 
+- ESLint (flat config, typescript-eslint) and Prettier with an `.editorconfig`;
+  `bun run lint`, `lint:file`, `format`, and `format:check`. A lint rule keeps
+  the shared package free of Nest, Angular, TypeORM, Redis, and Tailwind
+  imports.
+- GitHub Actions CI running typecheck, lint, format check, and tests on pull
+  requests and pushes to `main` and `dev`.
 - `GROK_PLAN.md` implementation plan and `docs/TECHNOLOGY.md` stack spec
   (Postgres first / multi-DB later, Redis behind a cache adapter, Angular 18+
   with Tailwind and Material on the demo app)
