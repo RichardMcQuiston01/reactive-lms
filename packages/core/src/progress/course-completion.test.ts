@@ -170,4 +170,52 @@ describe('ProgressSinkService', () => {
       'progress.committed',
     ]);
   });
+
+  test('blocks do not count toward section completion', async () => {
+    const ds = createMockDataSource();
+    const BLOCK = '99999999-9999-4999-8999-999999999999';
+    ds.seed(CourseSection, {
+      id: SECTION_ID,
+      courseOfferingId: '00000000-0000-4000-8000-000000000000',
+      title: 'Section',
+      completionRule: { allModules: true },
+    });
+    ds.seed(CourseModule, {
+      id: BLOCK,
+      courseSectionId: SECTION_ID,
+      contentPackageId: null,
+      title: 'Chapter',
+      sortOrder: 0,
+    });
+    ds.seed(CourseModule, {
+      id: MODULE_A,
+      courseSectionId: SECTION_ID,
+      parentModuleId: BLOCK,
+      contentPackageId: '11111111-1111-4111-8111-111111111111',
+      title: 'A',
+      sortOrder: 0,
+    });
+    ds.seed(Registration, {
+      id: REG_ID,
+      personId: PERSON_ID,
+      courseSectionId: SECTION_ID,
+      status: 'not_started',
+    });
+    const sink = new ProgressSinkService(
+      ds as unknown as DataSource,
+      new EventLogService(ds as unknown as DataSource),
+    );
+
+    await sink.upsert({
+      registrationId: REG_ID,
+      courseModuleId: MODULE_A,
+      activityNodeId: NODE_A,
+      completionStatus: 'completed',
+      successStatus: 'unknown',
+    });
+
+    // The block has no progress row and never will; it must not hold the
+    // section open.
+    expect(ds.rowsOf(Registration)[0]?.status).toBe('completed');
+  });
 });

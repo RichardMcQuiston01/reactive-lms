@@ -2,7 +2,20 @@ export {
   EventLogService,
   type EventLogRecord,
 } from './audit/event-log.service';
-export { ModuleService, type PlaceModuleInput } from './courses/module-service';
+export {
+  ModuleService,
+  assertBlockAvailability,
+  type PlaceBlockInput,
+  type PlaceModuleInput,
+} from './courses/module-service';
+export {
+  MAX_MODULE_DEPTH,
+  ancestorsOf,
+  assertCanParent,
+  contentModules,
+  isBlockModule,
+  subtreeHeight,
+} from './courses/module-tree';
 export {
   EnrolmentService,
   type EnrolmentResult,
@@ -22,6 +35,7 @@ export {
 } from './import/package-file-index';
 export {
   assertAvailable,
+  assertChainAvailable,
   evaluateAvailability,
   normalizeAvailabilityInput,
   readStoredAvailability,

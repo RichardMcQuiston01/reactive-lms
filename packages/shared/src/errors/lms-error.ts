@@ -9,6 +9,9 @@ export type LmsErrorCode =
   | typeof PACKAGE_ZIP_BOMB
   | typeof STORAGE_KEY_NOT_FOUND
   | typeof AVAILABILITY_INVALID
+  | typeof MODULE_NOT_LAUNCHABLE
+  | typeof MODULE_TREE_INVALID
+  | typeof MODULE_HAS_CHILDREN
   | typeof STORAGE_KEY_INVALID
   | typeof STORAGE_IO_ERROR
   | typeof STORAGE_RANGE_INVALID
@@ -43,6 +46,15 @@ export const STORAGE_KEY_NOT_FOUND = 'STORAGE_KEY_NOT_FOUND';
 
 /** Storage key would escape the configured data root. */
 export const STORAGE_KEY_INVALID = 'STORAGE_KEY_INVALID';
+
+/** The module is a container (block) and has no content to launch. */
+export const MODULE_NOT_LAUNCHABLE = 'MODULE_NOT_LAUNCHABLE';
+
+/** A module placement would make the tree invalid (parent, cycle, depth). */
+export const MODULE_TREE_INVALID = 'MODULE_TREE_INVALID';
+
+/** A block with child modules cannot be deleted until it is emptied. */
+export const MODULE_HAS_CHILDREN = 'MODULE_HAS_CHILDREN';
 
 /** Availability rules failed validation; `details` lists each problem. */
 export const AVAILABILITY_INVALID = 'AVAILABILITY_INVALID';
@@ -99,6 +111,9 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [PACKAGE_ZIP_BOMB]: 400,
   [STORAGE_KEY_INVALID]: 400,
   [AVAILABILITY_INVALID]: 400,
+  [MODULE_NOT_LAUNCHABLE]: 409,
+  [MODULE_TREE_INVALID]: 400,
+  [MODULE_HAS_CHILDREN]: 409,
   [STORAGE_IO_ERROR]: 500,
   [STORAGE_RANGE_INVALID]: 416,
   [CMI5_TOKEN_USED]: 400,

@@ -163,6 +163,43 @@ export function assertAvailable(
   });
 }
 
+/**
+ * Checks a module and the blocks around it, outermost first. A module is
+ * available only if every block on its path is, so a chapter's rules gate
+ * everything inside it. The error says which block failed.
+ *
+ * @param chain - The ancestor blocks (outermost first) followed by the module
+ * @param launchModuleId - The module being launched, the last of `chain`
+ * @param progressByModuleId - Progress keyed by course module id
+ * @param now - Evaluation instant
+ * @param groupIds - Ids of the LIS groups the learner belongs to
+ */
+export function assertChainAvailable(
+  chain: readonly AvailabilityModule[],
+  launchModuleId: string,
+  progressByModuleId: ReadonlyMap<string, AvailabilityProgress>,
+  now: Date,
+  groupIds: ReadonlySet<string> = new Set(),
+): void {
+  for (const entry of chain) {
+    try {
+      assertAvailable(entry, progressByModuleId, now, groupIds);
+    } catch (error) {
+      if (entry.id === launchModuleId || !(error instanceof LmsError)) {
+        throw error;
+      }
+      throw unavailable(
+        `A containing block is not available: ${error.message}`,
+        {
+          ...(error.details as Record<string, unknown> | undefined),
+          moduleId: launchModuleId,
+          blockModuleId: entry.id,
+        },
+      );
+    }
+  }
+}
+
 function evaluateNode(
   node: AvailabilityNode,
   context: AvailabilityContext,

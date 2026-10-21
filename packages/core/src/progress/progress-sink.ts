@@ -10,6 +10,7 @@ import type {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
+import { contentModules } from '../courses/module-tree';
 import { computeRegistrationStatus } from './course-completion';
 import type { ModuleProgressSnapshot } from './course-completion';
 
@@ -90,7 +91,7 @@ export class ProgressSinkService implements ProgressSink {
         });
         nextStatus = computeRegistrationStatus({
           rule: section?.completionRule,
-          moduleIds: modules.map((entry) => entry.id),
+          moduleIds: contentModules(modules).map((entry) => entry.id),
           progressByModuleId: mergeProgressByModule(rows),
         });
         if (nextStatus !== registration.status) {

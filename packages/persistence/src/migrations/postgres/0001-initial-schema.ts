@@ -153,7 +153,8 @@ export class InitialSchema0001 implements MigrationInterface {
       CREATE TABLE "rlms_course_module" (
         "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "course_section_id" uuid NOT NULL,
-        "content_package_id" uuid NOT NULL,
+        "parent_module_id" uuid,
+        "content_package_id" uuid,
         "activity_node_id" uuid,
         "title" text NOT NULL,
         "sort_order" integer NOT NULL DEFAULT 0,
@@ -162,7 +163,9 @@ export class InitialSchema0001 implements MigrationInterface {
         "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
         "created_by_user_id" uuid,
         "updated_by_user_id" uuid,
-        CONSTRAINT "pk_rlms_course_module" PRIMARY KEY ("id")
+        CONSTRAINT "pk_rlms_course_module" PRIMARY KEY ("id"),
+        CONSTRAINT "ck_rlms_course_module_block_has_no_node"
+          CHECK ("content_package_id" IS NOT NULL OR "activity_node_id" IS NULL)
       )
     `);
 
@@ -434,6 +437,12 @@ export class InitialSchema0001 implements MigrationInterface {
         REFERENCES "rlms_activity_node"("id")
     `);
     await queryRunner.query(`
+      ALTER TABLE "rlms_course_module"
+        ADD CONSTRAINT "fk_rlms_course_module_parent"
+        FOREIGN KEY ("parent_module_id")
+        REFERENCES "rlms_course_module"("id")
+    `);
+    await queryRunner.query(`
       ALTER TABLE "rlms_enrolment_method"
         ADD CONSTRAINT "fk_rlms_enrolment_method_section"
         FOREIGN KEY ("course_section_id")
@@ -540,6 +549,10 @@ export class InitialSchema0001 implements MigrationInterface {
     await queryRunner.query(`
       CREATE INDEX "ix_rlms_course_module_section_id"
       ON "rlms_course_module" ("course_section_id")
+    `);
+    await queryRunner.query(`
+      CREATE INDEX "ix_rlms_course_module_parent_id"
+      ON "rlms_course_module" ("parent_module_id")
     `);
     await queryRunner.query(`
       CREATE INDEX "ix_rlms_course_module_package_id"

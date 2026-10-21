@@ -4,6 +4,14 @@
 
 ### Added
 
+- Module tree (D5): `parent_module_id` on `course_module` and container
+  modules ("blocks") with no content package, nested up to five levels
+  (`MODULE_TREE_INVALID`). A module is available only if every ancestor block's
+  rules hold; a failed launch names the blocking block. Blocks are not
+  launchable (`MODULE_NOT_LAUNCHABLE`), do not count toward section
+  completion, and cannot be deleted while they hold modules
+  (`MODULE_HAS_CHILDREN`). New `POST course-sections/:id/blocks` endpoint;
+  `PATCH` on a module can re-parent it. Migration `0001` was edited in place.
 - Versioned module availability conditions (D5): `{ version: 1, all | any: [...] }`
   with nested groups and four condition types: `module_completed`,
   `date_window`, `min_score`, and `group_member`. Rules are validated on write

@@ -15,15 +15,22 @@ import { AuditedEntity } from './base.entity';
 export type ModuleAvailability = AvailabilityV0;
 
 /**
- * One activity placed in a section (Moodle-style course module).
+ * One row in a section's module tree (Moodle-style course module).
+ *
+ * A row with a `contentPackageId` is a content module a learner can launch. A
+ * row without one is a block: a chapter that only groups child modules and
+ * can carry availability rules that apply to everything beneath it.
  */
 @Entity({ name: 'rlms_course_module' })
 export class CourseModule extends AuditedEntity {
   @Column({ name: 'course_section_id', type: 'uuid' })
   courseSectionId!: string;
 
-  @Column({ name: 'content_package_id', type: 'uuid' })
-  contentPackageId!: string;
+  @Column({ name: 'parent_module_id', type: 'uuid', nullable: true })
+  parentModuleId?: string | null;
+
+  @Column({ name: 'content_package_id', type: 'uuid', nullable: true })
+  contentPackageId?: string | null;
 
   @Column({ name: 'activity_node_id', type: 'uuid', nullable: true })
   activityNodeId?: string | null;

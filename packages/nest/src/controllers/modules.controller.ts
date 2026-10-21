@@ -11,6 +11,7 @@ import {
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
   ModuleService,
+  type PlaceBlockInput,
   type PlaceModuleInput,
 } from '@richardmcquiston01/reactive-lms-core';
 import {
@@ -60,7 +61,31 @@ export class ModulesController {
   }
 
   /**
-   * Updates title, sort order, or availability.
+   * Adds a block: a chapter that groups modules and gates them with its own
+   * availability rules.
+   *
+   * @param id - Course section id
+   * @param body - Title and optional parent, order, and availability
+   * @param req - Host request
+   */
+  @Post('course-sections/:id/blocks')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Add a block (chapter) to a section' })
+  @ApiParam({ name: 'id' })
+  async placeBlock(
+    @Param('id') id: string,
+    @Body() body: PlaceBlockInput,
+    @Req() req: unknown,
+  ): Promise<{ moduleId: string }> {
+    await this.request.assertCan(req, 'module.manage', {
+      type: 'course_section',
+      id,
+    });
+    return this.modules.placeBlock(id, body);
+  }
+
+  /**
+   * Updates title, sort order, availability, or parent block.
    *
    * @param id - Course module id
    * @param body - Patch fields

@@ -18,6 +18,7 @@ import {
   LmsError,
   referencedGroupIds,
   MODULE_NOT_FOUND,
+  MODULE_NOT_LAUNCHABLE,
   REGISTRATION_NOT_FOUND,
   httpStatusForLmsCode,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -30,7 +31,8 @@ import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import type { AvailabilityProgress } from './availability';
-import { assertAvailable, readStoredAvailability } from './availability';
+import { assertChainAvailable, readStoredAvailability } from './availability';
+import { ancestorsOf, isBlockModule } from '../courses/module-tree';
 
 const LAUNCHABLE = new Set(['html5', 'scorm_12']);
 
@@ -98,21 +100,39 @@ export class LaunchService {
         });
       }
 
+      if (isBlockModule(courseModule) || !courseModule.contentPackageId) {
+        throw new LmsError({
+          status: httpStatusForLmsCode(MODULE_NOT_LAUNCHABLE),
+          code: MODULE_NOT_LAUNCHABLE,
+          message: `"${courseModule.title}" is a block that groups other modules, so it has no content to launch. Launch one of the modules inside it.`,
+          details: { courseModuleId: courseModule.id },
+        });
+      }
+
+      // The module is available only if every block around it is too.
+      const sectionModules = await manager.find(CourseModule, {
+        where: { courseSectionId: registration.courseSectionId },
+      });
+      const chain = [
+        ...ancestorsOf(sectionModules, courseModule.id),
+        courseModule,
+      ];
+
       const progressRows = await manager.find(NormalizedProgressRow, {
         where: { registrationId: registration.id },
       });
-      const needsGroups =
-        referencedGroupIds(
-          readStoredAvailability(
-            courseModule.id,
-            courseModule.availabilityJson,
-          ),
-        ).size > 0;
+      const needsGroups = chain.some(
+        (entry) =>
+          referencedGroupIds(
+            readStoredAvailability(entry.id, entry.availabilityJson),
+          ).size > 0,
+      );
       const groupIds = needsGroups
         ? await learnerGroupIds(manager, registration.personId)
         : new Set<string>();
-      assertAvailable(
-        courseModule,
+      assertChainAvailable(
+        chain,
+        courseModule.id,
         progressMapFromRows(progressRows),
         new Date(),
         groupIds,
