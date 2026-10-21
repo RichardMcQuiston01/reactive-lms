@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- `docs/PLAN_0.2.0.md`: task breakdown for the 0.2.0 milestone.
+
 ### Changed
 
 - Roadmap: decided to keep an own `BlobStorageAdapter` for package files (D11).
