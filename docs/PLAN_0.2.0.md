@@ -1,157 +1,158 @@
-# 0.2.0 Task Breakdown — Scaffold, contracts, schema
+# 0.2.0 Plan — Reconcile the foundation with the roadmap
 
-Working plan for milestone 0.2.0 in [ROADMAP.md](../ROADMAP.md). Detail comes
-from [GROK_PLAN.md](../GROK_PLAN.md) phases 0 to 2, updated for the decisions
-recorded in the roadmap (D1 to D13). Where this file and GROK_PLAN disagree,
-this file wins.
+Working plan for milestone 0.2.0 in [ROADMAP.md](../ROADMAP.md). It replaces
+the original from-scratch breakdown: `feature/lms-foundation` (merged in
+PR 13) already delivers most of 0.2.0, much of 0.3.0, and the core of 0.4.0.
+This plan lists what is built, where it differs from decisions D1 to D13, and
+the work packages that close the gaps. Where this file and
+[GROK_PLAN.md](../GROK_PLAN.md) disagree, this file wins.
 
-## Gate (D13)
+## What the foundation already provides
 
-Implementation starts once `@richardmcquiston01/storage-adapters` and
-`@richardmcquiston01/error-log-adapter` both have stable 1.0 releases. At the
-time of writing they are 0.20.0 and 0.15.0.
+Verified by running it: `bun install`, typecheck, and 161 tests pass (one
+Postgres integration test is skipped without a database URL).
 
-- [ ] Both packages published at 1.x
-- [ ] Open questions at the bottom answered
+| Area | Built |
+| ---- | ----- |
+| Workspace | Bun workspaces, seven packages, `docs/STANDARDS.md` |
+| `shared` | Enums, DTOs, adapter contracts (`ContentRuntime`, identity, capability, enrolment, storage), `LmsError` with HTTP mapping, CMI model; zero dependencies |
+| `persistence` | 21 `rlms_*` entities, `0001` Postgres migration, `createPersistenceDataSource` |
+| `core` | ZIP detection, HTML5 import with ZIP-bomb limits and antivirus hook, filesystem storage, modules, enrolment (`manual`, `self`, `group`), launch, availability, progress rollup, event log, SCORM 1.2 runtime and CMI store |
+| `nest` | `register` / `registerAsync`, REST and OpenAPI controllers, error filters |
+| `player` | Angular 18 `RlmsPlayerComponent`, HTML5 `postMessage` mapper, SCORM `window.API` bridge |
+| `standalone-api` | Nest bootstrap, filesystem data root, demo identity |
 
-## How the decisions land in 0.2.0
+## Gaps against the decisions
 
-| Decision | Effect on 0.2.0 |
-| -------- | --------------- |
-| D2 | `admin` package exists as an empty scaffold; screens arrive in 0.3.0 |
-| D4 | Six library packages named `@richardmcquiston01/reactive-lms-*`; workspace path references, nothing published yet |
-| D5 (B) | `course_module` has `parent_module_id`; `availability_json` is a versioned condition list |
-| D8 | `PersistenceDialect` contract and registry; Postgres is the only built-in dialect |
-| D9 | Entities use portable TypeORM column types; native Postgres types only in the Postgres migration |
-| D10 | One `feature/<name>` branch and PR per work package below, merge commits, subjects of 50 characters or fewer |
-| D11 | `BlobStorageAdapter` contract in `shared`; filesystem implementation is 0.3.0 |
-| D12 | Optional error-log support: `shared` defines the sink type, no hard dependency |
+| Decision | Gap |
+| -------- | --- |
+| D4 package names | Packages are `@reactive-lms/*` at 0.0.0 |
+| D9 portable types | Entities use `jsonb` (15), `bytea` (1), `timestamptz` (11), `numeric` (9) |
+| D8 dialects | `createPersistenceDataSource` is hard-coded to Postgres; no dialect contract |
+| D11 blob storage | `StorageAdapter` takes whole buffers, exposes `getPublicUrl`, and does ZIP extraction itself; not stream-based, and the name clashes with the `storage-adapters` package |
+| D5 option B | `course_module` has no `parent_module_id`; availability is one object (prerequisite, date window, minimum score), with no all/any list and no group condition |
+| D2 admin | No `admin` package; `standalone-web` only re-exports the player |
+| D7 cache | No `CacheAdapter` |
+| D12 error log | No error-sink hook |
+| Tooling | Lint and CI added in WP0 (PR 14) |
+| Verification | The one persistence integration test is skipped by default, so the migration and its unique constraints are not exercised in CI |
+| SCORM fixtures | No sample-package conformance fixtures confirmed |
 
 ## Work packages
 
-Three PRs, in order. Each is a feature branch off `dev`.
+One `feature/` branch and one PR each, in this order. Subjects stay at 50
+characters or fewer.
 
-### WP0: Scaffold the monorepo (`feature/scaffold-workspace`)
+### WP0: Lint, format, CI (PR 14, in review)
 
-Commit scope `chore(repo)`.
+- [x] Prettier, `.editorconfig`, ESLint with a guard keeping `shared` free of
+      framework imports
+- [x] GitHub Actions running typecheck, lint, format check, and tests
+- [ ] Add a Postgres service to CI and run the persistence integration test,
+      so the migration and unique constraints are verified (follow-up in WP3)
 
-- [ ] Extend the root `package.json` with Bun workspaces (`packages/*`); keep
-      it `private`, keep the `funding` field, keep version 0.1.0 until the
-      release PR
-- [ ] `tsconfig.base.json`: strict mode, ESM, declaration output
-- [ ] Eight packages under `packages/`: `shared`, `persistence`, `core`,
-      `nest`, `player`, `admin`, `standalone-api`, `standalone-web`. Each has
-      `package.json` (`"type": "module"`, the D4 name, `private` for the two
-      apps), `src/index.ts`, and a `tsconfig.json` extending the base
-- [ ] Root scripts: `typecheck`, `test`, `test:file`, `lint`, `lint:file`,
-      `format`
-- [ ] Lint and format config following the Google TypeScript Style Guide
-      (2-space indent, LF, trailing commas, 80-column soft margin)
-- [ ] Test runner wired and one smoke test per package so `bun run test`
-      exercises every workspace
-- [ ] `.env.example` (no secrets; database URL, data directory, log directory)
-- [ ] `docs/STANDARDS.md`: SCORM 1.2, SCORM 2004 4th Edition (CAM 1.3), xAPI
-      1.0.3, cmi5 Quartz 1st Edition, LTI 1.3 with AGS 2.0, NRPS 2.0 and
-      Deep Linking 2.0, H5P package spec, LIS 2.0.1 as the information model
-- [ ] CI workflow running typecheck, lint, and test on pull requests
-      (open question 1)
-- [ ] README monorepo map; CHANGELOG entry
+### WP1: Plan and roadmap rewrite (this PR)
 
-**Done when:** `bun install` links every workspace and `bun run typecheck`,
-`lint`, and `test` pass on the empty packages.
+- [x] This document; roadmap milestone status updated
 
-### WP1: Shared contracts (`feature/shared-contracts`)
+### WP2: Package rename (D4)
 
-Commit scope `feat(shared)`. Depends on WP0. No Nest, Angular, TypeORM, Redis,
-or Tailwind imports anywhere in this package; add a lint rule or test that
-fails the build if one appears.
+Commit scope `refactor(repo)`. Mechanical, so do it early.
 
-- [ ] Enums: `PackageType`, `RegistrationStatus`, plus completion and success
-      status types
-- [ ] Models: `LearnerRef`, `NormalizedProgress`, launch descriptor
-- [ ] `LmsError` with `{ status, code, message, details? }` and HTTP mapping;
-      readable codes (`PACKAGE_NOT_DETECTED`, `LAUNCH_SESSION_OPEN`,
-      `CMI5_TOKEN_USED`). Messages must name the cause, not be generic.
-      Tests written first
-- [ ] Package-type detection helpers, with fixtures for a bare HTML ZIP, an
-      `imsmanifest.xml` ZIP, a `cmi5.xml` ZIP, and an `h5p.json` ZIP. Tests
-      written first
-- [ ] Contracts: `ContentRuntime`, `IdentityAdapter`, `CapabilityAdapter`,
-      `EnrolmentAdapter`, `BlobStorageAdapter` (stream-based, key-based,
-      prefix listing, no local paths), `CacheAdapter` (`get`, `set`, `del`,
-      `setNx`), and an `ErrorSink` type compatible with `error-log-adapter`
-      (D12)
-- [ ] DTOs for content package, registration, and launch
-- [ ] One `src/index.ts` barrel; JSDoc on every public type and method
-- [ ] All functions return checked result values rather than throwing across
-      package boundaries, per the project's error-handling rule
+- [ ] Rename to `@richardmcquiston01/reactive-lms-{shared,persistence,core,nest,player}`;
+      `standalone-api` and `standalone-web` stay private apps
+- [ ] Update imports, `workspace:*` dependencies, tsconfig references, README,
+      and docs; set versions to 0.1.0 until the release PR
+- [ ] Add the `admin` package name to the workspace list (empty scaffold in WP6)
 
-**Done when:** another workspace package can import `ContentRuntime` and
-`LearnerRef` from `@richardmcquiston01/reactive-lms-shared`.
+**Done when:** typecheck, lint, and all tests pass with no `@reactive-lms/`
+references left outside `GROK_PLAN.md`.
 
-### WP2: Persistence and dialects (`feature/persistence-schema`)
+### WP3: Portable types and the dialect contract (D9, D8)
 
-Commit scope `feat(persistence)`. Depends on WP1.
+Commit scope `feat(persistence)`. Open question 1 applies.
 
-- [ ] Naming strategy adding the `rlms_` prefix to every table, so entity
-      `person` maps to `rlms_person`
-- [ ] Entities for the 21 tables in GROK_PLAN section 4.1: singular
-      `snake_case` names, UUID primary keys, `created_at` and `updated_at` on
-      every table that is not many-to-many or append-only, and
-      `created_by_user_id` and `updated_by_user_id` where users modify rows
-- [ ] D9: portable column types only (`json` or `simple-json`, `blob`, plain
-      `uuid`, `timestamp`); no `jsonb` or `bytea` in entities
-- [ ] D5 option B fields: `parent_module_id` on `course_module`;
-      `availability_json` documented as `{ version: 1, all: [...] }` with
-      `any` allowed
-- [ ] `PersistenceDialect` contract (driver type, connection options,
-      migration set) and a dialect registry; `postgres` registered as the
-      first dialect and replaceable by a host (D8)
+- [ ] Replace native types in entities with portable TypeORM types: `json` or
+      `simple-json` for `jsonb`, `blob` for `bytea`, `decimal` for `numeric`,
+      and a portable timestamp type for `timestamptz`
+- [ ] `PersistenceDialect` contract (driver type, options, migration set) and
+      a registry; Postgres is the first dialect and replaceable by a host
 - [ ] `createPersistenceDataSource({ url, dialect, migrationsRun? })`
-- [ ] `0001-initial-schema` for the Postgres dialect, generated then
-      reviewed by hand. Native Postgres types and UUID defaults live only
-      here
-- [ ] Shared persistence test suite, written so a future dialect can run it
-      behind an env flag. Cases: unique `(person_id, course_section_id)` on
-      `registration`; one section holding two `course_module` rows for the
-      same `content_package`; no update path for `xapi_statement`
-- [ ] Disposable Postgres for tests (open question 3)
+- [ ] Keep native Postgres types and UUID defaults only in the Postgres
+      migration
+- [ ] Postgres service container in CI; the integration test runs there
+- [ ] Persistence test suite structured so later dialects reuse it
 
-**Guardrail:** never run migrations against a shared database without a dump
-and an explicit OK.
+### WP4: Blob storage contract (D11)
 
-**Done when:** migrations apply to an empty Postgres and the unique
-constraints exist.
+Commit scope `feat(shared)` then `refactor(core)`.
 
-### WP3: Release prep (`feature/release-0-2-0`)
+- [ ] `BlobStorageAdapter` in `shared`: stream-based, key-based, prefix
+      listing, no local paths, no `getPublicUrl`
+- [ ] Move ZIP extraction out of the adapter into the importer, so adapters
+      stay storage-only
+- [ ] Port `FilesystemStorageAdapter`; update Nest tokens and the standalone
+      bootstrap
+- [ ] Shared adapter conformance suite (the pass bar for the 1.0.0 S3 adapter)
 
-Commit scope `chore(release)`. Depends on WP0 to WP2.
+### WP5: Module tree and conditions (D5 option B)
 
-- [ ] Root version to 0.2.0; workspace package versions aligned
-- [ ] CHANGELOG moves the Unreleased entries under `0.2.0 - <date>`
-- [ ] README reflects the package map and dual-mode story
-- [ ] ROADMAP marks 0.2.0 done and updates the milestone table
-- [ ] Tag from `main` after the `dev` to `main` merge (not published; D4)
+Commit scope `feat(core)`.
+
+- [ ] `parent_module_id` on `course_module`
+- [ ] `availability_json` as `{ version: 1, all: [...] }` with `any`; condition
+      types: previous module complete, date window, minimum score, group
+      membership
+- [ ] Read the current single-object shape as version 0 and upcast it, so
+      existing rows keep working
+- [ ] Tests for each condition and for nesting
+
+### WP6: Admin package scaffold (D2)
+
+Commit scope `feat(admin)`.
+
+- [ ] `@richardmcquiston01/reactive-lms-admin`: Angular 18 library, theme-free
+      (CSS custom properties), with the extension points: navigation token,
+      replaceable screens, content-projection slots, wrappable API client,
+      `CapabilityAdapter` visibility
+- [ ] `provideReactiveLmsAdmin` and `reactiveLmsAdminRoutes`
+- [ ] `standalone-web` composes `admin` and `player`
+
+The screens themselves (upload, placement, enrolment, progress, module tree)
+follow as 0.3.0 work.
+
+### WP7: Cache and error-sink hooks (D7, D12)
+
+Commit scope `feat(shared)`.
+
+- [ ] `CacheAdapter` contract and `MemoryCacheAdapter`; route cmi5 tokens and
+      LTI nonces through it when those land
+- [ ] `ErrorSink` type compatible with `error-log-adapter`, with a built-in
+      console fallback in `core` and `nest`; the package stays optional
+- [ ] Gated by D13: the `storage-adapters`-backed cache and the
+      `error-log-adapter` wiring wait until both packages reach 1.0
+
+### Then, to finish 0.3.0 and 0.4.0
+
+- [ ] Admin screens and module-tree view
+- [ ] SCORM 1.2 sample-package fixtures and an ADL conformance check
+- [ ] Release prep: version bump, changelog, roadmap update, tag from `main`
 
 ## Out of scope for 0.2.0
 
-Filesystem blob storage and its conformance suite, the importer, launch,
-enrolment, event log service, any runtime, the admin screens, the player, and
-the Nest module. These start in 0.3.0.
+xAPI, cmi5, SCORM 2004, H5P, LTI, completion events (0.9.0), and the MySQL,
+MariaDB, and SQLite dialects (1.1.0).
 
 ## Open questions
 
-1. **CI:** add a GitHub Actions workflow in WP0? Recommended yes; the repo has
-   none today.
-2. **Lint and format tooling:** ESLint with Prettier configured to the Google
-   style, or `gts`? Recommended ESLint plus Prettier, since `gts` is opinionated
-   about its own config.
-3. **Test database:** Testcontainers or a `docker compose` service named
-   `rlms_test`? Recommended `docker compose`, which is simpler in cloud
-   sessions and CI; Testcontainers needs a Docker socket.
-4. **UUID generation:** generate IDs in application code (UUID v4, or v7 for
-   index locality) so every dialect behaves the same, or rely on database
-   defaults? Recommended application-generated, with Postgres defaults only as
-   a fallback in the migration.
-5. **Test runner:** `bun test` or Vitest? Recommended `bun test` where it
-   works; the Angular packages may need their own runner later.
+1. **Editing `0001`:** has the foundation's `0001` migration been applied to
+   any database? If not, WP3 can edit it in place; if so, it needs a second
+   migration.
+2. **SCORM 1.2 engine:** D1 says wrap `scorm-again`; the foundation has its own
+   tested CMI store and bridge. Proposal: keep the existing runtime for 1.2 and
+   evaluate `scorm-again` for 2004 sequencing at 0.6.0. Needs confirmation.
+3. **D13 scope:** the gate applies only to WP7's package-backed pieces; all
+   other work proceeds now. Needs confirmation.
+4. **Timestamp type:** which portable type for `timestamptz` columns, given
+   that MySQL lacks time-zone-aware timestamps? Proposal: store UTC in a
+   `datetime`/`timestamp` column and document it.

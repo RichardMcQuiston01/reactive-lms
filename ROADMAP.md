@@ -4,7 +4,7 @@ Release plan for ReactiveLMS, derived from [GROK_PLAN.md](GROK_PLAN.md).
 The plan holds the detail (domain model, API surface, step lists); this file
 holds the order, the exit criteria, and the decisions still open.
 
-Status key: ✅ done · 🚧 in progress · ⬜ planned · ⏸ waiting · ❓ blocked on a decision
+Status key: ✅ done · 🚧 in progress (partly built) · ⬜ planned · ⏸ waiting · ❓ blocked on a decision
 
 ## Adopted packages
 
@@ -41,9 +41,9 @@ Boundaries, so the two don't blur:
 | Version | Theme                       | PRs (GROK_PLAN §14) | Status |
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
-| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ waits for both packages at 1.0 |
-| 0.3.0   | Course container + HTML5 + first admin screens | 3 | ⬜     |
-| 0.4.0   | SCORM 1.2                   | 4                   | ⬜     |
+| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | 🚧 built on `lms-foundation`; reconciling with decisions (see `docs/PLAN_0.2.0.md`) |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, and Nest API built; admin screens, module tree and conditions, blob conformance suite remain |
+| 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, and player bridge built; sample-package fixtures and conformance check remain |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
