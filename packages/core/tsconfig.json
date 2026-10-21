@@ -7,7 +7,7 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts", "src/test/**"],
+  "exclude": ["src/**/*.test.ts", "src/test/**", "src/testing/**"],
   "references": [
     {
       "path": "../shared"

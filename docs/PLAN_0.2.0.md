@@ -68,7 +68,7 @@ Commit scope `refactor(repo)`. Mechanical, so do it early.
 **Done when:** typecheck, lint, and all tests pass with no `@reactive-lms/`
 references left outside `GROK_PLAN.md`.
 
-### WP3: Portable types and the dialect contract (D9, D8)
+### WP3: Portable types and the dialect contract (D9, D8, PR 17)
 
 Commit scope `feat(persistence)`. Open question 1 applies.
 
@@ -89,13 +89,13 @@ Commit scope `feat(persistence)`. Open question 1 applies.
 
 Commit scope `feat(shared)` then `refactor(core)`.
 
-- [ ] `BlobStorageAdapter` in `shared`: stream-based, key-based, prefix
+- [x] `BlobStorageAdapter` in `shared`: stream-based, key-based, prefix
       listing, no local paths, no `getPublicUrl`
-- [ ] Move ZIP extraction out of the adapter into the importer, so adapters
+- [x] Move ZIP extraction out of the adapter into the importer, so adapters
       stay storage-only
-- [ ] Port `FilesystemStorageAdapter`; update Nest tokens and the standalone
+- [x] Port `FilesystemStorageAdapter`; update Nest tokens and the standalone
       bootstrap
-- [ ] Shared adapter conformance suite (the pass bar for the 1.0.0 S3 adapter)
+- [x] Shared adapter conformance suite (the pass bar for the 1.0.0 S3 adapter)
 
 ### WP5: Module tree and conditions (D5 option B)
 

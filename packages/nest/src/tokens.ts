@@ -19,6 +19,6 @@ export const RLMS_IDENTITY_ADAPTER = Symbol('RLMS_IDENTITY_ADAPTER');
 export const RLMS_CAPABILITY_ADAPTER = Symbol('RLMS_CAPABILITY_ADAPTER');
 
 /**
- * DI token for the configured {@link import('@richardmcquiston01/reactive-lms-shared').StorageAdapter}.
+ * DI token for the configured {@link import('@richardmcquiston01/reactive-lms-shared').BlobStorageAdapter}.
  */
-export const RLMS_STORAGE_ADAPTER = Symbol('RLMS_STORAGE_ADAPTER');
+export const RLMS_BLOB_STORAGE_ADAPTER = Symbol('RLMS_BLOB_STORAGE_ADAPTER');

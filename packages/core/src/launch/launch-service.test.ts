@@ -11,7 +11,6 @@ import {
 import {
   LmsError,
   type LaunchRequest,
-  type StorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
@@ -35,23 +34,13 @@ const REQUEST: LaunchRequest = {
   launchMode: 'Normal',
 };
 
-function storage(): StorageAdapter {
-  return {
-    put: async () => undefined,
-    get: async () => new Uint8Array(),
-    getPublicUrl: async (key) => `/lms/content/${key}`,
-    extractZip: async () => [],
-    remove: async () => undefined,
-  };
-}
-
 function launchService(
   ds: ReturnType<typeof createMockDataSource>,
 ): LaunchService {
   return new LaunchService(
     ds as unknown as DataSource,
-    storage(),
     [new Html5Runtime(), new Scorm12Runtime()],
+    {},
     new EventLogService(ds as unknown as DataSource),
   );
 }

@@ -8,8 +8,10 @@ import {
   PACKAGE_NOT_DETECTED,
   PACKAGE_TYPE_UNSUPPORTED,
   PACKAGE_ZIP_BOMB,
+  STORAGE_IO_ERROR,
   STORAGE_KEY_INVALID,
   STORAGE_KEY_NOT_FOUND,
+  STORAGE_RANGE_INVALID,
   httpStatusForLmsCode,
 } from './lms-error';
 
@@ -54,6 +56,11 @@ describe('httpStatusForLmsCode', () => {
   test('maps PACKAGE_INVALID_ZIP and PACKAGE_ZIP_BOMB to 400', () => {
     expect(httpStatusForLmsCode(PACKAGE_INVALID_ZIP)).toBe(400);
     expect(httpStatusForLmsCode(PACKAGE_ZIP_BOMB)).toBe(400);
+  });
+
+  test('maps STORAGE_IO_ERROR to 500 and STORAGE_RANGE_INVALID to 416', () => {
+    expect(httpStatusForLmsCode(STORAGE_IO_ERROR)).toBe(500);
+    expect(httpStatusForLmsCode(STORAGE_RANGE_INVALID)).toBe(416);
   });
 
   test('maps STORAGE_KEY_INVALID to 400 and STORAGE_KEY_NOT_FOUND to 404', () => {

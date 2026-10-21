@@ -11,7 +11,6 @@ import type {
   ContentRuntime,
   LaunchDescriptor,
   LaunchRequest,
-  StorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
   LAUNCH_NOT_IMPLEMENTED,
@@ -21,6 +20,10 @@ import {
   httpStatusForLmsCode,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
+import {
+  DEFAULT_CONTENT_URL_PREFIX,
+  contentUrlForKey,
+} from '../content/content-serving';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
@@ -30,6 +33,17 @@ import { assertAvailable } from './availability';
 const LAUNCHABLE = new Set(['html5', 'scorm_12']);
 
 /**
+ * Options for {@link LaunchService}.
+ */
+export interface LaunchServiceOptions {
+  /**
+   * URL prefix under which the API serves extracted package files. Defaults to
+   * `/lms/content`.
+   */
+  contentUrlPrefix?: string;
+}
+
+/**
  * Creates an attempt, checks availability, and asks the matching
  * content runtime for a launch descriptor. HTML5 and SCORM 1.2
  * are implemented in this slice.
@@ -37,14 +51,14 @@ const LAUNCHABLE = new Set(['html5', 'scorm_12']);
 export class LaunchService {
   /**
    * @param dataSource - Caller-owned TypeORM DataSource
-   * @param storage - Blob store used to resolve the HTML5 content URL
    * @param runtimes - Registered content runtimes (HTML5 / SCORM 1.2)
+   * @param options - Content URL prefix
    * @param events - Audit writer; constructed from `dataSource` when omitted
    */
   constructor(
     private readonly dataSource: DataSource,
-    private readonly storage: StorageAdapter,
     private readonly runtimes: ContentRuntime[],
+    private readonly options: LaunchServiceOptions = {},
     private readonly events: EventLogService = new EventLogService(dataSource),
   ) {}
 
@@ -180,7 +194,11 @@ export class LaunchService {
         extractedKey,
         entryHref,
         activityNodeId: activityNode?.id,
-        getPublicUrl: (key: string) => this.storage.getPublicUrl(key),
+        getPublicUrl: async (key: string) =>
+          contentUrlForKey(
+            key,
+            this.options.contentUrlPrefix ?? DEFAULT_CONTENT_URL_PREFIX,
+          ),
       };
       const descriptor = await createRuntimeLaunch(
         runtime,

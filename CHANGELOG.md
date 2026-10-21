@@ -4,6 +4,19 @@
 
 ### Added
 
+- `BlobStorageAdapter` (D11) replaces `StorageAdapter`: stream-based and
+  key-based, with `put`, `get` (optional byte range), `head`, `list`, `remove`,
+  and `removePrefix`. It returns results instead of throwing, exposes no local
+  paths and no public URLs, and shares key normalization (`normalizeBlobKey`)
+  across adapters.
+- `FilesystemBlobStorageAdapter` (atomic writes, lazily opened reads, pruned
+  empty directories) and `MemoryBlobStorageAdapter`, both passing the shared
+  conformance suite exported from `@richardmcquiston01/reactive-lms-core/testing`
+  as `runBlobStorageConformance`. It is the pass bar for the 1.0.0 S3 adapter.
+- `extractZipToStorage`: ZIP extraction moved out of storage adapters so every
+  store gets the same zip-bomb limits, path checks, and content types.
+- The standalone content endpoint streams files and supports a single `Range`
+  header (206 and 416 responses), so media can seek without buffering.
 - `PersistenceDialect` contract and `DialectRegistry` (D8). Postgres ships as
   the built-in dialect; a host can register another or replace one.
   `createPersistenceDataSource` takes a dialect object or registered name.
@@ -59,6 +72,10 @@
 
 ### Changed
 
+- Breaking, pre-release: the Nest module option `storageAdapter` is now
+  `blobStorage`, the token `RLMS_STORAGE_ADAPTER` is `RLMS_BLOB_STORAGE_ADAPTER`,
+  the antivirus hook and zip-bomb limits are options on `PackageImporter` (and
+  `ReactiveLmsModule`), and `LaunchService` no longer takes a storage argument.
 - Entities use portable TypeORM column types (D9): `json`, `decimal`, and
   `Date` replace `jsonb`, `numeric`, and `timestamptz`; xAPI document bodies are
   stored as base64 `text`. Native Postgres types stay in the Postgres migration,

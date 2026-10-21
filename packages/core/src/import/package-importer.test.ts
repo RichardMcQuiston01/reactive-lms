@@ -5,12 +5,14 @@ import path from 'node:path';
 import {
   LmsError,
   PACKAGE_NOT_DETECTED,
+  collectBlobBody,
+  type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import { zipSync, strToU8 } from 'fflate';
 import type { DataSource } from 'typeorm';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
-import { FilesystemStorageAdapter } from '../storage/filesystem-storage.adapter';
+import { FilesystemBlobStorageAdapter } from '../storage/filesystem-blob-storage.adapter';
 import { PackageImporter } from './package-importer';
 
 const UUID_RE =
@@ -47,15 +49,26 @@ function createMockDataSource(saved: SavedRow[]) {
   } as unknown as DataSource;
 }
 
+async function readKey(
+  store: BlobStorageAdapter,
+  key: string,
+): Promise<Uint8Array> {
+  const result = await store.get(key);
+  if (!result.ok) {
+    throw new Error(result.error.message);
+  }
+  return collectBlobBody(result.value.body);
+}
+
 describe('PackageImporter', () => {
   let dataRoot: string;
-  let storage: FilesystemStorageAdapter;
+  let storage: FilesystemBlobStorageAdapter;
   let saved: SavedRow[];
   let importer: PackageImporter;
 
   beforeEach(async () => {
     dataRoot = await mkdtemp(path.join(tmpdir(), 'rlms-import-'));
-    storage = new FilesystemStorageAdapter(dataRoot);
+    storage = new FilesystemBlobStorageAdapter(dataRoot);
     saved = [];
     importer = new PackageImporter(createMockDataSource(saved), storage, [
       new Html5Runtime(),
@@ -88,9 +101,9 @@ describe('PackageImporter', () => {
     expect(node?.id).toBe(result.activityNodeId);
     expect(node?.href).toBe('index.html');
 
-    const original = await storage.get(pkg!.storageKey!);
+    const original = await readKey(storage, pkg!.storageKey!);
     expect(original.byteLength).toBe(buffer.byteLength);
-    const extracted = await storage.get(`${pkg!.extractedKey}/index.html`);
+    const extracted = await readKey(storage, `${pkg!.extractedKey}/index.html`);
     expect(new TextDecoder().decode(extracted)).toContain('Demo');
     expect(saved.some((row) => row.action === 'package.imported')).toBe(true);
   });
@@ -103,7 +116,8 @@ describe('PackageImporter', () => {
     const result = await importer.import(buffer);
     const pkg = saved.find((row) => row.id === result.packageId);
     expect(pkg?.entryHref).toBe('course/index.html');
-    const extracted = await storage.get(
+    const extracted = await readKey(
+      storage,
       `${pkg!.extractedKey}/course/index.html`,
     );
     expect(new TextDecoder().decode(extracted)).toContain('wrapped');
@@ -222,6 +236,62 @@ describe('PackageImporter', () => {
     });
 
     await expect(failing.import(buffer)).rejects.toThrow('db down');
+    expect(await listStoredFiles(dataRoot)).toEqual([]);
+  });
+
+  test('runs the antivirus hook on the upload before storing anything', async () => {
+    const scanned: Uint8Array[] = [];
+    const guarded = new PackageImporter(
+      createMockDataSource(saved),
+      storage,
+      [new Html5Runtime()],
+      {
+        antivirusScan: async (archive) => {
+          scanned.push(archive);
+        },
+      },
+    );
+    const buffer = zipSync({ 'index.html': strToU8('<html>ok</html>') });
+
+    await guarded.import(buffer);
+
+    expect(scanned).toHaveLength(1);
+    expect(scanned[0]).toEqual(buffer);
+  });
+
+  test('a rejected antivirus scan stores and persists nothing', async () => {
+    const guarded = new PackageImporter(
+      createMockDataSource(saved),
+      storage,
+      [new Html5Runtime()],
+      {
+        antivirusScan: async () => {
+          throw new Error('threat found');
+        },
+      },
+    );
+    const buffer = zipSync({ 'index.html': strToU8('<html>bad</html>') });
+
+    await expect(guarded.import(buffer)).rejects.toThrow('threat found');
+    expect(saved).toEqual([]);
+    expect(await listStoredFiles(dataRoot)).toEqual([]);
+  });
+
+  test('enforces the configured zip-bomb limits on import', async () => {
+    const limited = new PackageImporter(
+      createMockDataSource(saved),
+      storage,
+      [new Html5Runtime()],
+      { maxFileCount: 1 },
+    );
+    const buffer = zipSync({
+      'index.html': strToU8('<html></html>'),
+      'extra.js': strToU8('1'),
+    });
+
+    await expect(limited.import(buffer)).rejects.toMatchObject({
+      code: 'PACKAGE_ZIP_BOMB',
+    });
     expect(await listStoredFiles(dataRoot)).toEqual([]);
   });
 });
