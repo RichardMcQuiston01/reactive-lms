@@ -14,6 +14,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
+  MODULE_HAS_CHILDREN,
   MODULE_NOT_FOUND,
   PACKAGE_NOT_FOUND,
   REGISTRATION_NOT_FOUND,
@@ -23,6 +24,9 @@ import {
   type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
+  assertBlockAvailability,
+  assertCanParent,
+  isBlockModule,
   normalizeAvailabilityInput,
   requireBlob,
   type AvailabilityInput,
@@ -82,6 +86,8 @@ export interface UpdateModuleInput {
   sortOrder?: number;
   /** Version 1 rules, the older single-object form, or `null` to clear. */
   availability?: AvailabilityInput | null;
+  /** Block to move the module into, or `null` for the top level. */
+  parentModuleId?: string | null;
 }
 
 /**
@@ -251,7 +257,18 @@ export class CatalogService {
       row.sortOrder = input.sortOrder;
     }
     if (input.availability !== undefined) {
-      row.availabilityJson = normalizeAvailabilityInput(input.availability);
+      const rules = normalizeAvailabilityInput(input.availability);
+      if (isBlockModule(row)) {
+        assertBlockAvailability(rules);
+      }
+      row.availabilityJson = rules;
+    }
+    if (input.parentModuleId !== undefined) {
+      const siblings = await this.dataSource.manager.find(CourseModule, {
+        where: { courseSectionId: row.courseSectionId },
+      });
+      assertCanParent(siblings, row.id, input.parentModuleId);
+      row.parentModuleId = input.parentModuleId;
     }
     await this.dataSource.manager.save(row);
     return { id: row.id };
@@ -269,6 +286,17 @@ export class CatalogService {
     if (!row) {
       throw notFound(MODULE_NOT_FOUND, 'Course module not found.', {
         courseModuleId: id,
+      });
+    }
+    const children = await this.dataSource.manager.find(CourseModule, {
+      where: { parentModuleId: id },
+    });
+    if (children.length > 0) {
+      throw new LmsError({
+        status: httpStatusForLmsCode(MODULE_HAS_CHILDREN),
+        code: MODULE_HAS_CHILDREN,
+        message: `"${row.title}" still contains ${children.length} module${children.length === 1 ? '' : 's'}. Move or delete them first.`,
+        details: { courseModuleId: id, childCount: children.length },
       });
     }
     await this.dataSource.manager.delete(CourseModule, { id });
@@ -328,12 +356,16 @@ export class CatalogService {
         courseModuleId,
       });
     }
+    const contentPackageId = row.contentPackageId;
+    if (!contentPackageId) {
+      return undefined;
+    }
     const contentPackage = await this.dataSource.manager.findOne(
       ContentPackage,
-      { where: { id: row.contentPackageId } },
+      { where: { id: contentPackageId } },
     );
     const nodes = await this.dataSource.manager.find(ActivityNode, {
-      where: { contentPackageId: row.contentPackageId },
+      where: { contentPackageId },
       order: { sortOrder: 'ASC' },
     });
     const entryHref = contentPackage?.entryHref;

@@ -112,13 +112,13 @@ Split in two PRs.
       rules
 - [x] Tests for each condition, nesting, upcast, and group membership at launch
 
-**WP5b: module tree (next)**
+**WP5b: module tree**
 
-- [ ] `parent_module_id` on `course_module`, with container modules (blocks)
+- [x] `parent_module_id` on `course_module`, with container modules (blocks)
       that have no content package
-- [ ] A module is available only if its ancestors' rules hold too
-- [ ] Blocks are not launchable and do not count toward section completion
-- [ ] Place and reorder within a parent; tests for nesting
+- [x] A module is available only if its ancestors' rules hold too
+- [x] Blocks are not launchable and do not count toward section completion
+- [x] Place and reorder within a parent; tests for nesting
 
 ### WP6: Admin package scaffold (D2)
 
