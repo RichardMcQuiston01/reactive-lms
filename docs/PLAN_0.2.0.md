@@ -138,9 +138,9 @@ follow as 0.3.0 work.
 
 Commit scope `feat(shared)`.
 
-- [ ] `CacheAdapter` contract and `MemoryCacheAdapter`; route cmi5 tokens and
-      LTI nonces through it when those land
-- [ ] `ErrorSink` type compatible with `error-log-adapter`, with a built-in
+- [x] `CacheAdapter` contract and `MemoryCacheAdapter`; (routing cmi5 tokens and
+      LTI nonces through it follows when those land)
+- [x] `ErrorSink` type compatible with `error-log-adapter`, with a built-in
       console fallback in `core` and `nest`; the package stays optional
 - [ ] Gated by D13: the `storage-adapters`-backed cache and the
       `error-log-adapter` wiring wait until both packages reach 1.0

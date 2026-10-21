@@ -8,10 +8,12 @@ import {
   type Type,
 } from '@nestjs/common';
 import {
+  consoleErrorSink,
   EnrolmentService,
   FilesystemBlobStorageAdapter,
   Html5Runtime,
   LaunchService,
+  MemoryCacheAdapter,
   ModuleService,
   PackageImporter,
   ProgressSinkService,
@@ -20,7 +22,9 @@ import {
 } from '@richardmcquiston01/reactive-lms-core';
 import type {
   BlobStorageAdapter,
+  CacheAdapter,
   CapabilityAdapter,
+  ErrorSink,
   IdentityAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
@@ -42,6 +46,8 @@ import {
   RLMS_IDENTITY_ADAPTER,
   RLMS_MODULE_OPTIONS,
   RLMS_BLOB_STORAGE_ADAPTER,
+  RLMS_CACHE_ADAPTER,
+  RLMS_ERROR_SINK,
 } from './tokens';
 
 /**
@@ -54,6 +60,17 @@ export interface ReactiveLmsModuleOptions {
   capabilityAdapter?: CapabilityAdapter;
   /** Blob store; created from `dataRoot` when omitted. */
   blobStorage?: BlobStorageAdapter;
+  /**
+   * Cache for one-time tokens and nonces. Defaults to an in-memory cache,
+   * which is only safe with a single API process; inject a shared adapter
+   * (e.g. Redis) when running several.
+   */
+  cache?: CacheAdapter;
+  /**
+   * Receives unexpected (5xx) errors. Defaults to one JSON line per error on
+   * `console.error`. `ErrorLogAdapter.log` from `error-log-adapter` fits.
+   */
+  errorSink?: ErrorSink;
   /** Filesystem dataroot used when `blobStorage` is omitted. */
   dataRoot?: string;
   /** Called with each uploaded archive before it is stored; throw to reject. */
@@ -162,6 +179,18 @@ function buildModule(input: {
       inject: [RLMS_MODULE_OPTIONS],
     },
     {
+      provide: RLMS_CACHE_ADAPTER,
+      useFactory: (opts: ReactiveLmsModuleOptions): CacheAdapter =>
+        opts.cache ?? new MemoryCacheAdapter(),
+      inject: [RLMS_MODULE_OPTIONS],
+    },
+    {
+      provide: RLMS_ERROR_SINK,
+      useFactory: (opts: ReactiveLmsModuleOptions): ErrorSink =>
+        opts.errorSink ?? consoleErrorSink,
+      inject: [RLMS_MODULE_OPTIONS],
+    },
+    {
       provide: PackageImporter,
       useFactory: (
         dataSource: DataSource,
@@ -247,6 +276,8 @@ function buildModule(input: {
       RLMS_IDENTITY_ADAPTER,
       RLMS_CAPABILITY_ADAPTER,
       RLMS_BLOB_STORAGE_ADAPTER,
+      RLMS_CACHE_ADAPTER,
+      RLMS_ERROR_SINK,
     ],
   };
 }

@@ -22,3 +22,13 @@ export const RLMS_CAPABILITY_ADAPTER = Symbol('RLMS_CAPABILITY_ADAPTER');
  * DI token for the configured {@link import('@richardmcquiston01/reactive-lms-shared').BlobStorageAdapter}.
  */
 export const RLMS_BLOB_STORAGE_ADAPTER = Symbol('RLMS_BLOB_STORAGE_ADAPTER');
+
+/**
+ * DI token for the configured {@link import('@richardmcquiston01/reactive-lms-shared').CacheAdapter}.
+ */
+export const RLMS_CACHE_ADAPTER = Symbol('RLMS_CACHE_ADAPTER');
+
+/**
+ * DI token for the configured {@link import('@richardmcquiston01/reactive-lms-shared').ErrorSink}.
+ */
+export const RLMS_ERROR_SINK = Symbol('RLMS_ERROR_SINK');

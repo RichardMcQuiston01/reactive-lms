@@ -40,3 +40,36 @@ describe('LmsExceptionFilter', () => {
     });
   });
 });
+
+describe('LmsExceptionFilter error sink', () => {
+  const host = {
+    switchToHttp: () => ({
+      getResponse: () => ({
+        status() {
+          return this;
+        },
+        json() {
+          return this;
+        },
+      }),
+    }),
+  } as unknown as ArgumentsHost;
+
+  test('reports server errors with their own code, not client errors', () => {
+    const reported: string[] = [];
+    const filter = new LmsExceptionFilter((entry) => {
+      reported.push(entry.code);
+    });
+
+    filter.catch(
+      new LmsError({ status: 500, code: 'STORAGE_IO_ERROR', message: 'disk' }),
+      host,
+    );
+    filter.catch(
+      new LmsError({ status: 404, code: PACKAGE_NOT_FOUND, message: 'gone' }),
+      host,
+    );
+
+    expect(reported).toEqual(['STORAGE_IO_ERROR']);
+  });
+});

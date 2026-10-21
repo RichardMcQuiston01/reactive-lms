@@ -4,6 +4,15 @@
 
 ### Added
 
+- `CacheAdapter` (D7) and `ErrorSink` (D12) contracts in `shared`. The cache
+  holds small string state with expiry and offers atomic `setIfAbsent` and
+  `take` for cmi5 one-time tokens and LTI nonces. `MemoryCacheAdapter` is the
+  default (single API process only) and `runCacheConformance` is the pass bar
+  for shared adapters such as Redis. Without an injected sink, unexpected
+  (5xx) errors are written as one JSON line to `console.error`; the entry
+  fields match `error-log-adapter`'s `ErrorLogEntry`, so its `log` can be
+  passed as `errorSink`. A failing sink never changes a response. New
+  `ReactiveLmsModule` options `cache` and `errorSink`.
 - `@richardmcquiston01/reactive-lms-admin` (D2): theme-free Angular admin
   scaffold styled only through `--rlms-admin-*` CSS custom properties.
   `provideReactiveLmsAdmin` and `reactiveLmsAdminRoutes` expose the extension

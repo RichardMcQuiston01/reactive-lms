@@ -94,3 +94,9 @@ export {
   parseByteRange,
   type ByteRangeResult,
 } from './content/content-serving';
+export { MemoryCacheAdapter } from './cache/memory-cache.adapter';
+export {
+  consoleErrorSink,
+  errorSinkEntryOf,
+  reportError,
+} from './errors/error-sink';

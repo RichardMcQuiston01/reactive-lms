@@ -43,6 +43,13 @@ export {
 } from './models/availability';
 
 // Contracts
+export type {
+  CacheAdapter,
+  CacheError,
+  CacheResult,
+  CacheSetOptions,
+} from './contracts/cache-adapter';
+export type { ErrorSink, ErrorSinkEntry } from './contracts/error-sink';
 export type { ContentRuntime, ProgressSink } from './contracts/content-runtime';
 export type { IdentityAdapter } from './contracts/identity-adapter';
 export type {
