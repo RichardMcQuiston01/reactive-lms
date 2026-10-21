@@ -12,6 +12,7 @@ export {
   type ScormFrameBindResult,
 } from './runtimes/scorm/scorm-frame-bind';
 export { ScormFrameComponent } from './runtimes/scorm/scorm-frame.component';
+export { lmsFetch } from './http/lms-http';
 export { isContentFrameMessage } from './progress/is-content-frame-message';
 export {
   mapHtml5Message,

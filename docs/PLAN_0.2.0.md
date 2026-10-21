@@ -124,12 +124,12 @@ Split in two PRs.
 
 Commit scope `feat(admin)`.
 
-- [ ] `@richardmcquiston01/reactive-lms-admin`: Angular 18 library, theme-free
+- [x] `@richardmcquiston01/reactive-lms-admin`: Angular 18 library, theme-free
       (CSS custom properties), with the extension points: navigation token,
       replaceable screens, content-projection slots, wrappable API client,
       `CapabilityAdapter` visibility
-- [ ] `provideReactiveLmsAdmin` and `reactiveLmsAdminRoutes`
-- [ ] `standalone-web` composes `admin` and `player`
+- [x] `provideReactiveLmsAdmin` and `reactiveLmsAdminRoutes`
+- [x] `standalone-web` composes `admin` and `player`
 
 The screens themselves (upload, placement, enrolment, progress, module tree)
 follow as 0.3.0 work.

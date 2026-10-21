@@ -4,6 +4,14 @@
 
 ### Added
 
+- `@richardmcquiston01/reactive-lms-admin` (D2): theme-free Angular admin
+  scaffold styled only through `--rlms-admin-*` CSS custom properties.
+  `provideReactiveLmsAdmin` and `reactiveLmsAdminRoutes` expose the extension
+  points: navigation items, replaceable screens (`ADMIN_SCREEN_OVERRIDES`),
+  header and footer content slots, a wrappable API client
+  (`wrapAdminApiClient`), and a capability check that hides navigation the
+  user cannot use. Screens are placeholders until 0.3.0. `standalone-web`
+  re-exports it alongside the player.
 - Module tree (D5): `parent_module_id` on `course_module` and container
   modules ("blocks") with no content package, nested up to five levels
   (`MODULE_TREE_INVALID`). A module is available only if every ancestor block's

@@ -18,7 +18,7 @@
     "packages/*"
   ],
   "scripts": {
-    "typecheck": "tsc -b packages/shared packages/persistence packages/core packages/nest packages/player packages/standalone-api packages/standalone-web",
+    "typecheck": "tsc -b packages/shared packages/persistence packages/core packages/nest packages/player packages/admin packages/standalone-api packages/standalone-web",
     "test": "bun test",
     "test:file": "bun test",
     "lint": "eslint .",

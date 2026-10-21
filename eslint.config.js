@@ -32,7 +32,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/player/**/*.ts'],
+    files: ['packages/player/**/*.ts', 'packages/admin/**/*.ts'],
     languageOptions: {
       globals: { ...globals.browser },
     },
