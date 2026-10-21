@@ -9,8 +9,8 @@
       "import": "./src/index.ts"
     },
     "./testing": {
-      "types": "./src/testing/blob-storage-conformance.ts",
-      "import": "./src/testing/blob-storage-conformance.ts"
+      "types": "./src/testing/index.ts",
+      "import": "./src/testing/index.ts"
     }
   },
   "scripts": {

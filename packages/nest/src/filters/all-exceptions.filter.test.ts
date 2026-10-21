@@ -68,3 +68,17 @@ describe('AllExceptionsFilter', () => {
     });
   });
 });
+
+describe('AllExceptionsFilter error sink', () => {
+  test('reports unexpected errors but not client errors', () => {
+    const reported: string[] = [];
+    const filter = new AllExceptionsFilter((entry) => {
+      reported.push(`${entry.code}:${entry.source}`);
+    });
+
+    filter.catch(new Error('db down'), hostOf({}));
+    filter.catch(new BadRequestException('nope'), hostOf({}));
+
+    expect(reported).toEqual(['INTERNAL_ERROR:nest.AllExceptionsFilter']);
+  });
+});
