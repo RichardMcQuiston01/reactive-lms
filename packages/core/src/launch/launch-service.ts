@@ -4,6 +4,7 @@ import {
   Attempt,
   ContentPackage,
   CourseModule,
+  Membership,
   NormalizedProgress as NormalizedProgressRow,
   Registration,
 } from '@richardmcquiston01/reactive-lms-persistence';
@@ -15,11 +16,12 @@ import type {
 import {
   LAUNCH_NOT_IMPLEMENTED,
   LmsError,
+  referencedGroupIds,
   MODULE_NOT_FOUND,
   REGISTRATION_NOT_FOUND,
   httpStatusForLmsCode,
 } from '@richardmcquiston01/reactive-lms-shared';
-import type { DataSource } from 'typeorm';
+import type { DataSource, EntityManager } from 'typeorm';
 import {
   DEFAULT_CONTENT_URL_PREFIX,
   contentUrlForKey,
@@ -28,7 +30,7 @@ import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import type { AvailabilityProgress } from './availability';
-import { assertAvailable } from './availability';
+import { assertAvailable, readStoredAvailability } from './availability';
 
 const LAUNCHABLE = new Set(['html5', 'scorm_12']);
 
@@ -99,10 +101,21 @@ export class LaunchService {
       const progressRows = await manager.find(NormalizedProgressRow, {
         where: { registrationId: registration.id },
       });
+      const needsGroups =
+        referencedGroupIds(
+          readStoredAvailability(
+            courseModule.id,
+            courseModule.availabilityJson,
+          ),
+        ).size > 0;
+      const groupIds = needsGroups
+        ? await learnerGroupIds(manager, registration.personId)
+        : new Set<string>();
       assertAvailable(
         courseModule,
         progressMapFromRows(progressRows),
         new Date(),
+        groupIds,
       );
 
       const contentPackage = await manager.findOne(ContentPackage, {
@@ -244,6 +257,16 @@ async function createRuntimeLaunch(
   }
   const html5 = runtime instanceof Html5Runtime ? runtime : new Html5Runtime();
   return html5.createLaunch(request, context);
+}
+
+async function learnerGroupIds(
+  manager: EntityManager,
+  personId: string,
+): Promise<Set<string>> {
+  const memberships = await manager.find(Membership, {
+    where: { personId, collectionType: 'group' },
+  });
+  return new Set(memberships.map((row) => row.collectionId));
 }
 
 function progressMapFromRows(

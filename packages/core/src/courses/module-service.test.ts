@@ -47,10 +47,82 @@ describe('ModuleService', () => {
       title: 'Override',
       sortOrder: 1,
       availabilityJson: {
-        afterModuleId: first.moduleId,
-        minScore: 0.5,
+        version: 1,
+        all: [
+          { type: 'module_completed', moduleId: first.moduleId },
+          { type: 'min_score', moduleId: first.moduleId, score: 0.5 },
+        ],
       },
     });
+  });
+
+  test('place stores version 1 rules as given', async () => {
+    const ds = createMockDataSource();
+    ds.seed(ContentPackage, {
+      id: PACKAGE_ID,
+      packageType: 'html5',
+      title: 'HTML5 package',
+      storageKey: 'k',
+      manifestJson: {},
+    });
+    const rules = {
+      version: 1 as const,
+      any: [
+        { type: 'group_member' as const, groupId: 'g1' },
+        { type: 'module_completed' as const, moduleId: 'm1' },
+      ],
+    };
+
+    const service = new ModuleService(ds as unknown as DataSource);
+    await service.place(SECTION_ID, {
+      contentPackageId: PACKAGE_ID,
+      availability: rules,
+    });
+
+    expect(ds.rowsOf(CourseModule)[0]?.availabilityJson).toEqual(rules);
+  });
+
+  test('place rejects invalid availability and stores nothing', async () => {
+    const ds = createMockDataSource();
+    ds.seed(ContentPackage, {
+      id: PACKAGE_ID,
+      packageType: 'html5',
+      title: 'HTML5 package',
+      storageKey: 'k',
+      manifestJson: {},
+    });
+    const service = new ModuleService(ds as unknown as DataSource);
+
+    const attempt = service.place(SECTION_ID, {
+      contentPackageId: PACKAGE_ID,
+      availability: { version: 1, any: [] },
+    });
+
+    await expect(attempt).rejects.toMatchObject({
+      code: 'AVAILABILITY_INVALID',
+      status: 400,
+    });
+    await expect(attempt).rejects.toThrow('at least one condition');
+    expect(ds.rowsOf(CourseModule)).toEqual([]);
+  });
+
+  test('place with no rules stores null', async () => {
+    const ds = createMockDataSource();
+    ds.seed(ContentPackage, {
+      id: PACKAGE_ID,
+      packageType: 'html5',
+      title: 'HTML5 package',
+      storageKey: 'k',
+      manifestJson: {},
+    });
+    const service = new ModuleService(ds as unknown as DataSource);
+
+    await service.place(SECTION_ID, {
+      contentPackageId: PACKAGE_ID,
+      availability: {},
+    });
+
+    expect(ds.rowsOf(CourseModule)[0]?.availabilityJson).toBeNull();
   });
 
   test('reorder writes 0-based sort_order', async () => {

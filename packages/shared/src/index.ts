@@ -27,6 +27,21 @@ export type {
 export type { PackageFileIndex } from './models/package-file-index';
 export type { ActivityNodeTree, ParsedPackage } from './models/parsed-package';
 
+export type {
+  AvailabilityCondition,
+  AvailabilityGroup,
+  AvailabilityNode,
+  AvailabilityParseResult,
+  AvailabilityV0,
+  AvailabilityV1,
+} from './models/availability';
+export {
+  MAX_AVAILABILITY_DEPTH,
+  MAX_AVAILABILITY_NODES,
+  parseAvailability,
+  referencedGroupIds,
+} from './models/availability';
+
 // Contracts
 export type { ContentRuntime, ProgressSink } from './contracts/content-runtime';
 export type { IdentityAdapter } from './contracts/identity-adapter';
@@ -71,6 +86,7 @@ export {
   ENROLMENT_WINDOW_CLOSED,
   LAUNCH_NOT_IMPLEMENTED,
   LAUNCH_SESSION_OPEN,
+  AVAILABILITY_INVALID,
   LMS_ERROR_HTTP_STATUS,
   LmsError,
   MODULE_NOT_AVAILABLE,

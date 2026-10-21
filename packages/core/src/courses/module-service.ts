@@ -4,7 +4,6 @@ import {
   ContentPackage,
   CourseModule,
 } from '@richardmcquiston01/reactive-lms-persistence';
-import type { ModuleAvailability } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
   MODULE_NOT_FOUND,
@@ -12,6 +11,10 @@ import {
   httpStatusForLmsCode,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource, EntityManager } from 'typeorm';
+import {
+  normalizeAvailabilityInput,
+  type AvailabilityInput,
+} from '../launch/availability';
 
 /**
  * Input for {@link ModuleService.place}.
@@ -25,13 +28,11 @@ export interface PlaceModuleInput {
   title?: string;
   /** Explicit sort position; defaults to append after the current max. */
   sortOrder?: number;
-  /** Conditional availability stored on the module. */
-  availability?: {
-    afterModuleId?: string;
-    availableFrom?: string;
-    availableUntil?: string;
-    minScore?: number;
-  };
+  /**
+   * Conditions that must hold for the module to launch. Accepts version 1
+   * rules or the older single-object form; stored as version 1.
+   */
+  availability?: AvailabilityInput;
 }
 
 /**
@@ -79,7 +80,7 @@ export class ModuleService {
       const sortOrder =
         input.sortOrder ?? (await nextSortOrder(manager, sectionId));
 
-      const availabilityJson = toAvailability(input.availability);
+      const availabilityJson = normalizeAvailabilityInput(input.availability);
       const module = manager.create(CourseModule, {
         id: randomUUID(),
         courseSectionId: sectionId,
@@ -133,26 +134,4 @@ async function nextSortOrder(
   });
   const max = rows[0]?.sortOrder;
   return typeof max === 'number' ? max + 1 : 0;
-}
-
-function toAvailability(
-  availability?: PlaceModuleInput['availability'],
-): ModuleAvailability | null {
-  if (!availability) {
-    return null;
-  }
-  const cleaned: ModuleAvailability = {};
-  if (availability.afterModuleId) {
-    cleaned.afterModuleId = availability.afterModuleId;
-  }
-  if (availability.availableFrom) {
-    cleaned.availableFrom = availability.availableFrom;
-  }
-  if (availability.availableUntil) {
-    cleaned.availableUntil = availability.availableUntil;
-  }
-  if (typeof availability.minScore === 'number') {
-    cleaned.minScore = availability.minScore;
-  }
-  return Object.keys(cleaned).length > 0 ? cleaned : null;
 }

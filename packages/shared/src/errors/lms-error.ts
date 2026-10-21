@@ -8,6 +8,7 @@ export type LmsErrorCode =
   | typeof PACKAGE_INVALID_ZIP
   | typeof PACKAGE_ZIP_BOMB
   | typeof STORAGE_KEY_NOT_FOUND
+  | typeof AVAILABILITY_INVALID
   | typeof STORAGE_KEY_INVALID
   | typeof STORAGE_IO_ERROR
   | typeof STORAGE_RANGE_INVALID
@@ -42,6 +43,9 @@ export const STORAGE_KEY_NOT_FOUND = 'STORAGE_KEY_NOT_FOUND';
 
 /** Storage key would escape the configured data root. */
 export const STORAGE_KEY_INVALID = 'STORAGE_KEY_INVALID';
+
+/** Availability rules failed validation; `details` lists each problem. */
+export const AVAILABILITY_INVALID = 'AVAILABILITY_INVALID';
 
 /** A requested byte range starts past the end of the object. */
 export const STORAGE_RANGE_INVALID = 'STORAGE_RANGE_INVALID';
@@ -94,6 +98,7 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [PACKAGE_INVALID_ZIP]: 400,
   [PACKAGE_ZIP_BOMB]: 400,
   [STORAGE_KEY_INVALID]: 400,
+  [AVAILABILITY_INVALID]: 400,
   [STORAGE_IO_ERROR]: 500,
   [STORAGE_RANGE_INVALID]: 416,
   [CMI5_TOKEN_USED]: 400,
