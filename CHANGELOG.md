@@ -4,6 +4,9 @@
 
 ### Added
 
+- ROADMAP records D14, an opt-in learner engagement extension package
+  (spaced repetition and lightweight gamification) targeted at 1.5.0, and
+  narrows the "social/gamification" non-goal to allow it in that package only.
 - `CacheAdapter` (D7) and `ErrorSink` (D12) contracts in `shared`. The cache
   holds small string state with expiry and offers atomic `setIfAbsent` and
   `take` for cmi5 one-time tokens and LTI nonces. `MemoryCacheAdapter` is the
