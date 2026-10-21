@@ -1,0 +1,34 @@
+{
+  "name": "@reactive-lms/standalone-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -b",
+    "start": "bun src/main.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/swagger": "^11.2.0",
+    "@reactive-lms/core": "workspace:*",
+    "@reactive-lms/nest": "workspace:*",
+    "@reactive-lms/persistence": "workspace:*",
+    "@reactive-lms/shared": "workspace:*",
+    "pg": "^8.23.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.3.31"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0"
+  }
+}
