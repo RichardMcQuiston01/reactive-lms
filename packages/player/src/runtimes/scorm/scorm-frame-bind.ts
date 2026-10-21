@@ -1,4 +1,4 @@
-import type { ScormCmiDto } from '@reactive-lms/shared';
+import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
 import { ScormApiBridge, type ScormApiHost } from './scorm-api-bridge';
 
 /**

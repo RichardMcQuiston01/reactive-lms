@@ -17,12 +17,12 @@ import {
   ProgressSinkService,
   Scorm12Runtime,
   ScormCmiService,
-} from '@reactive-lms/core';
+} from '@richardmcquiston01/reactive-lms-core';
 import type {
   CapabilityAdapter,
   IdentityAdapter,
   StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { CatalogService } from './catalog/catalog.service';
 import { CoursesController } from './controllers/courses.controller';
@@ -92,7 +92,7 @@ const CONTROLLERS = [
 ];
 
 /**
- * Embeddable Nest module: REST + OpenAPI over `@reactive-lms/core`.
+ * Embeddable Nest module: REST + OpenAPI over `@richardmcquiston01/reactive-lms-core`.
  */
 @Module({})
 export class ReactiveLmsModule {

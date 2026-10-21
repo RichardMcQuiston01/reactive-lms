@@ -1,13 +1,13 @@
 import type {
   CourseModule,
   ModuleAvailability,
-} from '@reactive-lms/persistence';
-import type { CompletionStatus } from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-persistence';
+import type { CompletionStatus } from '@richardmcquiston01/reactive-lms-shared';
 import {
   LmsError,
   MODULE_NOT_AVAILABLE,
   httpStatusForLmsCode,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 
 /**
  * Progress snapshot used by {@link assertAvailable}.

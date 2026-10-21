@@ -4,7 +4,7 @@ import {
   httpStatusForLmsCode,
   type PackageFileIndex,
   type PackageType,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { normalizePackagePath } from './package-file-index';
 
 const CMI5_MARKER = 'cmi5.xml';

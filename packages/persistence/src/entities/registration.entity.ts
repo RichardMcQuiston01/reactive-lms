@@ -1,4 +1,4 @@
-import type { RegistrationStatus } from '@reactive-lms/shared';
+import type { RegistrationStatus } from '@richardmcquiston01/reactive-lms-shared';
 import { Column, Entity, Unique } from 'typeorm';
 import { AuditedEntity } from './base.entity';
 

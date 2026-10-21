@@ -3,8 +3,11 @@ import {
   CourseSection,
   NormalizedProgress as NormalizedProgressRow,
   Registration,
-} from '@reactive-lms/persistence';
-import type { NormalizedProgress, ProgressSink } from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-persistence';
+import type {
+  NormalizedProgress,
+  ProgressSink,
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { computeRegistrationStatus } from './course-completion';

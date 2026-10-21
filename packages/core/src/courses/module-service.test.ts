@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { ContentPackage, CourseModule } from '@reactive-lms/persistence';
-import { LmsError } from '@reactive-lms/shared';
+import {
+  ContentPackage,
+  CourseModule,
+} from '@richardmcquiston01/reactive-lms-persistence';
+import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { createMockDataSource } from '../test/mock-data-source';
 import { ModuleService } from './module-service';

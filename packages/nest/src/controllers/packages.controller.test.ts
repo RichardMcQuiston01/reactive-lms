@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import type { PackageImporter } from '@reactive-lms/core';
-import { LmsError, PACKAGE_NOT_DETECTED } from '@reactive-lms/shared';
+import type { PackageImporter } from '@richardmcquiston01/reactive-lms-core';
+import {
+  LmsError,
+  PACKAGE_NOT_DETECTED,
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { CatalogService } from '../catalog/catalog.service';
 import type { LmsRequestService } from '../identity/lms-request.service';
 import { PackagesController } from './packages.controller';

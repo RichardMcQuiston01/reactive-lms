@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Person } from '@reactive-lms/persistence';
-import type { LearnerRef } from '@reactive-lms/shared';
+import { Person } from '@richardmcquiston01/reactive-lms-persistence';
+import type { LearnerRef } from '@richardmcquiston01/reactive-lms-shared';
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { RLMS_DATA_SOURCE } from '../tokens';

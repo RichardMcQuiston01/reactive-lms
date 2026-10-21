@@ -11,12 +11,15 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { PackageImporter, type ImportPackageResult } from '@reactive-lms/core';
+import {
+  PackageImporter,
+  type ImportPackageResult,
+} from '@richardmcquiston01/reactive-lms-core';
 import {
   LmsError,
   PACKAGE_NOT_DETECTED,
   httpStatusForLmsCode,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import {
   CatalogService,
   type ContentPackageDetail,

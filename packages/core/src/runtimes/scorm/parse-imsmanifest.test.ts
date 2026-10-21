@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { LmsError, PACKAGE_NOT_DETECTED } from '@reactive-lms/shared';
+import {
+  LmsError,
+  PACKAGE_NOT_DETECTED,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { createMemoryFileIndex } from '../../import/package-file-index';
 import { parseImsmanifest } from './parse-imsmanifest';
 

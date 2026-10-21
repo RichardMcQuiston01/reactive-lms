@@ -1,6 +1,6 @@
 {
-  "name": "@reactive-lms/player",
-  "version": "0.0.0",
+  "name": "@richardmcquiston01/reactive-lms-player",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -15,7 +15,7 @@
   "dependencies": {
     "@angular/common": "^18.2.13",
     "@angular/core": "^18.2.13",
-    "@reactive-lms/shared": "workspace:*",
+    "@richardmcquiston01/reactive-lms-shared": "workspace:*",
     "rxjs": "^7.8.2"
   },
   "peerDependencies": {

@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, readdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { LmsError, PACKAGE_NOT_DETECTED } from '@reactive-lms/shared';
+import {
+  LmsError,
+  PACKAGE_NOT_DETECTED,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { zipSync, strToU8 } from 'fflate';
 import type { DataSource } from 'typeorm';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';

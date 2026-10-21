@@ -1,6 +1,6 @@
 {
-  "name": "@reactive-lms/standalone-web",
-  "version": "0.0.0",
+  "name": "@richardmcquiston01/reactive-lms-standalone-web",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@angular/core": "^18.2.13",
-    "@reactive-lms/player": "workspace:*",
-    "@reactive-lms/shared": "workspace:*"
+    "@richardmcquiston01/reactive-lms-player": "workspace:*",
+    "@richardmcquiston01/reactive-lms-shared": "workspace:*"
   }
 }

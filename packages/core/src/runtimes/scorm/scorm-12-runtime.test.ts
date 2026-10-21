@@ -3,7 +3,7 @@ import {
   LmsError,
   PACKAGE_NOT_DETECTED,
   type LaunchRequest,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { createMemoryFileIndex } from '../../import/package-file-index';
 import { Scorm12Runtime } from './scorm-12-runtime';
 

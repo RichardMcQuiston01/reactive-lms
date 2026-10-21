@@ -3,14 +3,14 @@ import {
   ActivityNode,
   ContentPackage,
   CourseModule,
-} from '@reactive-lms/persistence';
-import type { ModuleAvailability } from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
+import type { ModuleAvailability } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
   MODULE_NOT_FOUND,
   PACKAGE_NOT_FOUND,
   httpStatusForLmsCode,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource, EntityManager } from 'typeorm';
 
 /**

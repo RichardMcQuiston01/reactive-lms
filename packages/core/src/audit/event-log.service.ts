@@ -1,4 +1,4 @@
-import { EventLog } from '@reactive-lms/persistence';
+import { EventLog } from '@richardmcquiston01/reactive-lms-persistence';
 import type { DataSource, EntityManager } from 'typeorm';
 
 /**

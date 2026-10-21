@@ -6,4 +6,4 @@ export {
   mapCmiToProgress,
   type CmiStoreSeed,
   type CmiValues,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';

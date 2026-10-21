@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { ScormCmiService } from '@reactive-lms/core';
-import type { ScormCmiDto } from '@reactive-lms/shared';
+import type { ScormCmiService } from '@richardmcquiston01/reactive-lms-core';
+import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
 import type { LmsRequestService } from '../identity/lms-request.service';
 import { ScormRuntimeController } from './scorm-runtime.controller';
 

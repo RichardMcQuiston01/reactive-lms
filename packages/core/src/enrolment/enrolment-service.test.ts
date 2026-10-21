@@ -4,8 +4,8 @@ import {
   EventLog,
   Membership,
   Registration,
-} from '@reactive-lms/persistence';
-import { LmsError } from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-persistence';
+import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { EnrolmentService } from './enrolment-service';

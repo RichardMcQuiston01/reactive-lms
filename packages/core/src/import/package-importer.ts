@@ -3,7 +3,7 @@ import {
   ActivityNode,
   ContentPackage,
   EventLog,
-} from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
   PACKAGE_TYPE_UNSUPPORTED,
@@ -12,7 +12,7 @@ import {
   type ContentRuntime,
   type PackageType,
   type StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { detectPackageType } from './detect-package-type';
 import { createZipFileIndex } from './package-file-index';

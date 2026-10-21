@@ -4,7 +4,7 @@ import {
   NormalizedProgress as NormalizedProgressRow,
   Person,
   Registration,
-} from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
 import {
   ATTEMPT_NOT_FOUND,
   CmiStore,
@@ -15,7 +15,7 @@ import {
   type CmiValues,
   type LaunchMode,
   type ScormCmiDto,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { ProgressSinkService } from '../../progress/progress-sink';
 

@@ -1,4 +1,4 @@
-import type { PackageFileIndex } from '@reactive-lms/shared';
+import type { PackageFileIndex } from '@richardmcquiston01/reactive-lms-shared';
 import { assertZipNotBomb, readZipMember } from './zip-limits';
 
 /**

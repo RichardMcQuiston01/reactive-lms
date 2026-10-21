@@ -3,7 +3,7 @@ import {
   type ArgumentsHost,
   type ExceptionFilter,
 } from '@nestjs/common';
-import { LmsError } from '@reactive-lms/shared';
+import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
 import type { Response } from 'express';
 
 /**

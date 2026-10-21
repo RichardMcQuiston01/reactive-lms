@@ -7,7 +7,7 @@ import {
   STORAGE_KEY_NOT_FOUND,
   httpStatusForLmsCode,
   type StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { unzipSync } from 'fflate';
 import {
   DEFAULT_MAX_ZIP_FILE_COUNT,

@@ -7,12 +7,12 @@ import {
   EventLog,
   NormalizedProgress,
   Registration,
-} from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
 import {
   LmsError,
   type LaunchRequest,
   type StorageAdapter,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';

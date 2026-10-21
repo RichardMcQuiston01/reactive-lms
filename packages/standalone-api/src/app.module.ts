@@ -4,8 +4,8 @@ import {
   type MiddlewareConsumer,
   type NestModule,
 } from '@nestjs/common';
-import { createPersistenceDataSource } from '@reactive-lms/persistence';
-import { ReactiveLmsModule } from '@reactive-lms/nest';
+import { createPersistenceDataSource } from '@richardmcquiston01/reactive-lms-persistence';
+import { ReactiveLmsModule } from '@richardmcquiston01/reactive-lms-nest';
 import { ContentMiddleware } from './content/content.middleware';
 import { HealthController } from './health.controller';
 import { DemoIdentityAdapter } from './identity/demo-identity.adapter';

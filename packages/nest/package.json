@@ -1,6 +1,6 @@
 {
-  "name": "@reactive-lms/nest",
-  "version": "0.0.0",
+  "name": "@richardmcquiston01/reactive-lms-nest",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -17,9 +17,9 @@
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/swagger": "^11.2.0",
-    "@reactive-lms/core": "workspace:*",
-    "@reactive-lms/persistence": "workspace:*",
-    "@reactive-lms/shared": "workspace:*",
+    "@richardmcquiston01/reactive-lms-core": "workspace:*",
+    "@richardmcquiston01/reactive-lms-persistence": "workspace:*",
+    "@richardmcquiston01/reactive-lms-shared": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.31"

@@ -1,4 +1,4 @@
-import type { PackageType } from '@reactive-lms/shared';
+import type { PackageType } from '@richardmcquiston01/reactive-lms-shared';
 import { Column, Entity } from 'typeorm';
 import { AuditedEntity } from './base.entity';
 

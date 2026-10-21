@@ -1,4 +1,4 @@
-import type { LaunchMode } from '@reactive-lms/shared';
+import type { LaunchMode } from '@richardmcquiston01/reactive-lms-shared';
 import { Column, Entity } from 'typeorm';
 import { TimestampedEntity } from './base.entity';
 

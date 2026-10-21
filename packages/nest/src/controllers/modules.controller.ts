@@ -9,7 +9,10 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { ModuleService, type PlaceModuleInput } from '@reactive-lms/core';
+import {
+  ModuleService,
+  type PlaceModuleInput,
+} from '@richardmcquiston01/reactive-lms-core';
 import {
   CatalogService,
   type UpdateModuleInput,

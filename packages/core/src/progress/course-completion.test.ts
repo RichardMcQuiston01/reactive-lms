@@ -5,7 +5,7 @@ import {
   EventLog,
   NormalizedProgress,
   Registration,
-} from '@reactive-lms/persistence';
+} from '@richardmcquiston01/reactive-lms-persistence';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { createMockDataSource } from '../test/mock-data-source';

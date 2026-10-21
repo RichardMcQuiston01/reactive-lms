@@ -8,13 +8,13 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { ProgressSinkService } from '@reactive-lms/core';
+import { ProgressSinkService } from '@richardmcquiston01/reactive-lms-core';
 import {
   LmsError,
   MODULE_NOT_FOUND,
   httpStatusForLmsCode,
   type NormalizedProgress,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogService } from '../catalog/catalog.service';
 import { LmsRequestService } from '../identity/lms-request.service';
 

@@ -5,7 +5,7 @@ import {
   type ActivityNodeTree,
   type PackageFileIndex,
   type ParsedPackage,
-} from '@reactive-lms/shared';
+} from '@richardmcquiston01/reactive-lms-shared';
 import { normalizePackagePath } from '../../import/package-file-index';
 
 interface XmlElement {
