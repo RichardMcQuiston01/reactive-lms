@@ -72,9 +72,8 @@ export class PackagesScreenComponent implements OnInit {
   readonly uploading = signal<boolean>(false);
   private readonly lists = new LatestOnly();
 
-  async ngOnInit(): Promise<void> {
-    await this.reload();
-    this.loading.set(false);
+  ngOnInit(): Promise<void> {
+    return this.reload();
   }
 
   /**
@@ -112,22 +111,16 @@ export class PackagesScreenComponent implements OnInit {
     }
   }
 
-  private async reload(): Promise<void> {
-    const isCurrent = this.lists.begin();
-    try {
-      const packages = await this.catalog.listPackages();
-      if (isCurrent()) {
-        this.packages.set(packages);
-      }
-    } catch (failure) {
-      if (!isCurrent()) {
-        return;
-      }
-      this.error.set(
-        failure instanceof Error
-          ? `Could not load packages: ${failure.message}`
-          : 'Could not load packages.',
-      );
-    }
+  private reload(): Promise<void> {
+    return this.lists.load(() => this.catalog.listPackages(), {
+      onData: (packages) => this.packages.set(packages),
+      onFailure: (failure) =>
+        this.error.set(
+          failure instanceof Error
+            ? `Could not load packages: ${failure.message}`
+            : 'Could not load packages.',
+        ),
+      onSettled: () => this.loading.set(false),
+    });
   }
 }

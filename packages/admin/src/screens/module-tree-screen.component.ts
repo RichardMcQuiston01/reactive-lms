@@ -377,29 +377,21 @@ export class ModuleTreeScreenComponent implements OnInit {
     }
   }
 
-  private async reload(): Promise<void> {
-    const isCurrent = this.lists.begin();
+  private reload(): Promise<void> {
     if (this.sectionId() === '') {
       this.loading.set(false);
-      return;
+      return Promise.resolve();
     }
-    try {
-      const modules = await this.service.list(this.sectionId());
-      if (isCurrent()) {
-        this.modules.set(modules);
-      }
-    } catch (failure) {
-      if (isCurrent()) {
+    const sectionId = this.sectionId();
+    return this.lists.load(() => this.service.list(sectionId), {
+      onData: (modules) => this.modules.set(modules),
+      onFailure: (failure) =>
         this.error.set(
           failure instanceof Error
             ? `Could not load modules: ${failure.message}`
             : 'Could not load modules.',
-        );
-      }
-    } finally {
-      if (isCurrent()) {
-        this.loading.set(false);
-      }
-    }
+        ),
+      onSettled: () => this.loading.set(false),
+    });
   }
 }
