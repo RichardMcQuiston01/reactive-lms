@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Admin list loading could show stale data when two loads overlapped. On the
+  packages screen, importing a package while the first list was still loading
+  could let the older response overwrite the refreshed list and hide the new
+  package. The module-tree screen had the same flaw, including when switching
+  sections quickly. Only the newest response is applied now, and the import
+  form is disabled until the first list has loaded.
+
 ### Added
 
 - Admin package upload: the `packages` screen imports a ZIP archive, shows the

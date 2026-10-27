@@ -11,6 +11,7 @@ import type {
   CourseModuleDto,
 } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogAdminService } from '../modules/catalog-admin.service';
+import { LatestOnly } from '../modules/latest-only';
 import { ModuleAdminService } from '../modules/module-admin.service';
 import {
   buildModuleTree,
@@ -224,6 +225,7 @@ export class ModuleTreeScreenComponent implements OnInit {
   readonly busy = signal<boolean>(false);
   readonly error = signal<string>('');
   readonly editingId = signal<string | null>(null);
+  private readonly lists = new LatestOnly();
 
   readonly rows = computed<ModuleTreeNode[]>(() =>
     flattenModuleTree(buildModuleTree(this.modules())),
@@ -376,20 +378,28 @@ export class ModuleTreeScreenComponent implements OnInit {
   }
 
   private async reload(): Promise<void> {
+    const isCurrent = this.lists.begin();
     if (this.sectionId() === '') {
       this.loading.set(false);
       return;
     }
     try {
-      this.modules.set(await this.service.list(this.sectionId()));
+      const modules = await this.service.list(this.sectionId());
+      if (isCurrent()) {
+        this.modules.set(modules);
+      }
     } catch (failure) {
-      this.error.set(
-        failure instanceof Error
-          ? `Could not load modules: ${failure.message}`
-          : 'Could not load modules.',
-      );
+      if (isCurrent()) {
+        this.error.set(
+          failure instanceof Error
+            ? `Could not load modules: ${failure.message}`
+            : 'Could not load modules.',
+        );
+      }
     } finally {
-      this.loading.set(false);
+      if (isCurrent()) {
+        this.loading.set(false);
+      }
     }
   }
 }
