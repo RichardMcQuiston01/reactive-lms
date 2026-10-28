@@ -1,6 +1,7 @@
 import { Component, inject, signal, type OnInit } from '@angular/core';
 import type { ContentPackageDto } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogAdminService } from '../modules/catalog-admin.service';
+import { LatestOnly } from '../modules/latest-only';
 import { checkPackageFile } from '../modules/package-upload';
 
 /**
@@ -19,9 +20,9 @@ import { checkPackageFile } from '../modules/package-upload';
         type="file"
         accept=".zip,application/zip"
         aria-label="Package ZIP"
-        [disabled]="uploading()"
+        [disabled]="uploading() || loading()"
       />
-      <button type="submit" [disabled]="uploading()">
+      <button type="submit" [disabled]="uploading() || loading()">
         {{ uploading() ? 'Importing…' : 'Import package' }}
       </button>
     </form>
@@ -69,10 +70,10 @@ export class PackagesScreenComponent implements OnInit {
   readonly error = signal<string>('');
   readonly notice = signal<string>('');
   readonly uploading = signal<boolean>(false);
+  private readonly lists = new LatestOnly();
 
-  async ngOnInit(): Promise<void> {
-    await this.reload();
-    this.loading.set(false);
+  ngOnInit(): Promise<void> {
+    return this.reload();
   }
 
   /**
@@ -110,15 +111,16 @@ export class PackagesScreenComponent implements OnInit {
     }
   }
 
-  private async reload(): Promise<void> {
-    try {
-      this.packages.set(await this.catalog.listPackages());
-    } catch (failure) {
-      this.error.set(
-        failure instanceof Error
-          ? `Could not load packages: ${failure.message}`
-          : 'Could not load packages.',
-      );
-    }
+  private reload(): Promise<void> {
+    return this.lists.load(() => this.catalog.listPackages(), {
+      onData: (packages) => this.packages.set(packages),
+      onFailure: (failure) =>
+        this.error.set(
+          failure instanceof Error
+            ? `Could not load packages: ${failure.message}`
+            : 'Could not load packages.',
+        ),
+      onSettled: () => this.loading.set(false),
+    });
   }
 }
