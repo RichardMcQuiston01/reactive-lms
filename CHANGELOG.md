@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- `standalone-api` now runs pending migrations on start, so a fresh empty
+  database works without a separate step. Set `RLMS_RUN_MIGRATIONS=false`
+  (or `0`, `no`, `off`) to apply migrations yourself; an unrecognised value
+  stops the process with a message naming the variable. Previously the app
+  started against an empty database and every request failed.
 - Admin list loading could show stale data when two loads overlapped. On the
   packages screen, importing a package while the first list was still loading
   could let the older response overwrite the refreshed list and hide the new
