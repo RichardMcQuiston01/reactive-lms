@@ -80,6 +80,22 @@ service. To run the database-backed persistence tests locally, point
 `RLMS_TEST_DATABASE_URL` at an empty Postgres 13+ database; without it those
 tests are skipped.
 
+### Running the standalone API
+
+`standalone-api` reads these environment variables:
+
+| Variable | Default | Meaning |
+| -------- | ------- | ------- |
+| `RLMS_DATABASE_URL` (or `DATABASE_URL`) | built from `DATABASE_*` parts | Postgres connection URL |
+| `RLMS_DATAROOT` (or `DATAROOT`) | `./data` | Directory for uploaded and extracted packages, outside the web root |
+| `RLMS_RUN_MIGRATIONS` | `true` | Run pending migrations on start. Set `false` (or `0`, `no`, `off`) if you apply migrations yourself |
+| `PORT` | `3000` | HTTP port |
+
+Standalone owns its database, so a fresh empty database is migrated on first
+start. When running several API processes against one database, start one
+first so two do not migrate at once. An unrecognised `RLMS_RUN_MIGRATIONS`
+value stops the process with a message naming the variable.
+
 ## Documentation
 
 - [docs/DESIGN_CONSIDERATIONS.md](docs/DESIGN_CONSIDERATIONS.md) — product
