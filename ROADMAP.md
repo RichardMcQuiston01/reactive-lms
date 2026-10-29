@@ -4,7 +4,7 @@ Release plan for ReactiveLMS, derived from [GROK_PLAN.md](GROK_PLAN.md).
 The plan holds the detail (domain model, API surface, step lists); this file
 holds the order, the exit criteria, and the decisions still open.
 
-Status key: ✅ done · 🚧 in progress · ⬜ planned · ⏸ waiting · ❓ blocked on a decision
+Status key: ✅ done · 🚧 in progress (partly built) · ⬜ planned · ⏸ waiting · ❓ blocked on a decision
 
 ## Adopted packages
 
@@ -41,9 +41,9 @@ Boundaries, so the two don't blur:
 | Version | Theme                       | PRs (GROK_PLAN §14) | Status |
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
-| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ⏸ waits for both packages at 1.0 |
-| 0.3.0   | Course container + HTML5 + first admin screens | 3 | ⬜     |
-| 0.4.0   | SCORM 1.2                   | 4                   | ⬜     |
+| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ✅ released 2026-10-29 (see `docs/PLAN_0.2.0.md`) |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, and placement screens built; enrolment and progress screens remain |
+| 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, and player bridge built; sample-package fixtures and conformance check remain |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
@@ -54,6 +54,7 @@ Boundaries, so the two don't blur:
 | 1.2.0   | Reusable learning paths (D5)  | —                 | ⬜     |
 | 1.3.0   | Built-in certificates (D6, option C) | —               | ⬜     |
 | 1.4.0   | Open Badges 3.0 credentials (D6, option D) | —         | ⬜     |
+| 1.5.0   | Learner engagement extension (D14) | —         | ⬜     |
 | later   | SCORM 2004 sequencing, only if the 0.6.0 spike fails | 6b | ⬜     |
 
 Order notes: after 0.3.0, the cmi5, SCORM 2004, H5P, and LTI work depends only
@@ -65,7 +66,7 @@ not a constraint. LTI depends only on the schema (PR 2).
 - Design spec, technology stack, implementation plan
 - MIT license, README, CHANGELOG, funding metadata
 
-## 0.2.0 — Scaffold, contracts, schema
+## 0.2.0 — Scaffold, contracts, schema ✅
 
 **Delivers**
 
@@ -83,6 +84,14 @@ not a constraint. LTI depends only on the schema (PR 2).
 
 **Done when:** migrations apply to an empty Postgres and the unique
 constraints exist; another package can import from `@richardmcquiston01/reactive-lms-shared`.
+
+**Verified:** CI applies the migration to an empty Postgres 16 and runs the
+persistence integration tests, including the unique constraints.
+
+**Not included:** the `storage-adapters`-backed cache and the
+`error-log-adapter` wiring, which D13 holds until both packages reach 1.0.
+`CacheAdapter` ships with an in-memory implementation and `ErrorSink` with a
+console fallback, so nothing else waits on them.
 
 **Guardrail:** dump the database and get an explicit OK before running
 migrations against any shared database.
@@ -237,6 +246,32 @@ at the public endpoint, and forgetting the learner anonymises it.
 using the 1EdTech Open Badges 3.0 standard: issuer key management, credential
 signing, and a verification path. Extends C; it does not replace it.
 
+## 1.5.0 — Learner engagement extension (D14)
+
+**Delivers:** an opt-in package, `@richardmcquiston01/reactive-lms-engagement`,
+with spaced-repetition review and lightweight gamification. The core never
+depends on it.
+
+- `ReviewScheduler` interface with an SM-2 implementation; FSRS later with
+  fixed default parameters (no per-tenant training)
+- Instructor-curated review items per content module (never per block); items
+  derived from H5P or xAPI statements are a later option
+- Every review attempt is logged; the server computes the next due date from
+  the learner's grade, never the browser
+- Small daily sessions (3 to 10 items) with overdue items spread out, and a
+  link back to the source module after repeated lapses
+- Streaks (with freezes), an append-only point ledger, and milestone badges
+  that reuse the 1.3.0 issuing flow and can become Open Badges 3.0
+  credentials at 1.4.0; leaderboards are opt-in and scoped to a section
+- Owns its own `rlms_` tables (portable entity types per D9), included in
+  `GET /people/:id/export` and `DELETE /people/:id/forget`
+- UI as replaceable Angular components through the D2 extension points,
+  which gain slots for extra course tabs and report columns here
+
+**Done when:** a learner reviews due items in the player, the next due date
+follows the scheduler, a streak and a badge are awarded, and forgetting the
+learner removes their review state and logs.
+
 ## Later
 
 - SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
@@ -246,7 +281,7 @@ signing, and a verification path. Extends C; it does not replace it.
 
 Native quizzes/QTI, forums/assignments/calendar/chat, competencies,
 content bank, plugin themes/blocks/formats, authoring, marketplace/e-commerce,
-social/gamification, built-in IdP, LIS SOAP/LDAP, LTI 1.1, LTI dynamic
+social features (feeds, chat; gamification is allowed only in the D14 extension package), built-in IdP, LIS SOAP/LDAP, LTI 1.1, LTI dynamic
 registration/proctoring/Caliper, acting as an LTI Tool, Moodle `.mbz`,
 multi-tenant billing, native mobile apps, AICC.
 
@@ -284,6 +319,32 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   `@richardmcquiston01/error-log-adapter` have stable 1.0 releases (currently
   0.20.0 and 0.15.0). No pre-1.0 version pinning or wrapping is needed as a
   result; depend on released 1.x versions.
+- **D14 — Learner engagement extension** (recorded 2026-10-21 at the
+  owner's request). Design only; no work starts before 1.0.0 (target 1.5.0).
+  - **Package:** opt-in `@richardmcquiston01/reactive-lms-engagement`. Hosts
+    register it in their Nest module configuration; nothing runs otherwise.
+    It consumes the 0.9.0 completion events hook and progress stream, and
+    never writes to `event_log`, which stays the audit trail.
+  - **Scope:** spaced-repetition review (SM-2 behind a `ReviewScheduler`
+    interface, FSRS later) and lightweight gamification (streaks, points,
+    milestone badges). Moves "gamification" out of the v1 non-goals for this
+    package only; feeds, chat, and forums remain non-goals. Overrides the
+    GROK_PLAN "no gamification" default.
+  - **Review items:** instructor-curated and tied to `course_module`, because
+    curation is per placement; blocks cannot have items. H5P/xAPI-derived
+    items are a later option.
+  - **Dependencies:** state caching goes through the injected `CacheAdapter`
+    only, with no direct `storage-adapters` dependency, so the D13 gate does
+    not reach this package.
+  - **GDPR:** review state, logs, streaks, points, and badge awards are
+    personal data. Export includes them; forget deletes them. Only genuinely
+    anonymised aggregates may remain.
+  - **Guardrails:** reward consistency over speed; opt-in leaderboards scoped
+    to a section or cohort; streak freezes; points weighted by difficulty or
+    lapse history; measure effect (daily active reviewers, completion rate,
+    retention on due items, A/B against a no-review control) before launch.
+  - **Open:** whether FSRS ever justifies parameter training for a
+    multi-tenant host (default: no).
 - **D10 — Git workflow** (decided 2026-10-20, per the owner's git-workflow
   skill). Long-lived branches: `main` (production) and `dev` (development);
   there is no `staging` branch. New work goes on `feature/<name>` off `dev`
