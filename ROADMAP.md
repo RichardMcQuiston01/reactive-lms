@@ -41,7 +41,7 @@ Boundaries, so the two don't blur:
 | Version | Theme                       | PRs (GROK_PLAN §14) | Status |
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
-| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | 🚧 built on `lms-foundation`; reconciling with decisions (see `docs/PLAN_0.2.0.md`) |
+| 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ✅ released 2026-10-29 (see `docs/PLAN_0.2.0.md`) |
 | 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, and placement screens built; enrolment and progress screens remain |
 | 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, and player bridge built; sample-package fixtures and conformance check remain |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
@@ -66,7 +66,7 @@ not a constraint. LTI depends only on the schema (PR 2).
 - Design spec, technology stack, implementation plan
 - MIT license, README, CHANGELOG, funding metadata
 
-## 0.2.0 — Scaffold, contracts, schema
+## 0.2.0 — Scaffold, contracts, schema ✅
 
 **Delivers**
 
@@ -84,6 +84,14 @@ not a constraint. LTI depends only on the schema (PR 2).
 
 **Done when:** migrations apply to an empty Postgres and the unique
 constraints exist; another package can import from `@richardmcquiston01/reactive-lms-shared`.
+
+**Verified:** CI applies the migration to an empty Postgres 16 and runs the
+persistence integration tests, including the unique constraints.
+
+**Not included:** the `storage-adapters`-backed cache and the
+`error-log-adapter` wiring, which D13 holds until both packages reach 1.0.
+`CacheAdapter` ships with an in-memory implementation and `ErrorSink` with a
+console fallback, so nothing else waits on them.
 
 **Guardrail:** dump the database and get an explicit OK before running
 migrations against any shared database.

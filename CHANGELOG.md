@@ -2,19 +2,7 @@
 
 ## Unreleased
 
-### Fixed
-
-- `standalone-api` now runs pending migrations on start, so a fresh empty
-  database works without a separate step. Set `RLMS_RUN_MIGRATIONS=false`
-  (or `0`, `no`, `off`) to apply migrations yourself; an unrecognised value
-  stops the process with a message naming the variable. Previously the app
-  started against an empty database and every request failed.
-- Admin list loading could show stale data when two loads overlapped. On the
-  packages screen, importing a package while the first list was still loading
-  could let the older response overwrite the refreshed list and hide the new
-  package. The module-tree screen had the same flaw, including when switching
-  sections quickly. Only the newest response is applied now, and the import
-  form is disabled until the first list has loaded.
+## 0.2.0 - 2026-10-29
 
 ### Added
 
@@ -31,15 +19,14 @@
   module-tree screen can place a package, with an optional title and target
   block. New `GET course-sections` (optional `courseOfferingId`) and
   `GET packages`, both paged with `limit` (default 200, at most 500) and
-  `offset`; unusable paging values fall back to the defaults. Package upload,
-  enrolment, and progress screens remain.
+  `offset`; unusable paging values fall back to the defaults. Enrolment and
+  progress screens remain.
 - Admin module-tree screen (`sections/:sectionId/modules`): shows a section's
   modules and blocks as an indented tree with each module's availability
   summary, and lets an administrator add blocks, rename, move earlier or
   later, move into another block (only valid blocks are offered), and remove.
   The server's message is shown when it refuses a change. It resolves through
-  `ADMIN_SCREEN_OVERRIDES` as `module-tree`. A simple `sections` screen opens a
-  section by id until a section list endpoint exists.
+  `ADMIN_SCREEN_OVERRIDES` as `module-tree`.
 - `GET course-sections/:id/modules` returns a section's modules as
   `CourseModuleDto` (flat; the client builds the tree), flagging blocks and
   reporting stored rules that cannot be read (`availabilityInvalid`).
@@ -112,14 +99,14 @@
   suspend_data, comments; objectives in extras), `GET`/`PUT
   /scorm/attempts/:id/cmi`, map `lesson_status` and `score.raw` onto
   `ProgressSink`, debounce Commit 500ms
-- `@reactive-lms/nest` `ReactiveLmsModule.registerAsync` with REST + OpenAPI
+- `@richardmcquiston01/reactive-lms-nest` `ReactiveLmsModule.registerAsync` with REST + OpenAPI
   for packages, course templates/offerings/sections, modules, enrolment,
   launches, and progress; `LmsError` filter returns `{ code, message }`
-- `@reactive-lms/standalone-api` boots that module with a filesystem dataroot
+- `@richardmcquiston01/reactive-lms-standalone-api` boots that module with a filesystem dataroot
   (`RLMS_DATAROOT`), `GET /health`, `/lms/content/**`, and a fixed demo learner
-- `@reactive-lms/player` Angular standalone `RlmsPlayerComponent` plus
+- `@richardmcquiston01/reactive-lms-player` Angular standalone `RlmsPlayerComponent` plus
   `provideReactiveLms`; HTML5 `postMessage` mapper posts launch progress
-- `@reactive-lms/core` course spine: `ModuleService` places/reorders imported
+- `@richardmcquiston01/reactive-lms-core` course spine: `ModuleService` places/reorders imported
   packages as course modules; `EnrolmentService` supports `manual`, `self`
   (open window + optional key), and `group` methods; `LaunchService` launches
   HTML5 modules in an iframe; `ProgressSinkService` rolls up
@@ -127,24 +114,26 @@
   `package.imported`, `enrol.joined`, `launch.started`, `progress.committed`
 - Shared error codes for module availability, enrolment gates (403), and
   package/module/registration not-found (404)
-- `@reactive-lms/core` HTML5 import pipeline: deterministic package detection,
+- `@richardmcquiston01/reactive-lms-core` HTML5 import pipeline: deterministic package detection,
   `Html5Runtime`, `FilesystemStorageAdapter` (ZIP-bomb limits + optional
   antivirus hook), and `PackageImporter` that stores a ZIP and persists a
   `ContentPackage` + `ActivityNode`
-- `@reactive-lms/persistence` LIS-shaped `rlms_*` TypeORM schema, host-safe
+- `@richardmcquiston01/reactive-lms-persistence` LIS-shaped `rlms_*` TypeORM schema, host-safe
   `createPersistenceDataSource` factory, and `0001-initial-schema` migration
-- `@reactive-lms/shared` LMS contracts: package/registration enums, `LearnerRef`,
+- `@richardmcquiston01/reactive-lms-shared` LMS contracts: package/registration enums, `LearnerRef`,
   `NormalizedProgress`, launch models, adapter interfaces (`ContentRuntime`,
   identity/capability/enrolment/storage), content package / registration / launch
   DTOs, and `LmsError` with HTTP status mapping
-- Bun workspaces monorepo scaffold with seven packages:
-  `@reactive-lms/shared`, `@reactive-lms/persistence`, `@reactive-lms/core`,
-  `@reactive-lms/nest`, `@reactive-lms/player`, `@reactive-lms/standalone-api`,
-  `@reactive-lms/standalone-web`
+- Bun workspaces monorepo with eight packages: `shared`, `persistence`, `core`,
+  `nest`, `player`, `admin`, `standalone-api`, and `standalone-web` (all
+  `@richardmcquiston01/reactive-lms-*`)
 - Root scripts: `typecheck`, `test`, `test:file`, `lint`, `lint:file`
 - `tsconfig.base.json`, `.env.example`, and `docs/STANDARDS.md`
 - `docs/PLAN_0.2.0.md`: plan for reconciling the foundation workspace with the
   roadmap decisions.
+- `ROADMAP.md` with milestones, exit criteria, and open design decisions.
+- Roadmap adopts `@richardmcquiston01/error-log-adapter` and
+  `@richardmcquiston01/storage-adapters`.
 
 ### Changed
 
@@ -159,15 +148,14 @@
 - The Postgres migration moved to `migrations/postgres/` and was edited in
   place (never applied): its name now carries the timestamp TypeORM requires,
   and `rlms_xapi_document.body` is `text`.
-- Packages renamed from `@reactive-lms/*` to `@richardmcquiston01/reactive-lms-*`
-  (D4) and versioned 0.1.0. Entries below that predate this change use the old
-  names.
+- Packages renamed from `@reactive-lms/*` to
+  `@richardmcquiston01/reactive-lms-*` (D4) and versioned 0.2.0.
 - Roadmap: decided to keep an own `BlobStorageAdapter` for package files (D11).
 - Roadmap: `error-log-adapter` is optional (D12); implementation starts once
   `storage-adapters` and `error-log-adapter` reach stable 1.0 (D13).
 - Roadmap: decided the git workflow (D10).
 - Roadmap: decided the standards-support approach (D1).
-- Roadmap: decided the reusable `@reactive-lms/admin` package, first screens in
+- Roadmap: decided the reusable `@richardmcquiston01/reactive-lms-admin` package, first screens in
   0.3.0 (D2).
 - Roadmap: decided portable TypeORM column types in entities (D9).
 - Roadmap: decided filesystem blob storage first and S3-compatible storage
@@ -184,14 +172,19 @@
 - Roadmap: standalone-api logs to console plus a rotating JSON file by default
   when `error-log-adapter` is installed (D12).
 
-### Added
-
-- `ROADMAP.md` with milestones, exit criteria, and open design decisions.
-- Roadmap adopts `@richardmcquiston01/error-log-adapter` and
-  `@richardmcquiston01/storage-adapters`.
-
 ### Fixed
 
+- `standalone-api` now runs pending migrations on start, so a fresh empty
+  database works without a separate step. Set `RLMS_RUN_MIGRATIONS=false`
+  (or `0`, `no`, `off`) to apply migrations yourself; an unrecognised value
+  stops the process with a message naming the variable. Previously the app
+  started against an empty database and every request failed.
+- Admin list loading could show stale data when two loads overlapped. On the
+  packages screen, importing a package while the first list was still loading
+  could let the older response overwrite the refreshed list and hide the new
+  package. The module-tree screen had the same flaw, including when switching
+  sections quickly. Only the newest response is applied now, and the import
+  form is disabled until the first list has loaded.
 - SCORM 1.2: a stale attach no longer deletes a newer `window.API`
 - SCORM 1.2: flush a pending Commit on player destroy; coerce numeric
   CMI values so `score.raw` hydrates; accept empty / `null` /

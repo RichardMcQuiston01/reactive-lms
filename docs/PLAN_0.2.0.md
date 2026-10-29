@@ -7,6 +7,11 @@ This plan lists what is built, where it differs from decisions D1 to D13, and
 the work packages that close the gaps. Where this file and
 [GROK_PLAN.md](../GROK_PLAN.md) disagree, this file wins.
 
+**Status:** complete, released as 0.2.0 on 2026-10-29. The D13-gated parts of
+WP7 and the items under "Then, to finish 0.3.0 and 0.4.0" carry over to later
+milestones. Open questions 2 and 3 were proceeded on with the stated
+proposals and still need the owner's confirmation.
+
 ## What the foundation already provides
 
 Verified by running it: `bun install`, typecheck, and 161 tests pass (one
@@ -48,8 +53,8 @@ characters or fewer.
 - [x] Prettier, `.editorconfig`, ESLint with a guard keeping `shared` free of
       framework imports
 - [x] GitHub Actions running typecheck, lint, format check, and tests
-- [ ] Add a Postgres service to CI and run the persistence integration test,
-      so the migration and unique constraints are verified (follow-up in WP3)
+- [x] Add a Postgres service to CI and run the persistence integration test,
+      so the migration and unique constraints are verified (done in WP3)
 
 ### WP1: Plan and roadmap rewrite (PR 15, merged)
 
@@ -63,7 +68,7 @@ Commit scope `refactor(repo)`. Mechanical, so do it early.
       `standalone-api` and `standalone-web` take the same scheme and stay private
 - [x] Update imports, `workspace:*` dependencies, lockfile, and README; set
       versions to 0.1.0 until the release PR
-- [ ] Add the `admin` package name to the workspace list (empty scaffold in WP6)
+- [x] Add the `admin` package name to the workspace list (scaffolded in WP6)
 
 **Done when:** typecheck, lint, and all tests pass with no `@reactive-lms/`
 references left outside `GROK_PLAN.md`.
@@ -151,7 +156,8 @@ Commit scope `feat(shared)`.
       package upload, and placement done; enrolment and progress screens
       remain
 - [ ] SCORM 1.2 sample-package fixtures and an ADL conformance check
-- [ ] Release prep: version bump, changelog, roadmap update, tag from `main`
+- [ ] Release prep: version bump, changelog, and roadmap update are in the
+      0.2.0 release PR; the tag from `main` follows the merge
 
 ## Out of scope for 0.2.0
 

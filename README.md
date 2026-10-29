@@ -3,9 +3,11 @@
 A TypeScript learning management system that runs standalone or embeds into
 an existing NestJS + TypeORM API and Angular frontend.
 
-> **Status:** pre-alpha (v0.1.0). The workspace contains working HTML5 and
-> SCORM 1.2 import, launch, and progress; the rest of the standards are
-> planned. See [ROADMAP.md](ROADMAP.md).
+> **Status:** pre-alpha (v0.2.0). The workspace contains working HTML5 and
+> SCORM 1.2 import, launch, and progress, a module tree with availability
+> conditions, and first admin screens (module tree, sections, packages, upload,
+> placement); the rest of the standards are planned. See
+> [ROADMAP.md](ROADMAP.md).
 
 ## Dual mode
 
@@ -16,7 +18,7 @@ an existing NestJS + TypeORM API and Angular frontend.
 
 Standalone boots the same Nest module and Angular player with thin local adapters (identity, storage). Embed reuses TypeORM entities/migrations and shared DTOs without owning host users.
 
-A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`) or SCORM 1.2 (`playerKind: 'scorm-frame'`). Module availability (`afterModuleId`, date window, `minScore`) is enforced at launch. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed). SCORM 1.2 commits map `cmi.core.lesson_status` and `cmi.core.score.raw` onto that sink.
+A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`) or SCORM 1.2 (`playerKind: 'scorm-frame'`). Module availability (versioned `all`/`any` conditions: `module_completed`, `date_window`, `min_score`, `group_member`) is enforced at launch, and a block's rules gate every module inside it. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed). SCORM 1.2 commits map `cmi.core.lesson_status` and `cmi.core.score.raw` onto that sink.
 
 Those services are also exposed over HTTP by `@richardmcquiston01/reactive-lms-nest` (`ReactiveLmsModule.registerAsync`, default prefix `/lms`). `@richardmcquiston01/reactive-lms-player` ships `provideReactiveLms` and `<rlms-player>` which launches a module, iframes `contentUrl`, and posts HTML5 `postMessage` progress.
 
