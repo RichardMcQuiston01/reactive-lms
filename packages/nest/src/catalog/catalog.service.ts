@@ -435,55 +435,6 @@ export class CatalogService {
   }
 
   /**
-   * Default activity node for a module, when the placement has one.
-   *
-   * @param courseModuleId - Course module id
-   */
-  async moduleActivityNodeId(
-    courseModuleId: string,
-  ): Promise<string | undefined> {
-    const row = await this.dataSource.manager.findOne(CourseModule, {
-      where: { id: courseModuleId },
-    });
-    return row?.activityNodeId ?? undefined;
-  }
-
-  /**
-   * Package entry (or first) activity node when the module has none.
-   *
-   * @param courseModuleId - Course module id
-   */
-  async packageEntryActivityNodeId(
-    courseModuleId: string,
-  ): Promise<string | undefined> {
-    const row = await this.dataSource.manager.findOne(CourseModule, {
-      where: { id: courseModuleId },
-    });
-    if (!row) {
-      throw notFound(MODULE_NOT_FOUND, 'Course module not found.', {
-        courseModuleId,
-      });
-    }
-    const contentPackageId = row.contentPackageId;
-    if (!contentPackageId) {
-      return undefined;
-    }
-    const contentPackage = await this.dataSource.manager.findOne(
-      ContentPackage,
-      { where: { id: contentPackageId } },
-    );
-    const nodes = await this.dataSource.manager.find(ActivityNode, {
-      where: { contentPackageId },
-      order: { sortOrder: 'ASC' },
-    });
-    const entryHref = contentPackage?.entryHref;
-    const entry = entryHref
-      ? nodes.find((node) => node.href === entryHref)
-      : undefined;
-    return entry?.id ?? nodes[0]?.id;
-  }
-
-  /**
    * Lists normalized progress rows for a registration.
    *
    * @param registrationId - Registration id

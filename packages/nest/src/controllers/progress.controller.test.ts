@@ -1,42 +1,43 @@
 import { describe, expect, test } from 'bun:test';
-import type { ProgressSinkService } from '@richardmcquiston01/reactive-lms-core';
+import type {
+  LaunchProgressInput,
+  ProgressSinkService,
+} from '@richardmcquiston01/reactive-lms-core';
 import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
 import type { CatalogService } from '../catalog/catalog.service';
 import type { LmsRequestService } from '../identity/lms-request.service';
 import { ProgressController } from './progress.controller';
 
 describe('ProgressController', () => {
-  test('POST upserts through ProgressSinkService', async () => {
-    const written: NormalizedProgress[] = [];
+  test('POST hands content-reported progress to the launch-checked sink', async () => {
+    const written: LaunchProgressInput[] = [];
+    const checks: string[] = [];
     const ctl = new ProgressController(
       {
-        upsert: async (progress) => {
+        upsertFromLaunch: async (progress) => {
           written.push(progress);
         },
       } as ProgressSinkService,
+      { listProgress: async () => [] } as unknown as CatalogService,
       {
-        moduleActivityNodeId: async () => 'node-1',
-        listProgress: async () => [],
-      } as unknown as CatalogService,
-      {
-        assertCan: async () => undefined,
+        assertCan: async (_req, action, resource) => {
+          checks.push(`${action}:${resource.type}:${resource.id}`);
+        },
       } as LmsRequestService,
     );
 
     await ctl.upsert(
       'reg-1',
-      {
-        courseModuleId: 'mod-1',
-        completionStatus: 'completed',
-      },
+      { courseModuleId: 'mod-1', completionStatus: 'completed' },
       {},
     );
 
+    expect(checks).toEqual(['launch:registration:reg-1']);
     expect(written).toEqual([
       {
         registrationId: 'reg-1',
         courseModuleId: 'mod-1',
-        activityNodeId: 'node-1',
+        activityNodeId: undefined,
         completionStatus: 'completed',
         successStatus: 'unknown',
         scoreScaled: undefined,
@@ -51,6 +52,27 @@ describe('ProgressController', () => {
     ]);
   });
 
+  test('POST passes a supplied node through so the sink can reject a mismatch', async () => {
+    const written: LaunchProgressInput[] = [];
+    const ctl = new ProgressController(
+      {
+        upsertFromLaunch: async (progress) => {
+          written.push(progress);
+        },
+      } as ProgressSinkService,
+      {} as CatalogService,
+      { assertCan: async () => undefined } as LmsRequestService,
+    );
+
+    await ctl.upsert(
+      'reg-1',
+      { courseModuleId: 'mod-1', activityNodeId: 'node-9' },
+      {},
+    );
+
+    expect(written[0]?.activityNodeId).toBe('node-9');
+  });
+
   test('GET returns catalog progress rows', async () => {
     const rows: NormalizedProgress[] = [
       {
@@ -62,38 +84,11 @@ describe('ProgressController', () => {
       },
     ];
     const ctl = new ProgressController(
-      { upsert: async () => undefined } as ProgressSinkService,
-      {
-        listProgress: async () => rows,
-      } as unknown as CatalogService,
+      {} as ProgressSinkService,
+      { listProgress: async () => rows } as unknown as CatalogService,
       { assertCan: async () => undefined } as LmsRequestService,
     );
 
     expect(await ctl.list('reg-1', {})).toEqual(rows);
-  });
-
-  test('POST resolves the package entry node when the module has none', async () => {
-    const written: NormalizedProgress[] = [];
-    const ctl = new ProgressController(
-      {
-        upsert: async (progress) => {
-          written.push(progress);
-        },
-      } as ProgressSinkService,
-      {
-        moduleActivityNodeId: async () => undefined,
-        packageEntryActivityNodeId: async () => 'entry-node-1',
-      } as unknown as CatalogService,
-      { assertCan: async () => undefined } as LmsRequestService,
-    );
-
-    await ctl.upsert(
-      'reg-1',
-      { courseModuleId: 'mod-1', completionStatus: 'completed' },
-      {},
-    );
-
-    expect(written[0]?.activityNodeId).toBe('entry-node-1');
-    expect(written[0]?.completionStatus).toBe('completed');
   });
 });

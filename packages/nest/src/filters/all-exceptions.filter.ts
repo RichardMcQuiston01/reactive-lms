@@ -112,6 +112,8 @@ function httpExceptionCode(status: number): string {
       return 'NOT_FOUND';
     case 409:
       return 'CONFLICT';
+    case 413:
+      return 'PAYLOAD_TOO_LARGE';
     case 422:
       return 'UNPROCESSABLE_ENTITY';
     default:

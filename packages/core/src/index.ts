@@ -55,7 +55,10 @@ export {
   type ComputeRegistrationStatusInput,
   type ModuleProgressSnapshot,
 } from './progress/course-completion';
-export { ProgressSinkService } from './progress/progress-sink';
+export {
+  ProgressSinkService,
+  type LaunchProgressInput,
+} from './progress/progress-sink';
 export {
   Html5Runtime,
   joinStorageKey,
