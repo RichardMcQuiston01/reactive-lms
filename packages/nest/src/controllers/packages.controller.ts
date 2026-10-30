@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -31,6 +32,7 @@ import {
   type ContentPackageDetail,
 } from '../catalog/catalog.service';
 import { LmsRequestService } from '../identity/lms-request.service';
+import { PackageImportGuard } from './package-import.guard';
 
 /**
  * Import, fetch, and delete content packages.
@@ -50,13 +52,16 @@ export class PackagesController {
   ) {}
 
   /**
-   * Imports a multipart ZIP (`file` field).
+   * Imports a multipart ZIP (`file` field). Permission is checked by
+   * {@link PackageImportGuard} before the body is buffered, and the upload is
+   * capped by the module's `maxUploadBytes` (413 when exceeded).
    *
    * @param file - Uploaded archive
    * @param req - Host request
    */
   @Post()
   @HttpCode(201)
+  @UseGuards(PackageImportGuard)
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Import a content package ZIP' })
@@ -64,10 +69,6 @@ export class PackagesController {
     @UploadedFile() file: { buffer?: Uint8Array } | undefined,
     @Req() req: unknown,
   ): Promise<ImportPackageResultDto> {
-    await this.request.assertCan(req, 'package.import', {
-      type: 'content_package',
-      id: '*',
-    });
     if (!file?.buffer) {
       throw new LmsError({
         status: httpStatusForLmsCode(PACKAGE_NOT_DETECTED),
@@ -110,11 +111,19 @@ export class PackagesController {
    * Returns a package and its activity tree.
    *
    * @param id - Package id
+   * @param req - Host request
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get a content package and activity tree' })
   @ApiParam({ name: 'id' })
-  async findOne(@Param('id') id: string): Promise<ContentPackageDetail> {
+  async findOne(
+    @Param('id') id: string,
+    @Req() req: unknown,
+  ): Promise<ContentPackageDetail> {
+    await this.request.assertCan(req, 'module.manage', {
+      type: 'content_package',
+      id,
+    });
     return this.catalog.getPackage(id);
   }
 
