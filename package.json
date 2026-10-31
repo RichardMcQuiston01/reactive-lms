@@ -1,6 +1,6 @@
 {
   "name": "reactive-lms",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript LMS (SCORM, xAPI, cmi5, H5P, LTI) that runs standalone or embeds in a NestJS + Angular host.",
   "private": true,
   "license": "MIT",
@@ -12,5 +12,27 @@
   "funding": {
     "type": "individual",
     "url": "https://donate.stripe.com/00w5kD3Gj1Xo9v7gVOcs800"
+  },
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc -b packages/shared packages/persistence packages/core packages/nest packages/player packages/admin packages/standalone-api packages/standalone-web",
+    "test": "bun test",
+    "test:file": "bun test",
+    "lint": "eslint .",
+    "lint:file": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "globals": "^17.13.0",
+    "prettier": "^3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8"
   }
 }
