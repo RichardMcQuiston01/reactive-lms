@@ -3,6 +3,7 @@ import { getMetadataArgsStorage } from 'typeorm';
 import {
   ALL_ENTITIES,
   DialectRegistry,
+  NormalizedProgress,
   Registration,
   XapiDocument,
   createPersistenceDataSource,
@@ -64,6 +65,20 @@ describe('entity metadata', () => {
     expect(matchingUniques[0]?.columns).toEqual([
       'personId',
       'courseSectionId',
+    ]);
+  });
+
+  test('NormalizedProgress is unique per registration, module, and activity node', () => {
+    const uniques = getMetadataArgsStorage().uniques.filter(
+      (unique) => unique.target === NormalizedProgress,
+    );
+
+    expect(uniques).toHaveLength(1);
+    expect(uniques[0]?.name).toBe('uq_rlms_normalized_progress_slot');
+    expect(uniques[0]?.columns).toEqual([
+      'registrationId',
+      'courseModuleId',
+      'activityNodeId',
     ]);
   });
 

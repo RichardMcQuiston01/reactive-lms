@@ -1,12 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   ActivityNode,
+  Attempt,
   ContentPackage,
   CourseModule,
   CourseOffering,
   CourseSection,
   CourseTemplate,
   EnrolmentMethod,
+  LineItem,
   NormalizedProgress,
   Registration,
   type CompletionRule,
@@ -15,6 +17,8 @@ import {
 import {
   LmsError,
   MODULE_HAS_CHILDREN,
+  MODULE_IN_USE,
+  PACKAGE_IN_USE,
   MODULE_NOT_FOUND,
   PACKAGE_NOT_FOUND,
   REGISTRATION_NOT_FOUND,
@@ -27,6 +31,7 @@ import {
   type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
+  rowLock,
   assertBlockAvailability,
   assertCanParent,
   isBlockModule,
@@ -240,6 +245,17 @@ export class CatalogService {
         contentPackageId: id,
       });
     }
+    const placements = await this.dataSource.manager.count(CourseModule, {
+      where: { contentPackageId: id },
+    });
+    if (placements > 0) {
+      throw new LmsError({
+        status: httpStatusForLmsCode(PACKAGE_IN_USE),
+        code: PACKAGE_IN_USE,
+        message: `"${row.title}" is placed in ${placements} module${placements === 1 ? '' : 's'}. Remove ${placements === 1 ? 'that placement' : 'those placements'} before deleting the package.`,
+        details: { contentPackageId: id, placements },
+      });
+    }
     await this.dataSource.transaction(async (manager) => {
       await manager.delete(ActivityNode, { contentPackageId: id });
       await manager.delete(ContentPackage, { id });
@@ -350,36 +366,42 @@ export class CatalogService {
     id: string,
     input: UpdateModuleInput,
   ): Promise<{ id: string }> {
-    const row = await this.dataSource.manager.findOne(CourseModule, {
-      where: { id },
-    });
-    if (!row) {
-      throw notFound(MODULE_NOT_FOUND, 'Course module not found.', {
-        courseModuleId: id,
-      });
-    }
-    if (input.title !== undefined) {
-      row.title = input.title;
-    }
-    if (input.sortOrder !== undefined) {
-      row.sortOrder = input.sortOrder;
-    }
-    if (input.availability !== undefined) {
-      const rules = normalizeAvailabilityInput(input.availability);
-      if (isBlockModule(row)) {
-        assertBlockAvailability(rules);
+    return this.dataSource.transaction(async (manager) => {
+      const row = await manager.findOne(CourseModule, { where: { id } });
+      if (!row) {
+        throw notFound(MODULE_NOT_FOUND, 'Course module not found.', {
+          courseModuleId: id,
+        });
       }
-      row.availabilityJson = rules;
-    }
-    if (input.parentModuleId !== undefined) {
-      const siblings = await this.dataSource.manager.find(CourseModule, {
-        where: { courseSectionId: row.courseSectionId },
-      });
-      assertCanParent(siblings, row.id, input.parentModuleId);
-      row.parentModuleId = input.parentModuleId;
-    }
-    await this.dataSource.manager.save(row);
-    return { id: row.id };
+      if (input.title !== undefined) {
+        row.title = input.title;
+      }
+      if (input.sortOrder !== undefined) {
+        row.sortOrder = input.sortOrder;
+      }
+      if (input.availability !== undefined) {
+        const rules = normalizeAvailabilityInput(input.availability);
+        if (isBlockModule(row)) {
+          assertBlockAvailability(rules);
+        }
+        row.availabilityJson = rules;
+      }
+      if (input.parentModuleId !== undefined) {
+        // Lock the section so a concurrent move cannot pass the same check on
+        // the same snapshot and together leave a cycle.
+        await manager.findOne(CourseSection, {
+          where: { id: row.courseSectionId },
+          ...rowLock(manager),
+        });
+        const siblings = await manager.find(CourseModule, {
+          where: { courseSectionId: row.courseSectionId },
+        });
+        assertCanParent(siblings, row.id, input.parentModuleId);
+        row.parentModuleId = input.parentModuleId;
+      }
+      await manager.save(row);
+      return { id: row.id };
+    });
   }
 
   /**
@@ -407,7 +429,37 @@ export class CatalogService {
         details: { courseModuleId: id, childCount: children.length },
       });
     }
+    await this.assertModuleHasNoHistory(row);
     await this.dataSource.manager.delete(CourseModule, { id });
+  }
+
+  /**
+   * Refuses to remove a module learners have already used. Launch attempts,
+   * progress rows, and grade line items reference the module, so removing it
+   * would either fail inside the database or erase their history.
+   */
+  private async assertModuleHasNoHistory(row: CourseModule): Promise<void> {
+    const { manager } = this.dataSource;
+    const where = { courseModuleId: row.id };
+    const [attempts, progressRows, lineItems] = await Promise.all([
+      manager.count(Attempt, { where }),
+      manager.count(NormalizedProgress, { where }),
+      manager.count(LineItem, { where }),
+    ]);
+    if (attempts + progressRows + lineItems === 0) {
+      return;
+    }
+    throw new LmsError({
+      status: httpStatusForLmsCode(MODULE_IN_USE),
+      code: MODULE_IN_USE,
+      message: `"${row.title}" has been launched ${attempts} time${attempts === 1 ? '' : 's'} and has ${progressRows} progress record${progressRows === 1 ? '' : 's'}, so it cannot be removed without erasing learner history.`,
+      details: {
+        courseModuleId: row.id,
+        attempts,
+        progressRows,
+        lineItems,
+      },
+    });
   }
 
   /**

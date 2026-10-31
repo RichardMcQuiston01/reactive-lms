@@ -2,6 +2,45 @@
 
 ## Unreleased
 
+### Fixed
+
+- A progress report no longer erases what it leaves out. A completion-only
+  report used to overwrite the saved score, bookmark, time, and suspend data
+  with null, and a bookmark-only report sent `unknown` statuses that undid
+  completion. Omitted fields now keep their stored value and `unknown` means
+  "not reported". An empty string is a reported value and still clears text.
+  Progress for a registration that does not exist is now 404
+  `REGISTRATION_NOT_FOUND` instead of a database error.
+- Several writes that could collide now run one after another instead of
+  failing or leaving bad data. Verified against a real Postgres, where each of
+  these failed without the fix:
+  - progress writes for one registration lock it, so two first reports for a
+    node no longer insert twice and two modules completing together both count
+    toward the registration status;
+  - enrolling the same person at the same time returns one registration
+    instead of a unique-constraint error;
+  - launching the same module at the same time leaves one open attempt;
+  - tree changes in a section lock it, so two opposite moves can no longer
+    leave a cycle and simultaneous placements no longer share a sort position;
+  - the first requests for a new learner create one person row instead of
+    failing with a unique-constraint error.
+- A launch no longer accepts an activity node from another package. The node
+  must belong to the package placed in the module, otherwise 400
+  `ACTIVITY_NODE_INVALID`; before, its file was looked up under the wrong
+  package and its id recorded on the attempt.
+- Removing a module that learners have launched, or deleting a package that is
+  still placed, now returns 409 `MODULE_IN_USE` or `PACKAGE_IN_USE` with the
+  counts, instead of a 500 from a database reference. Removing used modules
+  safely (archiving) is a later decision.
+
+### Changed
+
+- Migration `0001` adds the unique constraint
+  `uq_rlms_normalized_progress_slot` on (registration, module, activity node).
+  It was edited in place because `0001` has not been released; after the tag,
+  schema changes need a new migration. A database that already applied the old
+  `0001` must be recreated or given the constraint by hand.
+
 ### Security
 
 - `GET /packages/:id` now checks `module.manage` for that package. It was the
