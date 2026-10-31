@@ -296,6 +296,35 @@ describe('PackageImporter', () => {
   });
 });
 
+describe('PackageImporter configured limits', () => {
+  test('a lowered limit rejects the archive before anything is stored or parsed', async () => {
+    const puts: string[] = [];
+    const recording = {
+      put: async (key: string) => {
+        puts.push(key);
+        return { ok: true, value: { key, size: 0 } };
+      },
+    } as unknown as BlobStorageAdapter;
+    const saved: SavedRow[] = [];
+    const limited = new PackageImporter(
+      createMockDataSource(saved),
+      recording,
+      [new Html5Runtime()],
+      { maxFileCount: 1 },
+    );
+    const buffer = zipSync({
+      'index.html': strToU8('<html></html>'),
+      'extra.js': strToU8('1'),
+    });
+
+    await expect(limited.import(buffer)).rejects.toMatchObject({
+      code: 'PACKAGE_ZIP_BOMB',
+    });
+    expect(puts).toEqual([]);
+    expect(saved).toEqual([]);
+  });
+});
+
 async function listStoredFiles(root: string): Promise<string[]> {
   const names = await readdir(root, { recursive: true });
   const files: string[] = [];

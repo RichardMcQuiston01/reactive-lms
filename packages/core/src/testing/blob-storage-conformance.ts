@@ -111,6 +111,29 @@ export function runBlobStorageConformance(
         }
       }));
 
+    test('whatever put accepts can be read back, listed, and removed', () =>
+      withStore(async (store) => {
+        // A store may refuse a key for its own reasons, but it must do so
+        // for every operation; accepting a write it then cannot see loses data.
+        for (const key of [
+          'dir/plain.txt',
+          'dir/odd.rlms-tmp',
+          'dir/.hidden',
+        ]) {
+          const put = await store.put(key, new Uint8Array([9]));
+          if (!put.ok) {
+            expect(errorCode(await store.head(key))).toBe(put.error.code);
+            continue;
+          }
+          expect(unwrap(await store.head(key)).size).toBe(1);
+          expect(
+            unwrap(await store.list('dir/')).map((info) => info.key),
+          ).toContain(key);
+          unwrap(await store.remove(key));
+          expect(errorCode(await store.head(key))).toBe('not_found');
+        }
+      }));
+
     test('list returns keys sorted and matches the prefix as text', () =>
       withStore(async (store) => {
         for (const key of ['a/b', 'a/bc', 'a/c/d', 'z', 'a/a']) {

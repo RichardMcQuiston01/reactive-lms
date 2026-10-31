@@ -40,7 +40,24 @@ describe('FilesystemBlobStorageAdapter', () => {
       'a/real',
     ]);
     const head = await store.head('a/x.rlms-tmp');
-    expect(!head.ok && head.error.code).toBe('not_found');
+    expect(!head.ok && head.error.code).toBe('invalid_key');
+  });
+
+  test('a key ending in the temporary suffix is refused by every operation', async () => {
+    const key = 'pkg/bundle.rlms-tmp';
+
+    const put = await store.put(key, new Uint8Array([1]));
+    expect(!put.ok && put.error.code).toBe('invalid_key');
+    expect(!put.ok && put.error.message).toContain('.rlms-tmp');
+    expect(!put.ok && put.error.message).toContain('reserved');
+    const head = await store.head(key);
+    expect(!head.ok && head.error.code).toBe('invalid_key');
+    const get = await store.get(key);
+    expect(!get.ok && get.error.code).toBe('invalid_key');
+    const removed = await store.remove(key);
+    expect(!removed.ok && removed.error.code).toBe('invalid_key');
+    // Nothing was written, so there is nothing hidden to clean up later.
+    expect(await readdir(dataRoot)).toEqual([]);
   });
 
   test('removing the last object prunes its empty directories', async () => {

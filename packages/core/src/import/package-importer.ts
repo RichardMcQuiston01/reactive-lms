@@ -82,7 +82,13 @@ export class PackageImporter {
     options?: ImportPackageOptions,
   ): Promise<ImportPackageResult> {
     await this.options.antivirusScan?.(buffer);
-    const files = createZipFileIndex(buffer);
+    // The configured limits apply from the first look at the archive: a host
+    // that lowers them must not have a larger manifest inflated and parsed
+    // first, and one that raises them must not be stopped by the defaults.
+    const files = createZipFileIndex(buffer, {
+      maxFileCount: this.options.maxFileCount,
+      maxUncompressedBytes: this.options.maxUncompressedBytes,
+    });
     const packageType = detectPackageType(files);
     if (!IMPORTABLE.has(packageType)) {
       throw new LmsError({

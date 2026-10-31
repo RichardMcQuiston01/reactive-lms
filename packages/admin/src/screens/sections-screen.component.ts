@@ -2,6 +2,12 @@ import { Component, inject, signal, type OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { CourseSectionDto } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogAdminService } from '../modules/catalog-admin.service';
+import {
+  ADMIN_PAGE_SIZE,
+  firstPage,
+  hasMorePages,
+  mergePage,
+} from '../modules/paging';
 
 /**
  * Lists course sections and opens one's module tree. A host can replace this
@@ -30,6 +36,11 @@ import { CatalogAdminService } from '../modules/catalog-admin.service';
           </li>
         }
       </ul>
+      @if (hasMore()) {
+        <button type="button" [disabled]="loadingMore()" (click)="loadMore()">
+          {{ loadingMore() ? 'Loading…' : 'Load more' }}
+        </button>
+      }
     }
 
     <form (submit)="open($event, sectionId)">
@@ -45,11 +56,18 @@ export class SectionsScreenComponent implements OnInit {
 
   readonly sections = signal<CourseSectionDto[]>([]);
   readonly loading = signal<boolean>(true);
+  readonly loadingMore = signal<boolean>(false);
+  readonly hasMore = signal<boolean>(false);
   readonly error = signal<string>('');
+  /** Rows fetched so far, which is where the next page starts. */
+  private fetched = 0;
 
   async ngOnInit(): Promise<void> {
     try {
-      this.sections.set(await this.catalog.listSections());
+      const page = await this.catalog.listSections(firstPage());
+      this.sections.set(page);
+      this.fetched = page.length;
+      this.hasMore.set(hasMorePages(page.length));
     } catch (failure) {
       this.error.set(
         failure instanceof Error
@@ -58,6 +76,29 @@ export class SectionsScreenComponent implements OnInit {
       );
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Fetches the next page and adds it below the sections already shown. */
+  async loadMore(): Promise<void> {
+    this.loadingMore.set(true);
+    this.error.set('');
+    try {
+      const page = await this.catalog.listSections({
+        limit: ADMIN_PAGE_SIZE,
+        offset: this.fetched,
+      });
+      this.sections.set(mergePage(this.sections(), page));
+      this.fetched += page.length;
+      this.hasMore.set(hasMorePages(page.length));
+    } catch (failure) {
+      this.error.set(
+        failure instanceof Error
+          ? `Could not load more sections: ${failure.message}`
+          : 'Could not load more sections.',
+      );
+    } finally {
+      this.loadingMore.set(false);
     }
   }
 
