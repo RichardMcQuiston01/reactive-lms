@@ -14,6 +14,7 @@ import type {
   LaunchRequest,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
+  ACTIVITY_NODE_INVALID,
   LAUNCH_NOT_IMPLEMENTED,
   LmsError,
   referencedGroupIds,
@@ -33,6 +34,7 @@ import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import type { AvailabilityProgress } from './availability';
 import { assertChainAvailable, readStoredAvailability } from './availability';
 import { ancestorsOf, isBlockModule } from '../courses/module-tree';
+import { rowLock } from '../db/row-lock';
 
 const LAUNCHABLE = new Set(['html5', 'scorm_12']);
 
@@ -73,8 +75,11 @@ export class LaunchService {
    */
   async launch(request: LaunchRequest): Promise<LaunchDescriptor> {
     return this.dataSource.transaction(async (manager) => {
+      // Lock the registration so two launches for it run one after another:
+      // each abandons the other's open attempt instead of both leaving one open.
       const registration = await manager.findOne(Registration, {
         where: { id: request.registrationId },
+        ...rowLock(manager),
       });
       if (!registration) {
         throw new LmsError({
@@ -162,13 +167,27 @@ export class LaunchService {
         });
       }
 
+      // A node the caller or the placement names must belong to this module's
+      // package; otherwise its href would be served from the wrong package.
       const nodeId =
         request.activityNodeId ?? courseModule.activityNodeId ?? undefined;
       let activityNode = nodeId
         ? await manager.findOne(ActivityNode, {
-            where: { id: nodeId },
+            where: { id: nodeId, contentPackageId: contentPackage.id },
           })
         : null;
+      if (nodeId && !activityNode) {
+        throw new LmsError({
+          status: httpStatusForLmsCode(ACTIVITY_NODE_INVALID),
+          code: ACTIVITY_NODE_INVALID,
+          message: `The activity node does not belong to the package placed in "${courseModule.title}".`,
+          details: {
+            courseModuleId: courseModule.id,
+            activityNodeId: nodeId,
+            contentPackageId: contentPackage.id,
+          },
+        });
+      }
       if (!activityNode) {
         const nodes = await manager.find(ActivityNode, {
           where: { contentPackageId: contentPackage.id },

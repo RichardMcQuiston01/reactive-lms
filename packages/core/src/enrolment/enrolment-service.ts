@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   EnrolmentMethod,
   Membership,
+  Person,
   Registration,
 } from '@richardmcquiston01/reactive-lms-persistence';
 import type { EnrolmentMethodKind } from '@richardmcquiston01/reactive-lms-persistence';
@@ -15,6 +16,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource, EntityManager } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
+import { rowLock } from '../db/row-lock';
 
 /**
  * Result of a successful (or repeat) enrolment.
@@ -191,6 +193,13 @@ export class EnrolmentService {
       actorPersonId?: string;
     },
   ): Promise<EnrolmentResult> {
+    // Lock the person so concurrent enrolments of the same person run one
+    // after another; the second then finds the first's registration below
+    // instead of racing it into the unique constraint.
+    await manager.findOne(Person, {
+      where: { id: input.personId },
+      ...rowLock(manager),
+    });
     const existing = await manager.findOne(Registration, {
       where: {
         personId: input.personId,

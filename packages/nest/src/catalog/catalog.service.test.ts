@@ -28,7 +28,10 @@ function moduleRow(
   });
 }
 
-function setup(rows: CourseModule[]): {
+function setup(
+  rows: CourseModule[],
+  counts: Record<string, number> = {},
+): {
   service: CatalogService;
   rows: CourseModule[];
 } {
@@ -48,13 +51,20 @@ function setup(rows: CourseModule[]): {
             (row as unknown as Record<string, unknown>)[key] === value,
         ),
       ),
+    count: async (entity: { name: string }): Promise<number> =>
+      counts[entity.name] ?? 0,
     save: async (row: CourseModule): Promise<CourseModule> => row,
     delete: async (_entity: unknown, where: { id: string }): Promise<void> => {
       const index = rows.findIndex((row) => row.id === where.id);
       if (index >= 0) rows.splice(index, 1);
     },
   };
-  const dataSource = { manager } as unknown as DataSource;
+  const dataSource = {
+    manager,
+    transaction: async <T>(
+      run: (entityManager: typeof manager) => Promise<T>,
+    ) => run(manager),
+  } as unknown as DataSource;
   const service = new CatalogService(dataSource, {} as BlobStorageAdapter);
   return { service, rows };
 }
@@ -263,5 +273,89 @@ describe('CatalogService list calls', () => {
       take: MAX_LIST_LIMIT,
       skip: 5,
     });
+  });
+});
+
+describe('CatalogService.deleteModule history guard', () => {
+  test('refuses a module that has launch attempts or progress, naming the counts', async () => {
+    const leaf = moduleRow('leaf');
+    const { service, rows } = setup([leaf], {
+      Attempt: 3,
+      NormalizedProgress: 2,
+    });
+
+    const attempt = service.deleteModule('leaf');
+
+    await expect(attempt).rejects.toMatchObject({
+      code: 'MODULE_IN_USE',
+      status: 409,
+      details: { attempts: 3, progressRows: 2, lineItems: 0 },
+    });
+    await expect(attempt).rejects.toThrow('launched 3 times');
+    expect(rows).toHaveLength(1);
+  });
+
+  test('refuses a module that only has grade line items', async () => {
+    const { service } = setup([moduleRow('leaf')], { LineItem: 1 });
+
+    await expect(service.deleteModule('leaf')).rejects.toMatchObject({
+      code: 'MODULE_IN_USE',
+    });
+  });
+
+  test('still removes a module nobody has used', async () => {
+    const { service, rows } = setup([moduleRow('leaf')]);
+
+    await service.deleteModule('leaf');
+
+    expect(rows).toHaveLength(0);
+  });
+});
+
+describe('CatalogService.deletePackage placement guard', () => {
+  function packageService(placements: number): {
+    service: CatalogService;
+    deleted: string[];
+  } {
+    const deleted: string[] = [];
+    const manager = {
+      findOne: async () => ({ id: 'pkg-1', title: 'Safety basics' }),
+      count: async () => placements,
+      delete: async (entity: { name: string }) => {
+        deleted.push(entity.name);
+      },
+    };
+    const dataSource = {
+      manager,
+      transaction: async <T>(
+        run: (entityManager: typeof manager) => Promise<T>,
+      ) => run(manager),
+    } as unknown as DataSource;
+    const storage = {
+      removePrefix: async () => ({ ok: true, value: undefined }),
+    } as unknown as BlobStorageAdapter;
+    return { service: new CatalogService(dataSource, storage), deleted };
+  }
+
+  test('refuses a package that is still placed, saying how many placements', async () => {
+    const { service, deleted } = packageService(2);
+
+    const attempt = service.deletePackage('pkg-1');
+
+    await expect(attempt).rejects.toMatchObject({
+      code: 'PACKAGE_IN_USE',
+      status: 409,
+      details: { placements: 2 },
+    });
+    await expect(attempt).rejects.toThrow('placed in 2 modules');
+    expect(deleted).toEqual([]);
+  });
+
+  test('deletes a package that is not placed anywhere', async () => {
+    const { service, deleted } = packageService(0);
+
+    await service.deletePackage('pkg-1');
+
+    expect(deleted).toEqual(['ActivityNode', 'ContentPackage']);
   });
 });

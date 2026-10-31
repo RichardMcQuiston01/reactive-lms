@@ -103,3 +103,4 @@ export {
   errorSinkEntryOf,
   reportError,
 } from './errors/error-sink';
+export { rowLock } from './db/row-lock';
