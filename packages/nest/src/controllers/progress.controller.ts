@@ -11,7 +11,7 @@ import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ProgressSinkService } from '@richardmcquiston01/reactive-lms-core';
 import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogService } from '../catalog/catalog.service';
-import { LmsRequestService } from '../identity/lms-request.service';
+import { RegistrationAccess } from '../identity/registration-access';
 
 /**
  * HTML5 postMessage sink and progress listing.
@@ -22,12 +22,12 @@ export class ProgressController {
   /**
    * @param sink - Core progress writer
    * @param catalog - Progress listing and module lookup
-   * @param request - Identity / capability
+   * @param access - Registration ownership / capability checks
    */
   constructor(
     private readonly sink: ProgressSinkService,
     private readonly catalog: CatalogService,
-    private readonly request: LmsRequestService,
+    private readonly access: RegistrationAccess,
   ) {}
 
   /**
@@ -43,10 +43,7 @@ export class ProgressController {
     @Param('id') id: string,
     @Req() req: unknown,
   ): Promise<NormalizedProgress[]> {
-    await this.request.assertCan(req, 'grade.view', {
-      type: 'registration',
-      id,
-    });
+    await this.access.assertRegistration(req, 'grade.view', id);
     return this.catalog.listProgress(id);
   }
 
@@ -68,10 +65,7 @@ export class ProgressController {
     @Body() body: Partial<NormalizedProgress> & { courseModuleId: string },
     @Req() req: unknown,
   ): Promise<void> {
-    await this.request.assertCan(req, 'launch', {
-      type: 'registration',
-      id,
-    });
+    await this.access.assertRegistration(req, 'launch', id);
     await this.sink.upsertFromLaunch({
       registrationId: id,
       courseModuleId: body.courseModuleId,

@@ -5,7 +5,7 @@ import type {
 } from '@richardmcquiston01/reactive-lms-core';
 import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
 import type { CatalogService } from '../catalog/catalog.service';
-import type { LmsRequestService } from '../identity/lms-request.service';
+import type { RegistrationAccess } from '../identity/registration-access';
 import { ProgressController } from './progress.controller';
 
 describe('ProgressController', () => {
@@ -20,10 +20,10 @@ describe('ProgressController', () => {
       } as ProgressSinkService,
       { listProgress: async () => [] } as unknown as CatalogService,
       {
-        assertCan: async (_req, action, resource) => {
-          checks.push(`${action}:${resource.type}:${resource.id}`);
+        assertRegistration: async (_req, action, registrationId) => {
+          checks.push(`${action}:registration:${registrationId}`);
         },
-      } as LmsRequestService,
+      } as RegistrationAccess,
     );
 
     await ctl.upsert(
@@ -61,7 +61,7 @@ describe('ProgressController', () => {
         },
       } as ProgressSinkService,
       {} as CatalogService,
-      { assertCan: async () => undefined } as LmsRequestService,
+      { assertRegistration: async () => undefined } as RegistrationAccess,
     );
 
     await ctl.upsert(
@@ -86,7 +86,7 @@ describe('ProgressController', () => {
     const ctl = new ProgressController(
       {} as ProgressSinkService,
       { listProgress: async () => rows } as unknown as CatalogService,
-      { assertCan: async () => undefined } as LmsRequestService,
+      { assertRegistration: async () => undefined } as RegistrationAccess,
     );
 
     expect(await ctl.list('reg-1', {})).toEqual(rows);

@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Put, Req } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ScormCmiService } from '@richardmcquiston01/reactive-lms-core';
 import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
-import { LmsRequestService } from '../identity/lms-request.service';
+import { RegistrationAccess } from '../identity/registration-access';
 
 /**
  * SCORM 1.2 CMI hydrate / commit used by the browser `window.API` bridge.
@@ -12,11 +12,11 @@ import { LmsRequestService } from '../identity/lms-request.service';
 export class ScormRuntimeController {
   /**
    * @param cmi - Core CMI persist service
-   * @param request - Identity / capability
+   * @param access - Attempt ownership / capability checks
    */
   constructor(
     private readonly cmi: ScormCmiService,
-    private readonly request: LmsRequestService,
+    private readonly access: RegistrationAccess,
   ) {}
 
   /**
@@ -32,10 +32,7 @@ export class ScormRuntimeController {
     @Param('id') id: string,
     @Req() req: unknown,
   ): Promise<ScormCmiDto> {
-    await this.request.assertCan(req, 'launch', {
-      type: 'attempt',
-      id,
-    });
+    await this.access.assertAttempt(req, 'launch', id);
     return this.cmi.getCmi(id);
   }
 
@@ -54,10 +51,7 @@ export class ScormRuntimeController {
     @Body() body: ScormCmiDto,
     @Req() req: unknown,
   ): Promise<ScormCmiDto> {
-    await this.request.assertCan(req, 'launch', {
-      type: 'attempt',
-      id,
-    });
+    await this.access.assertAttempt(req, 'launch', id);
     return this.cmi.putCmi(id, body);
   }
 }

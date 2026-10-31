@@ -41,6 +41,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LmsExceptionFilter } from './filters/lms-exception.filter';
 import { LmsRequestService } from './identity/lms-request.service';
 import { PersonDirectory } from './identity/person-directory';
+import { RegistrationAccess } from './identity/registration-access';
 import {
   RLMS_CAPABILITY_ADAPTER,
   RLMS_DATA_SOURCE,
@@ -277,6 +278,7 @@ function buildModule(input: {
     },
     PersonDirectory,
     LmsRequestService,
+    RegistrationAccess,
     CatalogService,
     PackageImportGuard,
     { provide: APP_FILTER, useClass: LmsExceptionFilter },
