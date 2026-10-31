@@ -6,6 +6,7 @@ import type {
   LaunchDto,
 } from '@richardmcquiston01/reactive-lms-shared';
 import { LmsRequestService } from '../identity/lms-request.service';
+import { RegistrationAccess } from '../identity/registration-access';
 
 /**
  * Creates launch attempts for an existing registration.
@@ -15,11 +16,13 @@ import { LmsRequestService } from '../identity/lms-request.service';
 export class LaunchesController {
   /**
    * @param launches - Core launch service
-   * @param request - Identity / capability
+   * @param request - Identity
+   * @param access - Registration ownership / capability checks
    */
   constructor(
     private readonly launches: LaunchService,
     private readonly request: LmsRequestService,
+    private readonly access: RegistrationAccess,
   ) {}
 
   /**
@@ -38,10 +41,7 @@ export class LaunchesController {
     @Body() body: CreateLaunchDto,
     @Req() req: unknown,
   ): Promise<LaunchDto> {
-    await this.request.assertCan(req, 'launch', {
-      type: 'registration',
-      id,
-    });
+    await this.access.assertRegistration(req, 'launch', id);
     const learner = await this.request.resolveLearner(req);
     return this.launches.launch({
       registrationId: id,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { ScormCmiService } from '@richardmcquiston01/reactive-lms-core';
 import type { ScormCmiDto } from '@richardmcquiston01/reactive-lms-shared';
-import type { LmsRequestService } from '../identity/lms-request.service';
+import type { RegistrationAccess } from '../identity/registration-access';
 import { ScormRuntimeController } from './scorm-runtime.controller';
 
 const CMI: ScormCmiDto = {
@@ -17,7 +17,7 @@ describe('ScormRuntimeController', () => {
       {
         getCmi: async () => CMI,
       } as unknown as ScormCmiService,
-      { assertCan: async () => undefined } as LmsRequestService,
+      { assertAttempt: async () => undefined } as RegistrationAccess,
     );
 
     expect(await ctl.getCmi('att-1', {})).toEqual(CMI);
@@ -32,7 +32,7 @@ describe('ScormRuntimeController', () => {
           return body;
         },
       } as unknown as ScormCmiService,
-      { assertCan: async () => undefined } as LmsRequestService,
+      { assertAttempt: async () => undefined } as RegistrationAccess,
     );
 
     const body: ScormCmiDto = { ...CMI, finished: true };

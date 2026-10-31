@@ -9,14 +9,9 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ProgressSinkService } from '@richardmcquiston01/reactive-lms-core';
-import {
-  LmsError,
-  MODULE_NOT_FOUND,
-  httpStatusForLmsCode,
-  type NormalizedProgress,
-} from '@richardmcquiston01/reactive-lms-shared';
+import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogService } from '../catalog/catalog.service';
-import { LmsRequestService } from '../identity/lms-request.service';
+import { RegistrationAccess } from '../identity/registration-access';
 
 /**
  * HTML5 postMessage sink and progress listing.
@@ -27,12 +22,12 @@ export class ProgressController {
   /**
    * @param sink - Core progress writer
    * @param catalog - Progress listing and module lookup
-   * @param request - Identity / capability
+   * @param access - Registration ownership / capability checks
    */
   constructor(
     private readonly sink: ProgressSinkService,
     private readonly catalog: CatalogService,
-    private readonly request: LmsRequestService,
+    private readonly access: RegistrationAccess,
   ) {}
 
   /**
@@ -48,15 +43,14 @@ export class ProgressController {
     @Param('id') id: string,
     @Req() req: unknown,
   ): Promise<NormalizedProgress[]> {
-    await this.request.assertCan(req, 'grade.view', {
-      type: 'registration',
-      id,
-    });
+    await this.access.assertRegistration(req, 'grade.view', id);
     return this.catalog.listProgress(id);
   }
 
   /**
-   * Upserts HTML5 / player progress for a registration.
+   * Records progress that HTML5 content reports from a launch. The module
+   * must have an open attempt for the registration, and the activity node is
+   * the one that was launched; see `ProgressSinkService.upsertFromLaunch`.
    *
    * @param id - Registration id
    * @param body - Partial {@link NormalizedProgress}
@@ -71,27 +65,11 @@ export class ProgressController {
     @Body() body: Partial<NormalizedProgress> & { courseModuleId: string },
     @Req() req: unknown,
   ): Promise<void> {
-    await this.request.assertCan(req, 'launch', {
-      type: 'registration',
-      id,
-    });
-    const activityNodeId =
-      body.activityNodeId ??
-      (await this.catalog.moduleActivityNodeId(body.courseModuleId)) ??
-      (await this.catalog.packageEntryActivityNodeId(body.courseModuleId));
-    if (!activityNodeId) {
-      throw new LmsError({
-        status: httpStatusForLmsCode(MODULE_NOT_FOUND),
-        code: MODULE_NOT_FOUND,
-        message:
-          'activityNodeId is required when the module has no default node.',
-        details: { courseModuleId: body.courseModuleId },
-      });
-    }
-    await this.sink.upsert({
+    await this.access.assertRegistration(req, 'launch', id);
+    await this.sink.upsertFromLaunch({
       registrationId: id,
       courseModuleId: body.courseModuleId,
-      activityNodeId,
+      activityNodeId: body.activityNodeId,
       completionStatus: body.completionStatus ?? 'unknown',
       successStatus: body.successStatus ?? 'unknown',
       scoreScaled: body.scoreScaled,

@@ -33,6 +33,7 @@ import { CoursesController } from './controllers/courses.controller';
 import { EnrolmentsController } from './controllers/enrolments.controller';
 import { LaunchesController } from './controllers/launches.controller';
 import { ModulesController } from './controllers/modules.controller';
+import { PackageImportGuard } from './controllers/package-import.guard';
 import { PackagesController } from './controllers/packages.controller';
 import { ProgressController } from './controllers/progress.controller';
 import { ScormRuntimeController } from './controllers/scorm-runtime.controller';
@@ -40,6 +41,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { LmsExceptionFilter } from './filters/lms-exception.filter';
 import { LmsRequestService } from './identity/lms-request.service';
 import { PersonDirectory } from './identity/person-directory';
+import { RegistrationAccess } from './identity/registration-access';
 import {
   RLMS_CAPABILITY_ADAPTER,
   RLMS_DATA_SOURCE,
@@ -79,6 +81,13 @@ export interface ReactiveLmsModuleOptions {
   maxUncompressedBytes?: number;
   /** Maximum number of files in an uploaded archive. Default 10,000. */
   maxFileCount?: number;
+  /**
+   * Largest accepted package upload, in bytes of the ZIP itself (not its
+   * uncompressed size, which `maxUncompressedBytes` limits). Larger uploads
+   * are refused with 413 while streaming, so they never fill memory.
+   * Default 200 MiB.
+   */
+  maxUploadBytes?: number;
   /** URL prefix for LMS routes. Default `lms`. */
   routePrefix?: string;
   /** Caller-owned TypeORM DataSource. */
@@ -103,6 +112,16 @@ export interface ReactiveLmsModuleAsyncOptions {
    */
   routePrefix?: string;
 }
+
+/** Default cap on a package upload: 200 MiB. */
+export const DEFAULT_MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
+
+/**
+ * Token under which `@nestjs/platform-express` looks up multer options. Nest
+ * does not export the constant, but the value is part of its documented
+ * `MulterModule` behaviour and has not changed since v6.
+ */
+const MULTER_MODULE_OPTIONS_TOKEN = 'MULTER_MODULE_OPTIONS';
 
 const CONTROLLERS = [
   PackagesController,
@@ -191,6 +210,19 @@ function buildModule(input: {
       inject: [RLMS_MODULE_OPTIONS],
     },
     {
+      // Nest's FileInterceptor reads its multer options from this token. It is
+      // provided here, inside this module only, so a host's own uploads are
+      // unaffected.
+      provide: MULTER_MODULE_OPTIONS_TOKEN,
+      useFactory: (opts: ReactiveLmsModuleOptions) => ({
+        limits: {
+          fileSize: opts.maxUploadBytes ?? DEFAULT_MAX_UPLOAD_BYTES,
+          files: 1,
+        },
+      }),
+      inject: [RLMS_MODULE_OPTIONS],
+    },
+    {
       provide: PackageImporter,
       useFactory: (
         dataSource: DataSource,
@@ -246,7 +278,9 @@ function buildModule(input: {
     },
     PersonDirectory,
     LmsRequestService,
+    RegistrationAccess,
     CatalogService,
+    PackageImportGuard,
     { provide: APP_FILTER, useClass: LmsExceptionFilter },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ];

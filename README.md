@@ -98,6 +98,23 @@ start. When running several API processes against one database, start one
 first so two do not migrate at once. An unrecognised `RLMS_RUN_MIGRATIONS`
 value stops the process with a message naming the variable.
 
+### Authorization
+
+ReactiveLMS asks; the host decides. When embedding, pass a `capabilityAdapter`
+to `ReactiveLmsModule` and every route asks it (`package.import`,
+`module.manage`, `launch`, `grade.view`, and so on). The adapter may also let
+staff act for a learner.
+
+Without an adapter:
+
+- learner routes (launch, progress, SCORM CMI) are limited to the learner who
+  owns the registration, so one learner cannot read or write another's;
+- admin routes (import, create, place, enrol, delete) are open to any caller
+  the `IdentityAdapter` identifies.
+
+The standalone API runs without an adapter and with one fixed demo learner, so
+it is for evaluation only. An embedding host should configure an adapter.
+
 ## Documentation
 
 - [docs/DESIGN_CONSIDERATIONS.md](docs/DESIGN_CONSIDERATIONS.md) — product

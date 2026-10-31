@@ -19,6 +19,19 @@ export class PersonDirectory {
   ) {}
 
   /**
+   * Returns the existing person for `learner`, or `null`. Unlike
+   * {@link PersonDirectory.ensure} it never inserts, so a lookup made only to
+   * compare ownership leaves no row behind for a caller who has none.
+   *
+   * @param learner - Host identity
+   */
+  async find(learner: LearnerRef): Promise<Person | null> {
+    return this.dataSource.manager.findOne(Person, {
+      where: { externalId: learner.externalId },
+    });
+  }
+
+  /**
    * Returns the existing person for `externalId`, or inserts one.
    *
    * @param learner - Host identity

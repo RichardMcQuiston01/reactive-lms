@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+### Security
+
+- `GET /packages/:id` now checks `module.manage` for that package. It was the
+  only route without a permission check, so with a `CapabilityAdapter`
+  configured a caller denied the package list could still read a known
+  package's details and activity tree.
+- Package uploads are checked for `package.import` before the file is read
+  (a guard now runs ahead of the upload interceptor), and are capped. The new
+  `maxUploadBytes` option defaults to 200 MiB; a larger upload is refused with
+  413 `PAYLOAD_TOO_LARGE` while streaming, so it cannot fill memory.
+- Learner routes are now limited to the learner who owns the registration when
+  no `CapabilityAdapter` is configured. Launching (`POST
+  /registrations/:id/launches`), reporting and reading progress, and the
+  SCORM CMI routes (`GET`/`PUT /scorm/attempts/:id/cmi`) previously only
+  called `assertCan`, which does nothing without an adapter, so anyone who
+  knew a registration or attempt id could launch it or read and write its
+  progress. A non-owner now gets 403, and a caller with no person record is
+  refused without one being created. With an adapter the host still decides
+  (it may allow staff), and being the owner does not bypass a host that
+  denies. Admin routes are unchanged and open without an adapter; the README
+  now says so.
+- Progress reported by content (`POST /registrations/:id/progress`) no longer
+  trusts the module and node it names. The module must belong to the
+  registration's section and have an open launch attempt (otherwise 409
+  `LAUNCH_REQUIRED`, or 404 for another section's module), and the activity
+  node is the one that was launched; a different node is refused with 400
+  `ACTIVITY_NODE_INVALID`. Previously a learner could mark a locked,
+  never-launched module complete and so unlock later work. **Breaking:**
+  content must be launched before it reports progress. The
+  `ProgressSinkService.upsertFromLaunch` method carries these checks, and
+  `CatalogService.moduleActivityNodeId` and `packageEntryActivityNodeId` are
+  removed because the attempt now supplies the node.
+
 ## 0.2.0 - 2026-10-29
 
 ### Added

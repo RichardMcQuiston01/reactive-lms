@@ -5,6 +5,7 @@ import type {
   LearnerRef,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { LmsRequestService } from '../identity/lms-request.service';
+import type { RegistrationAccess } from '../identity/registration-access';
 import { LaunchesController } from './launches.controller';
 
 const LEARNER: LearnerRef = {
@@ -24,6 +25,7 @@ const DESCRIPTOR: LaunchDto = {
 describe('LaunchesController', () => {
   test('POST maps CreateLaunchDto onto LaunchService.launch', async () => {
     const calls: unknown[] = [];
+    const checks: string[] = [];
     const ctl = new LaunchesController(
       {
         launch: async (request) => {
@@ -31,10 +33,12 @@ describe('LaunchesController', () => {
           return DESCRIPTOR;
         },
       } as unknown as LaunchService,
+      { resolveLearner: async () => LEARNER } as LmsRequestService,
       {
-        assertCan: async () => undefined,
-        resolveLearner: async () => LEARNER,
-      } as LmsRequestService,
+        assertRegistration: async (_req, action, registrationId) => {
+          checks.push(`${action}:${registrationId}`);
+        },
+      } as RegistrationAccess,
     );
 
     const result = await ctl.create(
@@ -44,6 +48,7 @@ describe('LaunchesController', () => {
     );
 
     expect(result).toEqual(DESCRIPTOR);
+    expect(checks).toEqual(['launch:reg-1']);
     expect(calls).toEqual([
       {
         registrationId: 'reg-1',

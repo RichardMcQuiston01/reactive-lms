@@ -75,4 +75,42 @@ export class LmsRequestService {
       });
     }
   }
+
+  /**
+   * Authorizes an action on something that belongs to one learner (their
+   * registration, or an attempt under it).
+   *
+   * With a capability adapter the host decides, exactly as for
+   * {@link LmsRequestService.assertCan}; it may allow staff to act for a
+   * learner. Without one, nothing says who else may act, so only the owning
+   * learner may. Their person row is looked up, never created, so a caller
+   * with no row is refused without leaving one behind.
+   *
+   * @param request - Opaque HTTP request
+   * @param action - LMS action code
+   * @param resource - Target resource
+   * @param ownerPersonId - Person who owns the resource
+   * @throws {LmsError} 403 `FORBIDDEN` when the caller is not allowed
+   */
+  async assertCanOrOwn(
+    request: unknown,
+    action: LmsAction,
+    resource: LmsResourceRef,
+    ownerPersonId: string,
+  ): Promise<void> {
+    if (this.capability) {
+      await this.assertCan(request, action, resource);
+      return;
+    }
+    const learner = await this.resolveLearner(request);
+    const person = await this.persons.find(learner);
+    if (person?.id !== ownerPersonId) {
+      throw new LmsError({
+        status: 403,
+        code: 'FORBIDDEN',
+        message: `This ${resource.type} belongs to another learner, so you cannot ${action} it.`,
+        details: { action, resource },
+      });
+    }
+  }
 }

@@ -10,6 +10,8 @@ export type LmsErrorCode =
   | typeof STORAGE_KEY_NOT_FOUND
   | typeof AVAILABILITY_INVALID
   | typeof MODULE_NOT_LAUNCHABLE
+  | typeof LAUNCH_REQUIRED
+  | typeof ACTIVITY_NODE_INVALID
   | typeof MODULE_TREE_INVALID
   | typeof MODULE_HAS_CHILDREN
   | typeof STORAGE_KEY_INVALID
@@ -49,6 +51,12 @@ export const STORAGE_KEY_INVALID = 'STORAGE_KEY_INVALID';
 
 /** The module is a container (block) and has no content to launch. */
 export const MODULE_NOT_LAUNCHABLE = 'MODULE_NOT_LAUNCHABLE';
+
+/** Progress was reported for a module that has no open launch attempt. */
+export const LAUNCH_REQUIRED = 'LAUNCH_REQUIRED';
+
+/** The activity node is not the one launched for this module. */
+export const ACTIVITY_NODE_INVALID = 'ACTIVITY_NODE_INVALID';
 
 /** A module placement would make the tree invalid (parent, cycle, depth). */
 export const MODULE_TREE_INVALID = 'MODULE_TREE_INVALID';
@@ -112,6 +120,8 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [STORAGE_KEY_INVALID]: 400,
   [AVAILABILITY_INVALID]: 400,
   [MODULE_NOT_LAUNCHABLE]: 409,
+  [LAUNCH_REQUIRED]: 409,
+  [ACTIVITY_NODE_INVALID]: 400,
   [MODULE_TREE_INVALID]: 400,
   [MODULE_HAS_CHILDREN]: 409,
   [STORAGE_IO_ERROR]: 500,
