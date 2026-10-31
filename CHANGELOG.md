@@ -4,6 +4,28 @@
 
 ### Fixed
 
+- The HTML5 player no longer lets an old lesson report as the new one. When
+  the host changed the registration or module, the previous frame stayed on
+  screen while the next launch loaded, and its messages were labelled with the
+  new registration and module. The previous launch now stops speaking and its
+  frame is removed the moment the inputs change; each launch reports with the
+  ids it was started with, and a launch that finishes after a newer one began
+  is dropped.
+- Progress reports from HTML5 content are sent in the order the content sent
+  them. Sent together they could arrive out of order, and now that the server
+  keeps stored statuses a late "incomplete" could have undone a "completed".
+- SCORM saves are ordered and failures are no longer hidden. A slow debounced
+  commit could finish after `LMSFinish` and overwrite the final bookmark,
+  score, or completion; saves now go through a queue that sends one at a time,
+  newest state last. A rebind used to start loading the new CMI before the old
+  bridge had finished saving, so a resume could read stale values; it now
+  waits (`ScormApiBridge.uninstall` returns a promise). A failed save used to
+  be discarded while the lesson was told it succeeded; the state is now kept,
+  the player shows "Your progress could not be saved" with a Retry button,
+  and it is sent again with the next save or on exit.
+
+### Fixed
+
 - A progress report no longer erases what it leaves out. A completion-only
   report used to overwrite the saved score, bookmark, time, and suspend data
   with null, and a bookmark-only report sent `unknown` statuses that undid

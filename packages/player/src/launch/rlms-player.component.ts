@@ -12,10 +12,12 @@ import {
 import type {
   CreateLaunchDto,
   LaunchDto,
+  NormalizedProgress,
 } from '@richardmcquiston01/reactive-lms-shared';
 import { lmsFetch } from '../http/lms-http';
+import { SerialQueue } from '../http/serial-queue';
 import { isContentFrameMessage } from '../progress/is-content-frame-message';
-import { mapHtml5Message } from '../progress/map-html5-message';
+import { LaunchSession } from '../progress/launch-session';
 import { REACTIVE_LMS_CONFIG } from '../provide-reactive-lms';
 import { ScormFrameComponent } from '../runtimes/scorm/scorm-frame.component';
 
@@ -69,7 +71,10 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('frame') frame?: ElementRef<HTMLIFrameElement>;
 
   private readonly config = inject(REACTIVE_LMS_CONFIG);
-  private activityNodeId?: string;
+  /** Which launch the frame belongs to; messages speak only for that launch. */
+  private readonly session = new LaunchSession();
+  /** Keeps progress reports in the order the content sent them. */
+  private readonly progressQueue = new SerialQueue();
   private started = false;
   private abort?: AbortController;
 
@@ -100,21 +105,19 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private readonly onMessage = (event: MessageEvent): void => {
+    const contentUrl = this.session.contentUrl;
     if (
+      !contentUrl ||
       !isContentFrameMessage(
         event,
         this.frame?.nativeElement.contentWindow,
-        this.contentUrl,
+        contentUrl,
         typeof location === 'undefined' ? undefined : location.href,
       )
     ) {
       return;
     }
-    const payload = mapHtml5Message(event.data, {
-      registrationId: this.registrationId,
-      courseModuleId: this.courseModuleId,
-      activityNodeId: this.activityNodeId,
-    });
+    const payload = this.session.progressFor(event.data);
     if (!payload) {
       return;
     }
@@ -122,30 +125,45 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   private async launch(): Promise<void> {
+    // The previous launch stops speaking and its frame goes away now, not when
+    // the new launch finishes: until then its messages would be labelled with
+    // the new inputs.
+    const token = this.session.begin();
+    this.contentUrl = null;
+    this.attemptId = null;
+    this.abort?.abort();
     if (!this.registrationId || !this.courseModuleId) {
       return;
     }
-    this.abort?.abort();
     this.abort = new AbortController();
     this.error = null;
-    const body: CreateLaunchDto = {
-      courseModuleId: this.courseModuleId,
-    };
+    // Captured now: the inputs may change again while the request is out.
+    const registrationId = this.registrationId;
+    const courseModuleId = this.courseModuleId;
+    const body: CreateLaunchDto = { courseModuleId };
     try {
       const descriptor = await lmsFetch<LaunchDto>(
         this.config,
-        `/registrations/${this.registrationId}/launches`,
+        `/registrations/${registrationId}/launches`,
         {
           method: 'POST',
           body: JSON.stringify(body),
           signal: this.abort.signal,
         },
       );
+      const node = descriptor.runtimeConfig['activityNodeId'];
+      const applied = this.session.ready(token, {
+        registrationId,
+        courseModuleId,
+        activityNodeId: typeof node === 'string' ? node : undefined,
+        contentUrl: descriptor.contentUrl,
+      });
+      if (!applied) {
+        return;
+      }
       this.contentUrl = descriptor.contentUrl;
       this.playerKind = descriptor.playerKind;
       this.attemptId = descriptor.attemptId;
-      const node = descriptor.runtimeConfig['activityNodeId'];
-      this.activityNodeId = typeof node === 'string' ? node : undefined;
     } catch (error) {
       if (isAbort(error)) {
         return;
@@ -154,15 +172,23 @@ export class RlmsPlayerComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private async postProgress(payload: object): Promise<void> {
+  private async postProgress(
+    payload: Partial<NormalizedProgress>,
+  ): Promise<void> {
+    const registrationId = payload.registrationId;
+    if (!registrationId) {
+      return;
+    }
     try {
-      await lmsFetch<void>(
-        this.config,
-        `/registrations/${this.registrationId}/progress`,
-        {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        },
+      await this.progressQueue.enqueue(() =>
+        lmsFetch<void>(
+          this.config,
+          `/registrations/${registrationId}/progress`,
+          {
+            method: 'POST',
+            body: JSON.stringify(payload),
+          },
+        ),
       );
     } catch (error) {
       this.error =
