@@ -115,4 +115,76 @@ describe('bindScormFrame', () => {
     expect(host.API).toBe(newerApi);
     expect(host.API).toBeDefined();
   });
+
+  test('rebind waits for the previous bridge to finish saving before it hydrates', async () => {
+    const host: { API?: unknown } = {};
+    let finishSave!: () => void;
+    const saving = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const events: string[] = [];
+    const first = await bindScormFrame({
+      attemptId: 'att-1',
+      contentUrl: '/lms/content/a.html',
+      host,
+      getCmi: async () => ({ values: {} }),
+      putCmi: async () => {
+        events.push('save:start');
+        await saving;
+        events.push('save:end');
+      },
+    });
+    const api = host.API as {
+      LMSInitialize: (value: string) => string;
+      LMSSetValue: (element: string, value: string) => string;
+      LMSFinish: (value: string) => string;
+    };
+    api.LMSInitialize('');
+    api.LMSSetValue('cmi.core.lesson_location', 'p9');
+    api.LMSFinish('');
+
+    const second = bindScormFrame({
+      attemptId: 'att-1',
+      contentUrl: '/lms/content/b.html',
+      host,
+      previous: first.bridge,
+      getCmi: async () => {
+        events.push('hydrate');
+        return { values: {} };
+      },
+      putCmi: async () => undefined,
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(events).toEqual(['save:start']);
+
+    finishSave();
+    await second;
+
+    expect(events).toEqual(['save:start', 'save:end', 'hydrate']);
+  });
+
+  test('passes save failure hooks through to the bridge', async () => {
+    const host: { API?: unknown } = {};
+    const errors: string[] = [];
+    await bindScormFrame({
+      attemptId: 'att-1',
+      contentUrl: '/lms/content/a.html',
+      host,
+      getCmi: async () => ({ values: {} }),
+      putCmi: async () => {
+        throw new Error('offline');
+      },
+      onSaveError: (error) => errors.push((error as Error).message),
+    });
+    const api = host.API as {
+      LMSInitialize: (value: string) => string;
+      LMSFinish: (value: string) => string;
+    };
+    api.LMSInitialize('');
+    api.LMSFinish('');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(errors).toEqual(['offline']);
+  });
 });

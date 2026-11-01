@@ -2,6 +2,7 @@ import {
   CmiStore,
   type ScormCmiDto,
 } from '@richardmcquiston01/reactive-lms-shared';
+import { CmiSaveQueue } from './cmi-save-queue';
 
 /**
  * SCORM 1.2 `window.API` surface the SCO looks up via findAPI.
@@ -39,8 +40,15 @@ export interface ScormApiInstallOptions {
 export interface ScormApiBridgeOptions {
   /** Hydrate CMI before the SCO loads. */
   getCmi: () => Promise<ScormCmiDto>;
-  /** Persist CMI on Commit / Finish. */
+  /**
+   * Persist CMI on Commit / Finish. Calls are made one at a time, newest
+   * state last; a rejection keeps the state for a retry.
+   */
   putCmi: (body: ScormCmiDto) => Promise<void>;
+  /** A save failed. The state is kept and sent again on the next save. */
+  onSaveError?: (error: unknown) => void;
+  /** A save succeeded after earlier failures; nothing is left unsaved. */
+  onSaveRecovered?: () => void;
   /** Commit debounce in milliseconds. Default 500. */
   debounceMs?: number;
   /** Injectable timer (tests). */
@@ -51,12 +59,15 @@ export interface ScormApiBridgeOptions {
 
 /**
  * Installs `window.API` on the player window **before** the SCO iframe
- * loads. Get/Set stay local; Commit is debounced to the server.
+ * loads. Get/Set stay local; Commit is debounced to the server, and every
+ * save goes through an ordered queue so a slow one cannot land after a later
+ * one (see {@link CmiSaveQueue}).
  */
 export class ScormApiBridge {
   private store = new CmiStore();
   private installedApi?: Scorm12Api;
   private timer: unknown;
+  private readonly queue: CmiSaveQueue;
   private readonly debounceMs: number;
   private readonly setTimeoutFn: (handler: () => void, ms: number) => unknown;
   private readonly clearTimeoutFn: (handle: unknown) => void;
@@ -65,6 +76,10 @@ export class ScormApiBridge {
    * @param options - Hydrate/commit hooks and optional debounce
    */
   constructor(private readonly options: ScormApiBridgeOptions) {
+    this.queue = new CmiSaveQueue(options.putCmi, {
+      onError: options.onSaveError,
+      onRecovered: options.onSaveRecovered,
+    });
     this.debounceMs = options.debounceMs ?? 500;
     this.setTimeoutFn =
       options.setTimeoutFn ?? ((handler, ms) => setTimeout(handler, ms));
@@ -106,35 +121,49 @@ export class ScormApiBridge {
   }
 
   /**
-   * Flushes a pending debounced Commit, then removes `target.API`
-   * only when this bridge still owns it.
+   * Removes `target.API` only when this bridge still owns it, saves any
+   * pending debounced Commit, and waits until nothing is in flight.
+   *
+   * Await it before hydrating a replacement for the same attempt: the
+   * replacement then reads what this bridge just saved, not an older copy.
+   * It never rejects; a save that still fails is reported through
+   * `onSaveError` and stays queued.
    *
    * @param target - Player window previously passed to {@link install}
    */
-  uninstall(target: ScormApiHost): void {
-    this.flushPending();
+  async uninstall(target: ScormApiHost): Promise<void> {
     const host = asApiHost(target);
     if (this.installedApi && host.API === this.installedApi) {
       delete host.API;
     }
+    await this.flush();
   }
 
   /**
-   * Flushes a pending debounced commit immediately.
+   * Saves a pending debounced commit now and waits until nothing is in
+   * flight, retrying a snapshot that failed earlier.
    */
   async flush(): Promise<void> {
     this.flushPending();
+    await this.queue.retry();
   }
 
   /**
-   * Writes a pending Commit now (used by uninstall / destroy).
+   * Sends again whatever failed to save. Never rejects.
+   */
+  retrySave(): Promise<void> {
+    return this.queue.retry();
+  }
+
+  /**
+   * Queues the pending debounced Commit now, if there is one.
    */
   private flushPending(): void {
     if (this.timer === undefined) {
       return;
     }
     this.clearTimer();
-    void this.options.putCmi({
+    void this.queue.save({
       values: this.store.snapshot(),
       finished: this.store.isFinished(),
     });
@@ -152,7 +181,7 @@ export class ScormApiBridge {
     const result = this.store.LMSFinish(param);
     if (result === 'true') {
       this.clearTimer();
-      void this.options.putCmi({
+      void this.queue.save({
         values: this.store.snapshot(),
         finished: true,
       });
@@ -164,7 +193,7 @@ export class ScormApiBridge {
     this.clearTimer();
     this.timer = this.setTimeoutFn(() => {
       this.timer = undefined;
-      void this.options.putCmi({
+      void this.queue.save({
         values: this.store.snapshot(),
         finished,
       });
