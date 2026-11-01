@@ -34,12 +34,14 @@ export class PersonDirectory {
   /**
    * Returns the existing person for `externalId`, or inserts one.
    *
+   * Two first requests for the same learner can arrive together. The insert
+   * ignores a conflict on `external_id` and the row is read back, so the loser
+   * gets the winner's person instead of a unique-constraint error.
+   *
    * @param learner - Host identity
    */
   async ensure(learner: LearnerRef): Promise<Person> {
-    const existing = await this.dataSource.manager.findOne(Person, {
-      where: { externalId: learner.externalId },
-    });
+    const existing = await this.find(learner);
     if (existing) {
       return existing;
     }
@@ -51,6 +53,19 @@ export class PersonDirectory {
       accountName: learner.accountName ?? learner.externalId,
       email: learner.email ?? null,
     });
-    return this.dataSource.manager.save(row);
+    await this.dataSource
+      .createQueryBuilder()
+      .insert()
+      .into(Person)
+      .values(row)
+      .orIgnore()
+      .execute();
+    const person = await this.find(learner);
+    if (!person) {
+      throw new Error(
+        `Could not create or find a person for external id "${learner.externalId}".`,
+      );
+    }
+    return person;
   }
 }

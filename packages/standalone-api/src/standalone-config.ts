@@ -18,12 +18,44 @@ export function resolveDatabaseUrl(): string {
   if (explicit) {
     return explicit;
   }
-  const host = process.env['DATABASE_HOST'] ?? 'localhost';
-  const port = process.env['DATABASE_PORT'] ?? '5432';
-  const user = process.env['DATABASE_USER'] ?? 'rlms';
-  const password = process.env['DATABASE_PASSWORD'] ?? 'rlms';
-  const name = process.env['DATABASE_NAME'] ?? 'rlms';
-  return `postgres://${user}:${password}@${host}:${port}/${name}`;
+  return buildDatabaseUrl({
+    host: process.env['DATABASE_HOST'] ?? 'localhost',
+    port: process.env['DATABASE_PORT'] ?? '5432',
+    user: process.env['DATABASE_USER'] ?? 'rlms',
+    password: process.env['DATABASE_PASSWORD'] ?? 'rlms',
+    name: process.env['DATABASE_NAME'] ?? 'rlms',
+  });
+}
+
+/**
+ * Parts of a Postgres connection URL.
+ */
+export interface DatabaseUrlParts {
+  /** Server host name or address. */
+  host: string;
+  /** Server port. */
+  port: string;
+  /** Login name. */
+  user: string;
+  /** Login password; may contain any characters. */
+  password: string;
+  /** Database name. */
+  name: string;
+}
+
+/**
+ * Builds a Postgres URL from its parts. The user, password, and database name
+ * are percent-encoded: a `/`, `#`, `?`, `@`, or `:` in a password would
+ * otherwise change where the URL's credentials end, so startup would connect
+ * with the wrong user or fail.
+ *
+ * @param parts - Connection parts, as plain (not pre-encoded) text
+ */
+export function buildDatabaseUrl(parts: DatabaseUrlParts): string {
+  const user = encodeURIComponent(parts.user);
+  const password = encodeURIComponent(parts.password);
+  const name = encodeURIComponent(parts.name);
+  return `postgres://${user}:${password}@${parts.host}:${parts.port}/${name}`;
 }
 
 /**

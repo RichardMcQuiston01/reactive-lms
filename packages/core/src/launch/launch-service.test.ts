@@ -286,6 +286,83 @@ describe('LaunchService', () => {
     });
   });
 
+  describe('activity node scoping', () => {
+    const OTHER_PACKAGE_ID = '99999999-9999-4999-8999-999999999999';
+    const FOREIGN_NODE_ID = '98989898-9898-4989-8989-989898989898';
+    const SECOND_NODE_ID = '97979797-9797-4979-8979-979797979797';
+
+    function seedForeignNode(
+      ds: ReturnType<typeof createMockDataSource>,
+    ): void {
+      ds.seed(ContentPackage, {
+        id: OTHER_PACKAGE_ID,
+        packageType: 'html5',
+        title: 'Other',
+        entryHref: 'other.html',
+        extractedKey: `packages/${OTHER_PACKAGE_ID}/content`,
+        storageKey: `packages/${OTHER_PACKAGE_ID}/original.zip`,
+        manifestJson: {},
+      });
+      ds.seed(ActivityNode, {
+        id: FOREIGN_NODE_ID,
+        contentPackageId: OTHER_PACKAGE_ID,
+        title: 'Other package page',
+        href: 'other.html',
+      });
+    }
+
+    test('refuses a node from another package and opens no attempt', async () => {
+      const ds = createMockDataSource();
+      seedLaunchable(ds);
+      seedForeignNode(ds);
+
+      const result = launchService(ds).launch({
+        ...REQUEST,
+        activityNodeId: FOREIGN_NODE_ID,
+      });
+
+      await expect(result).rejects.toMatchObject({
+        code: 'ACTIVITY_NODE_INVALID',
+        status: 400,
+      });
+      expect(ds.rowsOf(Attempt)).toHaveLength(0);
+    });
+
+    test('refuses a module whose own stored node belongs to another package', async () => {
+      const ds = createMockDataSource();
+      seedLaunchable(ds);
+      seedForeignNode(ds);
+      const moduleRow = ds.rowsOf(CourseModule)[0];
+      if (moduleRow) {
+        moduleRow.activityNodeId = FOREIGN_NODE_ID;
+      }
+
+      const result = launchService(ds).launch(REQUEST);
+
+      await expect(result).rejects.toMatchObject({
+        code: 'ACTIVITY_NODE_INVALID',
+      });
+    });
+
+    test('launches a different node of the module package and records it', async () => {
+      const ds = createMockDataSource();
+      seedLaunchable(ds);
+      ds.seed(ActivityNode, {
+        id: SECOND_NODE_ID,
+        contentPackageId: PACKAGE_ID,
+        title: 'Second page',
+        href: 'second.html',
+      });
+
+      await launchService(ds).launch({
+        ...REQUEST,
+        activityNodeId: SECOND_NODE_ID,
+      });
+
+      expect(ds.rowsOf(Attempt)[0]?.activityNodeId).toBe(SECOND_NODE_ID);
+    });
+  });
+
   describe('module tree', () => {
     const BLOCK_ID = 'b1b1b1b1-b1b1-4b1b-8b1b-b1b1b1b1b1b1';
     const OUTER_ID = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2';

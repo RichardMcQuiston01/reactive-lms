@@ -2,12 +2,18 @@ import type {
   CompletionStatus,
   SuccessStatus,
 } from '@richardmcquiston01/reactive-lms-shared';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, Unique } from 'typeorm';
 import { TimestampedEntity } from './base.entity';
 
 /**
- * Rolled-up progress per registration × module × activity node.
+ * Rolled-up progress per registration × module × activity node. One row per
+ * combination: the unique constraint is the backstop for writers that race.
  */
+@Unique('uq_rlms_normalized_progress_slot', [
+  'registrationId',
+  'courseModuleId',
+  'activityNodeId',
+])
 @Entity({ name: 'rlms_normalized_progress' })
 export class NormalizedProgress extends TimestampedEntity {
   @Column({ name: 'registration_id', type: 'uuid' })

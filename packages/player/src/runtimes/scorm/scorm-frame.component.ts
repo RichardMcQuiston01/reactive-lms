@@ -22,6 +22,10 @@ import type { ScormApiBridge } from './scorm-api-bridge';
   imports: [CommonModule],
   template: `
     <p class="rlms-player-error" *ngIf="error">{{ error }}</p>
+    <p class="rlms-player-error" *ngIf="saveError" role="alert">
+      {{ saveError }}
+      <button type="button" (click)="retrySave()">Retry now</button>
+    </p>
     <iframe
       *ngIf="iframeSrc"
       class="rlms-player-frame"
@@ -46,6 +50,9 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Hydrate / bind error shown instead of a blank frame. */
   error: string | null = null;
+
+  /** Set while the learner's progress could not be saved; cleared on success. */
+  saveError: string | null = null;
 
   private readonly config = inject(REACTIVE_LMS_CONFIG);
   private bridge?: ScormApiBridge;
@@ -74,8 +81,15 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
    */
   ngOnDestroy(): void {
     this.attachGen += 1;
-    this.bridge?.uninstall(window);
+    void this.bridge?.uninstall(window);
     this.bridge = undefined;
+  }
+
+  /**
+   * Sends progress that failed to save again, at the learner's request.
+   */
+  retrySave(): void {
+    void this.bridge?.retrySave();
   }
 
   /**
@@ -85,6 +99,7 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
     const gen = ++this.attachGen;
     this.iframeSrc = null;
     this.error = null;
+    this.saveError = null;
     const attemptId = this.attemptId;
     const contentUrl = this.contentUrl;
     const result = await bindScormFrame({
@@ -93,6 +108,18 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
       host: window,
       previous: this.bridge,
       shouldApply: () => gen === this.attachGen,
+      onSaveError: (failure) => {
+        if (gen === this.attachGen) {
+          this.saveError = `Your progress could not be saved (${
+            failure instanceof Error ? failure.message : 'unknown error'
+          }). It will be sent again with your next save.`;
+        }
+      },
+      onSaveRecovered: () => {
+        if (gen === this.attachGen) {
+          this.saveError = null;
+        }
+      },
       getCmi: () =>
         lmsFetch<ScormCmiDto>(this.config, `/scorm/attempts/${attemptId}/cmi`),
       putCmi: async (body) => {
@@ -107,7 +134,7 @@ export class ScormFrameComponent implements OnInit, OnChanges, OnDestroy {
       },
     });
     if (gen !== this.attachGen) {
-      result.bridge?.uninstall(window);
+      void result.bridge?.uninstall(window);
       return;
     }
     this.bridge = result.bridge;

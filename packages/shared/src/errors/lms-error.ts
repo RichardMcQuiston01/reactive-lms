@@ -14,6 +14,8 @@ export type LmsErrorCode =
   | typeof ACTIVITY_NODE_INVALID
   | typeof MODULE_TREE_INVALID
   | typeof MODULE_HAS_CHILDREN
+  | typeof MODULE_IN_USE
+  | typeof PACKAGE_IN_USE
   | typeof STORAGE_KEY_INVALID
   | typeof STORAGE_IO_ERROR
   | typeof STORAGE_RANGE_INVALID
@@ -51,6 +53,12 @@ export const STORAGE_KEY_INVALID = 'STORAGE_KEY_INVALID';
 
 /** The module is a container (block) and has no content to launch. */
 export const MODULE_NOT_LAUNCHABLE = 'MODULE_NOT_LAUNCHABLE';
+
+/** A module has launch or progress history, so it cannot be removed. */
+export const MODULE_IN_USE = 'MODULE_IN_USE';
+
+/** A package is still placed in one or more sections, so it cannot be deleted. */
+export const PACKAGE_IN_USE = 'PACKAGE_IN_USE';
 
 /** Progress was reported for a module that has no open launch attempt. */
 export const LAUNCH_REQUIRED = 'LAUNCH_REQUIRED';
@@ -124,6 +132,8 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [ACTIVITY_NODE_INVALID]: 400,
   [MODULE_TREE_INVALID]: 400,
   [MODULE_HAS_CHILDREN]: 409,
+  [MODULE_IN_USE]: 409,
+  [PACKAGE_IN_USE]: 409,
   [STORAGE_IO_ERROR]: 500,
   [STORAGE_RANGE_INVALID]: 416,
   [CMI5_TOKEN_USED]: 400,

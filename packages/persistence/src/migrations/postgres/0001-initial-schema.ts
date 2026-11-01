@@ -240,7 +240,9 @@ export class InitialSchema0001 implements MigrationInterface {
         "extras_json" jsonb,
         "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-        CONSTRAINT "pk_rlms_normalized_progress" PRIMARY KEY ("id")
+        CONSTRAINT "pk_rlms_normalized_progress" PRIMARY KEY ("id"),
+        CONSTRAINT "uq_rlms_normalized_progress_slot"
+          UNIQUE ("registration_id", "course_module_id", "activity_node_id")
       )
     `);
 

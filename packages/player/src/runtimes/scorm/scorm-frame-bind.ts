@@ -34,10 +34,16 @@ export interface ScormFrameBindOptions {
   getCmi: () => Promise<ScormCmiDto>;
   /** Commit hook. */
   putCmi: (body: ScormCmiDto) => Promise<void>;
+  /** A save failed; the player should tell the learner. */
+  onSaveError?: (error: unknown) => void;
+  /** A save succeeded after earlier failures. */
+  onSaveRecovered?: () => void;
 }
 
 /**
  * Uninstalls any previous bridge, hydrates CMI, and installs `window.API`.
+ * The previous bridge's final save finishes before hydration starts, so a
+ * resume never reads a copy that is about to be overwritten.
  * On hydrate failure, returns an error and no iframe src.
  *
  * @param input - Attempt, content URL, host, and HTTP hooks
@@ -45,13 +51,15 @@ export interface ScormFrameBindOptions {
 export async function bindScormFrame(
   input: ScormFrameBindOptions,
 ): Promise<ScormFrameBindResult> {
-  input.previous?.uninstall(input.host);
+  await input.previous?.uninstall(input.host);
   if (!input.attemptId || !input.contentUrl) {
     return { iframeSrc: null, error: null };
   }
   const bridge = new ScormApiBridge({
     getCmi: input.getCmi,
     putCmi: input.putCmi,
+    onSaveError: input.onSaveError,
+    onSaveRecovered: input.onSaveRecovered,
   });
   try {
     await bridge.install(input.host, {
@@ -59,7 +67,7 @@ export async function bindScormFrame(
     });
     return { bridge, iframeSrc: input.contentUrl, error: null };
   } catch (error) {
-    bridge.uninstall(input.host);
+    await bridge.uninstall(input.host);
     return {
       iframeSrc: null,
       error: error instanceof Error ? error.message : 'CMI hydrate failed.',

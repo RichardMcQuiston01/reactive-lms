@@ -2,6 +2,81 @@
 
 ## Unreleased
 
+### Fixed
+
+- The HTML5 player no longer lets an old lesson report as the new one. When
+  the host changed the registration or module, the previous frame stayed on
+  screen while the next launch loaded, and its messages were labelled with the
+  new registration and module. The previous launch now stops speaking and its
+  frame is removed the moment the inputs change; each launch reports with the
+  ids it was started with, and a launch that finishes after a newer one began
+  is dropped.
+- Progress reports from HTML5 content are sent in the order the content sent
+  them. Sent together they could arrive out of order, and now that the server
+  keeps stored statuses a late "incomplete" could have undone a "completed".
+- SCORM saves are ordered and failures are no longer hidden. A slow debounced
+  commit could finish after `LMSFinish` and overwrite the final bookmark,
+  score, or completion; saves now go through a queue that sends one at a time,
+  newest state last. A rebind used to start loading the new CMI before the old
+  bridge had finished saving, so a resume could read stale values; it now
+  waits (`ScormApiBridge.uninstall` returns a promise). A failed save used to
+  be discarded while the lesson was told it succeeded; the state is now kept,
+  the player shows "Your progress could not be saved" with a Retry button,
+  and it is sent again with the next save or on exit.
+
+### Fixed
+
+- A progress report no longer erases what it leaves out. A completion-only
+  report used to overwrite the saved score, bookmark, time, and suspend data
+  with null, and a bookmark-only report sent `unknown` statuses that undid
+  completion. Omitted fields now keep their stored value and `unknown` means
+  "not reported". An empty string is a reported value and still clears text.
+  Progress for a registration that does not exist is now 404
+  `REGISTRATION_NOT_FOUND` instead of a database error.
+- Several writes that could collide now run one after another instead of
+  failing or leaving bad data. Verified against a real Postgres, where each of
+  these failed without the fix:
+  - progress writes for one registration lock it, so two first reports for a
+    node no longer insert twice and two modules completing together both count
+    toward the registration status;
+  - enrolling the same person at the same time returns one registration
+    instead of a unique-constraint error;
+  - launching the same module at the same time leaves one open attempt;
+  - tree changes in a section lock it, so two opposite moves can no longer
+    leave a cycle and simultaneous placements no longer share a sort position;
+  - the first requests for a new learner create one person row instead of
+    failing with a unique-constraint error.
+- A launch no longer accepts an activity node from another package. The node
+  must belong to the package placed in the module, otherwise 400
+  `ACTIVITY_NODE_INVALID`; before, its file was looked up under the wrong
+  package and its id recorded on the attempt.
+- Removing a module that learners have launched, or deleting a package that is
+  still placed, now returns 409 `MODULE_IN_USE` or `PACKAGE_IN_USE` with the
+  counts, instead of a 500 from a database reference. Removing used modules
+  safely (archiving) is a later decision.
+- A database password containing `/`, `#`, `?`, `@`, `:` or `%` no longer
+  breaks standalone startup with "Invalid URL"; the user, password, and name
+  are URL-encoded when the connection string is built.
+- The importer's configured archive limits (`maxFileCount`,
+  `maxUncompressedBytes`) now apply at the first look at the archive, so a
+  lowered limit rejects before anything is stored or parsed, and a raised one
+  is honoured.
+- Blob keys ending `.rlms-tmp` are reserved by the filesystem adapter and
+  refused with `invalid_key`, so a stored file can no longer be hidden from
+  listing.
+- The in-memory cache now frees expired keys that are never read again, with a
+  periodic sweep on write.
+- The admin section and package pickers page through results with a "Load
+  more" button instead of silently stopping at the first 100.
+
+### Changed
+
+- Migration `0001` adds the unique constraint
+  `uq_rlms_normalized_progress_slot` on (registration, module, activity node).
+  It was edited in place because `0001` has not been released; after the tag,
+  schema changes need a new migration. A database that already applied the old
+  `0001` must be recreated or given the constraint by hand.
+
 ### Security
 
 - `GET /packages/:id` now checks `module.manage` for that package. It was the

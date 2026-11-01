@@ -2,6 +2,12 @@ import { Component, inject, signal, type OnInit } from '@angular/core';
 import type { ContentPackageDto } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogAdminService } from '../modules/catalog-admin.service';
 import { LatestOnly } from '../modules/latest-only';
+import {
+  ADMIN_PAGE_SIZE,
+  firstPage,
+  hasMorePages,
+  mergePage,
+} from '../modules/paging';
 import { checkPackageFile } from '../modules/package-upload';
 
 /**
@@ -59,6 +65,15 @@ import { checkPackageFile } from '../modules/package-upload';
           }
         </tbody>
       </table>
+      @if (hasMore()) {
+        <button
+          type="button"
+          [disabled]="loadingMore() || uploading()"
+          (click)="loadMore()"
+        >
+          {{ loadingMore() ? 'Loading…' : 'Load more' }}
+        </button>
+      }
     }
   `,
 })
@@ -70,6 +85,10 @@ export class PackagesScreenComponent implements OnInit {
   readonly error = signal<string>('');
   readonly notice = signal<string>('');
   readonly uploading = signal<boolean>(false);
+  readonly loadingMore = signal<boolean>(false);
+  readonly hasMore = signal<boolean>(false);
+  /** Rows fetched so far, which is where the next page starts. */
+  private fetched = 0;
   private readonly lists = new LatestOnly();
 
   ngOnInit(): Promise<void> {
@@ -111,16 +130,51 @@ export class PackagesScreenComponent implements OnInit {
     }
   }
 
+  /** Fetches the next page and adds it below the packages already shown. */
+  loadMore(): Promise<void> {
+    this.loadingMore.set(true);
+    return this.lists.load(
+      () =>
+        this.catalog.listPackages({
+          limit: ADMIN_PAGE_SIZE,
+          offset: this.fetched,
+        }),
+      {
+        onData: (page) => {
+          this.packages.set(mergePage(this.packages(), page));
+          this.fetched += page.length;
+          this.hasMore.set(hasMorePages(page.length));
+        },
+        onFailure: (failure) =>
+          this.error.set(
+            failure instanceof Error
+              ? `Could not load more packages: ${failure.message}`
+              : 'Could not load more packages.',
+          ),
+        onSettled: () => this.loadingMore.set(false),
+      },
+    );
+  }
+
+  /** Loads the first page again, such as after an import. */
   private reload(): Promise<void> {
-    return this.lists.load(() => this.catalog.listPackages(), {
-      onData: (packages) => this.packages.set(packages),
+    return this.lists.load(() => this.catalog.listPackages(firstPage()), {
+      onData: (page) => {
+        this.packages.set(page);
+        this.fetched = page.length;
+        this.hasMore.set(hasMorePages(page.length));
+      },
       onFailure: (failure) =>
         this.error.set(
           failure instanceof Error
             ? `Could not load packages: ${failure.message}`
             : 'Could not load packages.',
         ),
-      onSettled: () => this.loading.set(false),
+      onSettled: () => {
+        this.loading.set(false);
+        // A reload replaces any "load more" that was still in flight.
+        this.loadingMore.set(false);
+      },
     });
   }
 }

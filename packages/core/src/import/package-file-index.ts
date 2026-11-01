@@ -36,10 +36,16 @@ export function createMemoryFileIndex(
  * Member bodies are inflated only when {@link PackageFileIndex.read} is called.
  *
  * @param buffer - ZIP bytes
+ * @param limits - Size and file-count limits; defaults when omitted. Pass the
+ *   importer's configured limits so they apply to this first check too, not
+ *   only to the later extraction.
  * @throws LmsError when the buffer is not a valid ZIP or is a ZIP bomb
  */
-export function createZipFileIndex(buffer: Uint8Array): PackageFileIndex {
-  const members = assertZipNotBomb(buffer);
+export function createZipFileIndex(
+  buffer: Uint8Array,
+  limits?: { maxUncompressedBytes?: number; maxFileCount?: number },
+): PackageFileIndex {
+  const members = assertZipNotBomb(buffer, limits);
   const names = new Map<string, string>();
   for (const member of members) {
     const normalized = normalizePackagePath(member.name);

@@ -161,4 +161,148 @@ describe('ScormApiBridge', () => {
     expect(puts[0]?.values['cmi.core.lesson_location']).toBe('page-9');
     expect(puts[0]?.finished).toBe(false);
   });
+
+  describe('ordered saves', () => {
+    function gate(): { promise: Promise<void>; open: () => void } {
+      let open!: () => void;
+      const promise = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      return { promise, open };
+    }
+
+    function manualTimers(): {
+      setTimeoutFn: (handler: () => void, ms: number) => unknown;
+      clearTimeoutFn: (handle: unknown) => void;
+      fire: () => void;
+    } {
+      let pending: (() => void) | undefined;
+      return {
+        setTimeoutFn: (handler) => {
+          pending = handler;
+          return 1;
+        },
+        clearTimeoutFn: () => {
+          pending = undefined;
+        },
+        fire: () => {
+          const handler = pending;
+          pending = undefined;
+          handler?.();
+        },
+      };
+    }
+
+    test('a slow debounced commit cannot land after LMSFinish', async () => {
+      const timers = manualTimers();
+      const landed: string[] = [];
+      const first = gate();
+      let call = 0;
+      const bridge = new ScormApiBridge({
+        getCmi: async () => ({ values: {} }),
+        putCmi: async (body) => {
+          call += 1;
+          if (call === 1) {
+            await first.promise;
+          }
+          landed.push(String(body.values['cmi.core.lesson_status']));
+        },
+        ...timers,
+      });
+      const api = await bridge.install({});
+      api.LMSInitialize('');
+      api.LMSSetValue('cmi.core.lesson_status', 'incomplete');
+      api.LMSCommit('');
+      timers.fire();
+      api.LMSSetValue('cmi.core.lesson_status', 'completed');
+      api.LMSFinish('');
+      expect(call).toBe(1);
+
+      first.open();
+      await bridge.flush();
+
+      expect(landed).toEqual(['incomplete', 'completed']);
+    });
+
+    test('uninstall resolves only after the in-flight save has finished', async () => {
+      const timers = manualTimers();
+      const inFlight = gate();
+      let saved = false;
+      const host: { API?: unknown } = {};
+      const bridge = new ScormApiBridge({
+        getCmi: async () => ({ values: {} }),
+        putCmi: async () => {
+          await inFlight.promise;
+          saved = true;
+        },
+        ...timers,
+      });
+      const api = await bridge.install(host);
+      api.LMSInitialize('');
+      api.LMSSetValue('cmi.core.lesson_location', 'p9');
+      api.LMSCommit('');
+
+      let done = false;
+      const uninstalling = bridge.uninstall(host).then(() => {
+        done = true;
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(host.API).toBeUndefined();
+      expect(done).toBe(false);
+      inFlight.open();
+      await uninstalling;
+      expect(saved).toBe(true);
+      expect(done).toBe(true);
+    });
+
+    test('a failed save is reported, kept, and sent again by flush', async () => {
+      const timers = manualTimers();
+      const errors: string[] = [];
+      let recovered = 0;
+      let attempts = 0;
+      const sent: string[] = [];
+      const bridge = new ScormApiBridge({
+        getCmi: async () => ({ values: {} }),
+        putCmi: async (body) => {
+          attempts += 1;
+          if (attempts === 1) {
+            throw new Error('offline');
+          }
+          sent.push(String(body.values['cmi.core.lesson_status']));
+        },
+        onSaveError: (error) => errors.push((error as Error).message),
+        onSaveRecovered: () => {
+          recovered += 1;
+        },
+        ...timers,
+      });
+      const api = await bridge.install({});
+      api.LMSInitialize('');
+      api.LMSSetValue('cmi.core.lesson_status', 'completed');
+      expect(api.LMSFinish('')).toBe('true');
+      await bridge.retrySave();
+      await Promise.resolve();
+      expect(errors).toEqual(['offline']);
+      expect(sent).toEqual(['completed']);
+      expect(recovered).toBe(1);
+    });
+
+    test('a failing save never becomes an unhandled rejection', async () => {
+      const timers = manualTimers();
+      const bridge = new ScormApiBridge({
+        getCmi: async () => ({ values: {} }),
+        putCmi: async () => {
+          throw new Error('down');
+        },
+        ...timers,
+      });
+      const api = await bridge.install({});
+      api.LMSInitialize('');
+      api.LMSFinish('');
+
+      await expect(bridge.flush()).resolves.toBeUndefined();
+    });
+  });
 });

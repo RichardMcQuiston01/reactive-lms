@@ -3,6 +3,7 @@ import {
   ActivityNode,
   ContentPackage,
   CourseModule,
+  CourseSection,
 } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   AVAILABILITY_INVALID,
@@ -15,6 +16,7 @@ import {
   type AvailabilityV1,
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource, EntityManager } from 'typeorm';
+import { rowLock } from '../db/row-lock';
 import { assertCanParent } from './module-tree';
 import {
   normalizeAvailabilityInput,
@@ -79,6 +81,7 @@ export class ModuleService {
     input: PlaceModuleInput,
   ): Promise<{ moduleId: string }> {
     return this.dataSource.transaction(async (manager) => {
+      await lockSection(manager, sectionId);
       const contentPackage = await manager.findOne(ContentPackage, {
         where: { id: input.contentPackageId },
       });
@@ -146,6 +149,7 @@ export class ModuleService {
     assertBlockAvailability(availabilityJson);
 
     return this.dataSource.transaction(async (manager) => {
+      await lockSection(manager, sectionId);
       const parentModuleId = input.parentModuleId ?? null;
       const moduleId = randomUUID();
       if (parentModuleId) {
@@ -197,6 +201,7 @@ export class ModuleService {
           details: { moduleId },
         });
       }
+      await lockSection(manager, row.courseSectionId);
       assertCanParent(
         await sectionModules(manager, row.courseSectionId),
         moduleId,
@@ -229,6 +234,7 @@ export class ModuleService {
     parentModuleId?: string | null,
   ): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
+      await lockSection(manager, sectionId);
       const existing = await sectionModules(manager, sectionId);
       const byId = new Map(existing.map((row) => [row.id, row]));
       for (const [index, moduleId] of moduleIds.entries()) {
@@ -257,6 +263,22 @@ export class ModuleService {
       }
     });
   }
+}
+
+/**
+ * Locks the section row so tree changes in one section run one after another.
+ * Each change validates against the tree as it stands, so without this two
+ * administrators could each make a move that is valid alone and together leave
+ * a cycle, or both append at the same sort position.
+ */
+async function lockSection(
+  manager: EntityManager,
+  sectionId: string,
+): Promise<void> {
+  await manager.findOne(CourseSection, {
+    where: { id: sectionId },
+    ...rowLock(manager),
+  });
 }
 
 async function sectionModules(

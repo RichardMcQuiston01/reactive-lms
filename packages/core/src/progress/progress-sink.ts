@@ -19,6 +19,7 @@ import {
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { contentModules, isBlockModule } from '../courses/module-tree';
+import { rowLock } from '../db/row-lock';
 import { computeRegistrationStatus } from './course-completion';
 import type { ModuleProgressSnapshot } from './course-completion';
 
@@ -150,10 +151,34 @@ export class ProgressSinkService implements ProgressSink {
    * Upserts {@link NormalizedProgress} for a registration × module × node,
    * then recomputes the registration status from the section rule.
    *
+   * Fields the caller leaves out keep their stored value, so a bookmark-only
+   * or completion-only report cannot wipe scores or the bookmark. A status of
+   * `unknown` means "not reported" and also keeps the stored one. On a first
+   * write, omitted fields are null and statuses are as given.
+   *
+   * The registration row is locked first, so writes for one registration run
+   * one after another: two first reports for the same node cannot both insert,
+   * and two modules completing together both see each other's completion when
+   * the registration status is recomputed.
+   *
    * @param progress - Format-agnostic progress payload
+   * @throws {LmsError} `REGISTRATION_NOT_FOUND`
    */
   async upsert(progress: NormalizedProgress): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
+      const registration = await manager.findOne(Registration, {
+        where: { id: progress.registrationId },
+        ...rowLock(manager),
+      });
+      if (!registration) {
+        throw new LmsError({
+          status: httpStatusForLmsCode(REGISTRATION_NOT_FOUND),
+          code: REGISTRATION_NOT_FOUND,
+          message: 'Registration not found.',
+          details: { registrationId: progress.registrationId },
+        });
+      }
+
       const existing = await manager.findOne(NormalizedProgressRow, {
         where: {
           registrationId: progress.registrationId,
@@ -161,20 +186,7 @@ export class ProgressSinkService implements ProgressSink {
           activityNodeId: progress.activityNodeId,
         },
       });
-
-      const fields = {
-        completionStatus: progress.completionStatus,
-        successStatus: progress.successStatus,
-        scoreScaled: toNumeric(progress.scoreScaled),
-        scoreRaw: toNumeric(progress.scoreRaw),
-        scoreMin: toNumeric(progress.scoreMin),
-        scoreMax: toNumeric(progress.scoreMax),
-        progressMeasure: toNumeric(progress.progressMeasure),
-        location: progress.location ?? null,
-        totalTimeIso8601: progress.totalTime ?? null,
-        suspendData: progress.suspendData ?? null,
-        extrasJson: progress.extras ?? existing?.extrasJson ?? null,
-      };
+      const fields = mergedFields(existing, progress);
 
       if (existing) {
         Object.assign(existing, fields);
@@ -187,13 +199,6 @@ export class ProgressSinkService implements ProgressSink {
           ...fields,
         });
         await manager.save(row);
-      }
-
-      const registration = await manager.findOne(Registration, {
-        where: { id: progress.registrationId },
-      });
-      if (!registration) {
-        return;
       }
 
       let nextStatus = registration.status;
@@ -239,10 +244,57 @@ export class ProgressSinkService implements ProgressSink {
   }
 }
 
-function toNumeric(value: number | undefined): string | null {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? String(value)
-    : null;
+/** The stored numeric text, unless the caller reported a finite number. */
+function numericOrKeep(
+  incoming: number | undefined,
+  current: string | null | undefined,
+): string | null {
+  return typeof incoming === 'number' && Number.isFinite(incoming)
+    ? String(incoming)
+    : (current ?? null);
+}
+
+/** The reported text, or what is stored when the caller left it out. */
+function textOrKeep(
+  incoming: string | undefined,
+  current: string | null | undefined,
+): string | null {
+  return incoming !== undefined ? incoming : (current ?? null);
+}
+
+/**
+ * Columns to write: what the caller reported, falling back to what is stored.
+ * `unknown` is "not reported", so it never replaces a known status.
+ */
+function mergedFields(
+  existing: NormalizedProgressRow | null,
+  progress: NormalizedProgress,
+): Partial<NormalizedProgressRow> {
+  return {
+    completionStatus:
+      progress.completionStatus === 'unknown' && existing
+        ? existing.completionStatus
+        : progress.completionStatus,
+    successStatus:
+      progress.successStatus === 'unknown' && existing
+        ? existing.successStatus
+        : progress.successStatus,
+    scoreScaled: numericOrKeep(progress.scoreScaled, existing?.scoreScaled),
+    scoreRaw: numericOrKeep(progress.scoreRaw, existing?.scoreRaw),
+    scoreMin: numericOrKeep(progress.scoreMin, existing?.scoreMin),
+    scoreMax: numericOrKeep(progress.scoreMax, existing?.scoreMax),
+    progressMeasure: numericOrKeep(
+      progress.progressMeasure,
+      existing?.progressMeasure,
+    ),
+    location: textOrKeep(progress.location, existing?.location),
+    totalTimeIso8601: textOrKeep(
+      progress.totalTime,
+      existing?.totalTimeIso8601,
+    ),
+    suspendData: textOrKeep(progress.suspendData, existing?.suspendData),
+    extrasJson: progress.extras ?? existing?.extrasJson ?? null,
+  };
 }
 
 function mergeProgressByModule(
