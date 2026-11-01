@@ -12,6 +12,12 @@ import type {
 } from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogAdminService } from '../modules/catalog-admin.service';
 import { LatestOnly } from '../modules/latest-only';
+import {
+  ADMIN_PAGE_SIZE,
+  firstPage,
+  hasMorePages,
+  mergePage,
+} from '../modules/paging';
 import { ModuleAdminService } from '../modules/module-admin.service';
 import {
   buildModuleTree,
@@ -186,6 +192,19 @@ import {
         placeholder="Title (optional)"
         aria-label="Module title"
       />
+      @if (hasMorePackages()) {
+        <button
+          type="button"
+          [disabled]="loadingMorePackages()"
+          (click)="loadMorePackages()"
+        >
+          {{
+            loadingMorePackages()
+              ? 'Loading…'
+              : 'Load more packages (' + packages().length + ' shown)'
+          }}
+        </button>
+      }
       <select #placeParent aria-label="Place in block">
         <option value="">(top level)</option>
         @for (choice of blockParents(); track choice.module.id) {
@@ -221,6 +240,10 @@ export class ModuleTreeScreenComponent implements OnInit {
   readonly sectionId = signal<string>('');
   readonly modules = signal<CourseModuleDto[]>([]);
   readonly packages = signal<ContentPackageDto[]>([]);
+  readonly hasMorePackages = signal<boolean>(false);
+  readonly loadingMorePackages = signal<boolean>(false);
+  /** Packages fetched so far, which is where the next page starts. */
+  private packagesFetched = 0;
   readonly loading = signal<boolean>(true);
   readonly busy = signal<boolean>(false);
   readonly error = signal<string>('');
@@ -367,13 +390,38 @@ export class ModuleTreeScreenComponent implements OnInit {
   /** Loads the package picker; a failure leaves it empty and says why. */
   private async loadPackages(): Promise<void> {
     try {
-      this.packages.set(await this.catalog.listPackages());
+      const page = await this.catalog.listPackages(firstPage());
+      this.packages.set(page);
+      this.packagesFetched = page.length;
+      this.hasMorePackages.set(hasMorePages(page.length));
     } catch (failure) {
       this.error.set(
         failure instanceof Error
           ? `Could not load packages: ${failure.message}`
           : 'Could not load packages.',
       );
+    }
+  }
+
+  /** Fetches the next page of packages and adds it to the picker. */
+  async loadMorePackages(): Promise<void> {
+    this.loadingMorePackages.set(true);
+    try {
+      const page = await this.catalog.listPackages({
+        limit: ADMIN_PAGE_SIZE,
+        offset: this.packagesFetched,
+      });
+      this.packages.set(mergePage(this.packages(), page));
+      this.packagesFetched += page.length;
+      this.hasMorePackages.set(hasMorePages(page.length));
+    } catch (failure) {
+      this.error.set(
+        failure instanceof Error
+          ? `Could not load more packages: ${failure.message}`
+          : 'Could not load more packages.',
+      );
+    } finally {
+      this.loadingMorePackages.set(false);
     }
   }
 

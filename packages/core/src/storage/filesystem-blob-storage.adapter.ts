@@ -27,8 +27,31 @@ import {
   type PutBlobOptions,
 } from '@richardmcquiston01/reactive-lms-shared';
 
-/** Suffix of in-flight writes; such files are never listed or read. */
+/**
+ * Suffix of in-flight writes. Such files are never listed or read, so a key
+ * with this suffix is refused for every operation rather than accepted by
+ * `put` and then invisible.
+ */
 const TEMP_SUFFIX = '.rlms-tmp';
+
+/**
+ * Normalizes an object key and refuses the suffix reserved for in-flight
+ * writes, so every operation agrees on which keys exist.
+ */
+function objectKey(key: string): BlobResult<string> {
+  const normalized = normalizeBlobKey(key);
+  if (normalized.ok && normalized.value.endsWith(TEMP_SUFFIX)) {
+    return {
+      ok: false,
+      error: {
+        code: 'invalid_key',
+        message: `Key "${normalized.value}" is not allowed: names ending in "${TEMP_SUFFIX}" are reserved for writes in progress.`,
+        key: normalized.value,
+      },
+    };
+  }
+  return normalized;
+}
 
 /**
  * `BlobStorageAdapter` that stores objects as files under a data root that is
@@ -52,7 +75,7 @@ export class FilesystemBlobStorageAdapter implements BlobStorageAdapter {
     body: BlobBody,
     options: PutBlobOptions = {},
   ): Promise<BlobResult<BlobInfo>> {
-    const normalized = normalizeBlobKey(key);
+    const normalized = objectKey(key);
     if (!normalized.ok) {
       return normalized;
     }
@@ -127,12 +150,9 @@ export class FilesystemBlobStorageAdapter implements BlobStorageAdapter {
   }
 
   async head(key: string): Promise<BlobResult<BlobInfo>> {
-    const normalized = normalizeBlobKey(key);
+    const normalized = objectKey(key);
     if (!normalized.ok) {
       return normalized;
-    }
-    if (normalized.value.endsWith(TEMP_SUFFIX)) {
-      return notFound(normalized.value);
     }
     const dest = this.resolve(normalized.value);
     if (!dest.ok) {
@@ -180,7 +200,7 @@ export class FilesystemBlobStorageAdapter implements BlobStorageAdapter {
   }
 
   async remove(key: string): Promise<BlobResult<void>> {
-    const normalized = normalizeBlobKey(key);
+    const normalized = objectKey(key);
     if (!normalized.ok) {
       return normalized;
     }

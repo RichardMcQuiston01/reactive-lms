@@ -54,6 +54,20 @@
   still placed, now returns 409 `MODULE_IN_USE` or `PACKAGE_IN_USE` with the
   counts, instead of a 500 from a database reference. Removing used modules
   safely (archiving) is a later decision.
+- A database password containing `/`, `#`, `?`, `@`, `:` or `%` no longer
+  breaks standalone startup with "Invalid URL"; the user, password, and name
+  are URL-encoded when the connection string is built.
+- The importer's configured archive limits (`maxFileCount`,
+  `maxUncompressedBytes`) now apply at the first look at the archive, so a
+  lowered limit rejects before anything is stored or parsed, and a raised one
+  is honoured.
+- Blob keys ending `.rlms-tmp` are reserved by the filesystem adapter and
+  refused with `invalid_key`, so a stored file can no longer be hidden from
+  listing.
+- The in-memory cache now frees expired keys that are never read again, with a
+  periodic sweep on write.
+- The admin section and package pickers page through results with a "Load
+  more" button instead of silently stopping at the first 100.
 
 ### Changed
 
