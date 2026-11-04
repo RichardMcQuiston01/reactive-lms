@@ -69,6 +69,20 @@
 - The admin section and package pickers page through results with a "Load
   more" button instead of silently stopping at the first 100.
 
+### Added
+
+- Admin enrolment and progress screens for one section, replacing the two
+  "arrives in a later release" placeholders. Enrolments lists who is
+  registered and enrols a person by id (manual or group); progress shows a
+  count per status and each person's status, score, and time. Both page with
+  "Load more". The Enrolments and Progress menu items open the section picker,
+  which now opens whichever screen the item stands for.
+- `GET /course-sections/:id/registrations`: a section's roster with each
+  person's name, email, status, score, and time, paged like the other lists.
+  It needs the `enrol.manage` capability on the section.
+- Host screen overrides gain `section-enrolments` and `section-progress` for
+  the section screens; `enrolments` and `progress` now override the pickers.
+
 ### Changed
 
 - Migration `0001` adds the unique constraint

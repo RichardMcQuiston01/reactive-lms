@@ -10,8 +10,10 @@ import {
 } from '../modules/paging';
 
 /**
- * Lists course sections and opens one's module tree. A host can replace this
- * screen with its own section picker through `ADMIN_SCREEN_OVERRIDES`.
+ * Lists course sections and opens one of them. Which screen it opens comes
+ * from the route's `target` data: the module tree (default), enrolments, or
+ * progress. A host can replace this screen with its own section picker
+ * through `ADMIN_SCREEN_OVERRIDES`.
  */
 @Component({
   selector: 'rlms-admin-sections',
@@ -32,7 +34,9 @@ import {
       <ul>
         @for (section of sections(); track section.id) {
           <li>
-            <a [routerLink]="[section.id, 'modules']">{{ section.title }}</a>
+            <a [routerLink]="['../sections', section.id, target]">{{
+              section.title
+            }}</a>
           </li>
         }
       </ul>
@@ -54,6 +58,9 @@ export class SectionsScreenComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly catalog = inject(CatalogAdminService);
 
+  /** The screen a section opens: `modules`, `enrolments`, or `progress`. */
+  readonly target: string =
+    (this.route.snapshot.data['target'] as string | undefined) ?? 'modules';
   readonly sections = signal<CourseSectionDto[]>([]);
   readonly loading = signal<boolean>(true);
   readonly loadingMore = signal<boolean>(false);
@@ -107,7 +114,9 @@ export class SectionsScreenComponent implements OnInit {
     event.preventDefault();
     const id = input.value.trim();
     if (id !== '') {
-      void this.router.navigate([id, 'modules'], { relativeTo: this.route });
+      void this.router.navigate(['../sections', id, this.target], {
+        relativeTo: this.route,
+      });
     }
   }
 }
