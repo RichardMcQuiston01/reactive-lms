@@ -113,3 +113,64 @@ describe('EnrolmentsController', () => {
     ]);
   });
 });
+
+describe('EnrolmentsController roster', () => {
+  test('lists a section roster after checking enrol.manage on it', async () => {
+    const checks: unknown[] = [];
+    const reads: unknown[] = [];
+    const ctl = new EnrolmentsController(
+      {} as EnrolmentService,
+      {
+        listSectionRegistrations: async (sectionId: string, page: unknown) => {
+          reads.push({ sectionId, page });
+          return [{ id: 'reg-1' }];
+        },
+      } as unknown as CatalogService,
+      {
+        assertCan: async (
+          _req: unknown,
+          capability: string,
+          scope: unknown,
+        ) => {
+          checks.push({ capability, scope });
+        },
+      } as unknown as LmsRequestService,
+    );
+
+    expect(await ctl.listRegistrations('sec-1', {}, '50', '100')).toEqual([
+      { id: 'reg-1' },
+    ]);
+    expect(checks).toEqual([
+      {
+        capability: 'enrol.manage',
+        scope: { type: 'course_section', id: 'sec-1' },
+      },
+    ]);
+    expect(reads).toEqual([
+      { sectionId: 'sec-1', page: { limit: 50, offset: 100 } },
+    ]);
+  });
+
+  test('a denied capability stops the roster read', async () => {
+    const reads: string[] = [];
+    const ctl = new EnrolmentsController(
+      {} as EnrolmentService,
+      {
+        listSectionRegistrations: async () => {
+          reads.push('read');
+          return [];
+        },
+      } as unknown as CatalogService,
+      {
+        assertCan: async () => {
+          throw new Error('Not allowed to manage enrolment.');
+        },
+      } as unknown as LmsRequestService,
+    );
+
+    await expect(ctl.listRegistrations('sec-1', {})).rejects.toThrow(
+      'Not allowed to manage enrolment.',
+    );
+    expect(reads).toEqual([]);
+  });
+});

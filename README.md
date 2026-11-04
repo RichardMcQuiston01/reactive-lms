@@ -6,7 +6,7 @@ an existing NestJS + TypeORM API and Angular frontend.
 > **Status:** pre-alpha (v0.2.0). The workspace contains working HTML5 and
 > SCORM 1.2 import, launch, and progress, a module tree with availability
 > conditions, and first admin screens (module tree, sections, packages, upload,
-> placement); the rest of the standards are planned. See
+> placement, enrolments, progress); the rest of the standards are planned. See
 > [ROADMAP.md](ROADMAP.md).
 
 ## Dual mode

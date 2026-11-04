@@ -1,6 +1,16 @@
-import { Body, Controller, HttpCode, Param, Post, Req } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { EnrolmentService } from '@richardmcquiston01/reactive-lms-core';
+import type { SectionRegistrationDto } from '@richardmcquiston01/reactive-lms-shared';
 import type { EnrolmentMethodKind } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   CatalogService,
@@ -100,6 +110,35 @@ export class EnrolmentsController {
       return this.enrolment.group(id, body.personId);
     }
     return this.enrolment.manual(id, body.personId, actorPersonId);
+  }
+
+  /**
+   * Lists the people registered on a section with their status and score.
+   *
+   * @param id - Course section id
+   * @param req - Host request
+   * @param limit - Rows to return (default 200, at most 500)
+   * @param offset - Rows to skip
+   */
+  @Get(':id/registrations')
+  @ApiOperation({ summary: 'List a section roster' })
+  @ApiParam({ name: 'id' })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'offset', required: false })
+  async listRegistrations(
+    @Param('id') id: string,
+    @Req() req: unknown,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ): Promise<SectionRegistrationDto[]> {
+    await this.request.assertCan(req, 'enrol.manage', {
+      type: 'course_section',
+      id,
+    });
+    return this.catalog.listSectionRegistrations(id, {
+      limit: limit === undefined ? undefined : Number(limit),
+      offset: offset === undefined ? undefined : Number(offset),
+    });
   }
 
   /**
