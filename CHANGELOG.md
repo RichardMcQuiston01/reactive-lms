@@ -85,6 +85,9 @@
 
 ### Changed
 
+- Donations now point at Ko-fi instead of PayPal: the README badge, the
+  `package.json` funding link and a new `.github/FUNDING.yml`. The PayPal QR
+  image is removed.
 - Migration `0001` adds the unique constraint
   `uq_rlms_normalized_progress_slot` on (registration, module, activity node).
   It was edited in place because `0001` has not been released; after the tag,
