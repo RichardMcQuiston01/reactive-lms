@@ -1,5 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import type { SectionRegistrationDto } from '@richardmcquiston01/reactive-lms-shared';
+import type {
+  PersonSummaryDto,
+  SectionRegistrationDto,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { ADMIN_API_CLIENT } from '../api/admin-api-client.token';
 import { firstPage, pageQuery, type PageRequest } from './paging';
 
@@ -26,6 +29,21 @@ export class RosterAdminService {
   ): Promise<SectionRegistrationDto[]> {
     return this.client.request<SectionRegistrationDto[]>(
       `/course-sections/${encodeURIComponent(sectionId)}/registrations${pageQuery(page)}`,
+    );
+  }
+
+  /**
+   * Finds people by name, email, or host identifier, for the enrol picker.
+   *
+   * @param search - Text to look for; empty lists everyone
+   * @param page - Rows to ask for and to skip
+   */
+  searchPeople(
+    search: string,
+    page: PageRequest = firstPage(),
+  ): Promise<PersonSummaryDto[]> {
+    return this.client.request<PersonSummaryDto[]>(
+      `/people${pageQuery(page, { search: search.trim() })}`,
     );
   }
 

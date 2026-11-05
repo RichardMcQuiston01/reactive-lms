@@ -25,6 +25,19 @@ describe('pageQuery', () => {
   });
 });
 
+describe('pageQuery with typed search text', () => {
+  test('sends reserved characters intact so the server sees what was typed', () => {
+    const query = pageQuery({ limit: 20, offset: 0 }, { search: 'a&b=c 100%' });
+    expect(new URLSearchParams(query).get('search')).toBe('a&b=c 100%');
+  });
+
+  test('an empty search is left out, which lists everyone', () => {
+    expect(pageQuery({ limit: 20, offset: 0 }, { search: '' })).toBe(
+      '?limit=20&offset=0',
+    );
+  });
+});
+
 describe('hasMorePages', () => {
   test('a full page may be followed by another; a short one is the last', () => {
     expect(hasMorePages(ADMIN_PAGE_SIZE)).toBe(true);
