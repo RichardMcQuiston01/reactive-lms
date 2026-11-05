@@ -42,6 +42,7 @@ export {
   countByStatus,
   formatDuration,
   formatScore,
+  personChoiceLabel,
   rosterPersonLabel,
   statusLabel,
 } from './modules/roster';

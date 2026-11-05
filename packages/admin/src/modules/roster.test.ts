@@ -5,6 +5,7 @@ import {
   countByStatus,
   formatDuration,
   formatScore,
+  personChoiceLabel,
   rosterPersonLabel,
   statusLabel,
 } from './roster';
@@ -103,5 +104,28 @@ describe('checkPersonId', () => {
   test('refuses blank and malformed ids with a descriptive message', () => {
     expect(checkPersonId('   ')).toContain('Enter the id');
     expect(checkPersonId('not-a-uuid')).toContain('UUID');
+  });
+});
+
+describe('personChoiceLabel', () => {
+  test('shows name and email together to tell namesakes apart', () => {
+    expect(
+      personChoiceLabel({
+        id: 'p',
+        displayName: 'Ada',
+        email: 'ada@x.test',
+        externalId: 'e1',
+      }),
+    ).toBe('Ada (ada@x.test)');
+  });
+
+  test('falls back to name, then email, then external id', () => {
+    expect(
+      personChoiceLabel({ id: 'p', displayName: 'Ada', externalId: 'e1' }),
+    ).toBe('Ada');
+    expect(
+      personChoiceLabel({ id: 'p', email: 'ada@x.test', externalId: 'e1' }),
+    ).toBe('ada@x.test');
+    expect(personChoiceLabel({ id: 'p', externalId: 'e1' })).toBe('e1');
   });
 });

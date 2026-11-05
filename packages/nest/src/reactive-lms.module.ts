@@ -33,6 +33,7 @@ import { CoursesController } from './controllers/courses.controller';
 import { EnrolmentsController } from './controllers/enrolments.controller';
 import { LaunchesController } from './controllers/launches.controller';
 import { ModulesController } from './controllers/modules.controller';
+import { PeopleController } from './controllers/people.controller';
 import { PackageImportGuard } from './controllers/package-import.guard';
 import { PackagesController } from './controllers/packages.controller';
 import { ProgressController } from './controllers/progress.controller';
@@ -128,6 +129,7 @@ const CONTROLLERS = [
   CoursesController,
   ModulesController,
   EnrolmentsController,
+  PeopleController,
   LaunchesController,
   ProgressController,
   ScormRuntimeController,

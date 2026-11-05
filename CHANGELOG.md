@@ -71,6 +71,13 @@
 
 ### Added
 
+- A person picker on the Enrolments screen: search by name, email, or host
+  identifier, select a result, and enrol, instead of typing a person's UUID.
+  Results come twenty at a time with "More results", and a person id can still
+  be typed.
+- `GET /people?search=`: finds people for pickers, ignoring case and treating
+  `%`, `_`, and `\` as plain characters. It returns only id, name, email, and
+  host identifier, and needs the `enrol.manage` capability.
 - Admin enrolment and progress screens for one section, replacing the two
   "arrives in a later release" placeholders. Enrolments lists who is
   registered and enrols a person by id (manual or group); progress shows a

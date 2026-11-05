@@ -1,4 +1,5 @@
 import type {
+  PersonSummaryDto,
   RegistrationStatus,
   SectionRegistrationDto,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -116,4 +117,19 @@ export function checkPersonId(raw: string): string | null {
     return 'A person id is a UUID, for example 123e4567-e89b-42d3-a456-426614174000.';
   }
   return null;
+}
+
+/**
+ * Text for one entry in the person picker: the name with the email beside it
+ * when both are known, so two people with the same name can be told apart.
+ * Falls back to the email, then the host's identifier.
+ *
+ * @param person - A person found by the search
+ */
+export function personChoiceLabel(person: PersonSummaryDto): string {
+  const name = person.displayName;
+  if (name && person.email) {
+    return `${name} (${person.email})`;
+  }
+  return name || person.email || person.externalId;
 }
