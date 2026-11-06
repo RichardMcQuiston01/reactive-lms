@@ -1,13 +1,18 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   LmsError,
+  isAdminAction,
   type CapabilityAdapter,
   type IdentityAdapter,
   type LearnerRef,
   type LmsAction,
   type LmsResourceRef,
 } from '@richardmcquiston01/reactive-lms-shared';
-import { RLMS_CAPABILITY_ADAPTER, RLMS_IDENTITY_ADAPTER } from '../tokens';
+import {
+  RLMS_ALLOW_UNRESTRICTED_ADMIN,
+  RLMS_CAPABILITY_ADAPTER,
+  RLMS_IDENTITY_ADAPTER,
+} from '../tokens';
 import { PersonDirectory } from './person-directory';
 
 /**
@@ -19,6 +24,7 @@ export class LmsRequestService {
    * @param identity - Host identity adapter
    * @param persons - Person upsert helper
    * @param capability - Optional host capability adapter
+   * @param allowUnrestrictedAdmin - Host opt-in to admin actions without an adapter
    */
   constructor(
     @Inject(RLMS_IDENTITY_ADAPTER)
@@ -27,6 +33,9 @@ export class LmsRequestService {
     @Optional()
     @Inject(RLMS_CAPABILITY_ADAPTER)
     private readonly capability: CapabilityAdapter | null,
+    @Optional()
+    @Inject(RLMS_ALLOW_UNRESTRICTED_ADMIN)
+    private readonly allowUnrestrictedAdmin: boolean | null = null,
   ) {}
 
   /**
@@ -50,11 +59,18 @@ export class LmsRequestService {
   }
 
   /**
-   * Throws 403 when a capability adapter is configured and denies the action.
+   * Authorizes an action.
+   *
+   * With a capability adapter the host decides. Without one, learner actions
+   * (`launch`, `grade.view`) are left to the per-learner ownership checks,
+   * and administrative actions are refused unless the host set
+   * `allowUnrestrictedAdmin`, so an embedding that forgets the adapter does
+   * not leave its admin routes open.
    *
    * @param request - Opaque HTTP request
    * @param action - LMS action code
    * @param resource - Target resource
+   * @throws {LmsError} 403 `FORBIDDEN` when the action is denied
    */
   async assertCan(
     request: unknown,
@@ -62,6 +78,17 @@ export class LmsRequestService {
     resource: LmsResourceRef,
   ): Promise<void> {
     if (!this.capability) {
+      if (isAdminAction(action) && this.allowUnrestrictedAdmin !== true) {
+        throw new LmsError({
+          status: 403,
+          code: 'FORBIDDEN',
+          message:
+            `The administrative action "${action}" on ${resource.type} was refused ` +
+            'because no capability adapter is configured. Pass capabilityAdapter to ' +
+            'ReactiveLmsModule, or set allowUnrestrictedAdmin: true for evaluation only.',
+          details: { action, resource, reason: 'no_capability_adapter' },
+        });
+      }
       return;
     }
     const learner = await this.resolveLearner(request);

@@ -52,6 +52,10 @@ export type {
 export type { ErrorSink, ErrorSinkEntry } from './contracts/error-sink';
 export type { ContentRuntime, ProgressSink } from './contracts/content-runtime';
 export type { IdentityAdapter } from './contracts/identity-adapter';
+export {
+  ADMIN_LMS_ACTIONS,
+  isAdminAction,
+} from './contracts/capability-adapter';
 export type {
   CapabilityAdapter,
   LmsAction,
