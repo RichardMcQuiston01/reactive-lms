@@ -33,6 +33,7 @@ function service(ds: ReturnType<typeof createMockDataSource>): ScormCmiService {
 function seedAttempt(
   ds: ReturnType<typeof createMockDataSource>,
   extras?: Record<string, unknown>,
+  nodeMetadata: Record<string, unknown> = { launchData: 'hole=1' },
 ): void {
   ds.seed(Person, {
     id: PERSON_ID,
@@ -57,7 +58,7 @@ function seedAttempt(
     contentPackageId: '11111111-1111-4111-8111-111111111111',
     title: 'Playing',
     href: 'sco.html',
-    metadataJson: { launchData: 'hole=1' },
+    metadataJson: nodeMetadata,
   });
   ds.seed(Registration, {
     id: REG_ID,
@@ -219,6 +220,135 @@ describe('ScormCmiService', () => {
     });
 
     expect(ds.rowsOf(NormalizedProgress)[0]?.scoreScaled).toBe('0.85');
+  });
+
+  describe('mastery score', () => {
+    const withMastery = {
+      masteryScore: 80,
+      maxTimeAllowed: '00:30:00',
+      timeLimitAction: 'exit,message',
+    };
+    const finishWith = (
+      raw: string,
+      status = 'completed',
+      extra: Record<string, string> = {},
+    ) => ({
+      values: {
+        'cmi.core.score.raw': raw,
+        'cmi.core.lesson_status': status,
+        ...extra,
+      },
+      finished: true,
+    });
+
+    test('the SCO can read the mastery score and time limits the manifest set', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).getCmi(ATTEMPT_ID);
+
+      expect(values['cmi.student_data.mastery_score']).toBe('80');
+      expect(values['cmi.student_data.max_time_allowed']).toBe('00:30:00');
+      expect(values['cmi.student_data.time_limit_action']).toBe('exit,message');
+    });
+
+    test('a score at or above it passes, whatever status the SCO wrote', async () => {
+      for (const written of ['completed', 'incomplete', 'failed']) {
+        const ds = createMockDataSource();
+        seedAttempt(ds, undefined, withMastery);
+
+        const { values } = await service(ds).putCmi(
+          ATTEMPT_ID,
+          finishWith('80', written),
+        );
+
+        expect(values['cmi.core.lesson_status']).toBe('passed');
+        expect(ds.rowsOf(NormalizedProgress)[0]).toMatchObject({
+          completionStatus: 'completed',
+          successStatus: 'passed',
+        });
+        expect(ds.rowsOf(Registration)[0]?.status).toBe('passed');
+      }
+    });
+
+    test('a score below it fails, even when the SCO wrote passed', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('79.5', 'passed'),
+      );
+
+      expect(values['cmi.core.lesson_status']).toBe('failed');
+      expect(ds.rowsOf(NormalizedProgress)[0]?.successStatus).toBe('failed');
+      expect(ds.rowsOf(Registration)[0]?.status).toBe('failed');
+    });
+
+    test('the verdict is what the next launch reads', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, finishWith('90'));
+
+      const { values } = await cmi.getCmi(ATTEMPT_ID);
+
+      expect(values['cmi.core.lesson_status']).toBe('passed');
+    });
+
+    test('is applied when the SCO finishes, not on every commit', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(ATTEMPT_ID, {
+        values: {
+          'cmi.core.score.raw': '95',
+          'cmi.core.lesson_status': 'incomplete',
+        },
+      });
+
+      expect(values['cmi.core.lesson_status']).toBe('incomplete');
+    });
+
+    test('changes nothing without a raw score', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'completed' },
+        finished: true,
+      });
+
+      expect(values['cmi.core.lesson_status']).toBe('completed');
+    });
+
+    test('changes nothing when the manifest set no mastery score', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      const { values } = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('10', 'completed'),
+      );
+
+      expect(values['cmi.core.lesson_status']).toBe('completed');
+      expect(values['cmi.student_data.mastery_score']).toBe('');
+    });
+
+    test('a SCO cannot change it', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('50', 'completed', {
+          'cmi.student_data.mastery_score': '10',
+        }),
+      );
+
+      expect(values['cmi.student_data.mastery_score']).toBe('80');
+      expect(values['cmi.core.lesson_status']).toBe('failed');
+    });
   });
 
   test('throws ATTEMPT_NOT_FOUND for an unknown attempt', async () => {

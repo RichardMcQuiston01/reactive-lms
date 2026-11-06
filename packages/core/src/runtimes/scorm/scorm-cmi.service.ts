@@ -9,6 +9,7 @@ import {
   ATTEMPT_NOT_FOUND,
   CmiStore,
   LmsError,
+  applyMasteryScore,
   coerceCmiValue,
   httpStatusForLmsCode,
   mapCmiToProgress,
@@ -54,7 +55,10 @@ export class ScormCmiService {
     const store = this.seedStore(ctx);
     store.loadValues(body.values ?? {});
     store.applyLmsOwned(lmsOwnedFrom(ctx));
-    const values = store.snapshot();
+    // When a SCO finishes, the mastery score (if the manifest set one) decides
+    // pass or fail from the raw score, whatever status the SCO wrote.
+    const reported = store.snapshot();
+    const values = body.finished ? applyMasteryScore(reported) : reported;
     const activityNodeId = ctx.activityNodeId;
     if (!activityNodeId) {
       throw new LmsError({
@@ -154,6 +158,9 @@ export class ScormCmiService {
       studentId: person?.externalId ?? '',
       studentName: person?.displayName ?? '',
       launchData: launchDataFrom(activityNode?.metadataJson),
+      masteryScore: masteryScoreFrom(activityNode?.metadataJson),
+      maxTimeAllowed: textFrom(activityNode?.metadataJson, 'maxTimeAllowed'),
+      timeLimitAction: textFrom(activityNode?.metadataJson, 'timeLimitAction'),
       persisted,
     };
   }
@@ -165,6 +172,9 @@ interface CmiContext {
   studentId: string;
   studentName: string;
   launchData?: string;
+  masteryScore?: string;
+  maxTimeAllowed?: string;
+  timeLimitAction?: string;
   persisted: CmiValues;
 }
 
@@ -193,6 +203,9 @@ function lmsOwnedFrom(ctx: CmiContext) {
     studentName: ctx.studentName,
     lessonMode: lessonModeFrom(ctx.attempt.launchMode),
     launchData: ctx.launchData ?? '',
+    masteryScore: ctx.masteryScore ?? '',
+    maxTimeAllowed: ctx.maxTimeAllowed ?? '',
+    timeLimitAction: ctx.timeLimitAction ?? '',
   };
 }
 
@@ -201,6 +214,24 @@ function launchDataFrom(
 ): string | undefined {
   const value = metadata?.['launchData'];
   return typeof value === 'string' ? value : undefined;
+}
+
+function textFrom(
+  metadata: Record<string, unknown> | null | undefined,
+  key: string,
+): string | undefined {
+  const value = metadata?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** The manifest's mastery score as the text a SCO reads, or `undefined` when none was set. */
+function masteryScoreFrom(
+  metadata: Record<string, unknown> | null | undefined,
+): string | undefined {
+  const value = metadata?.['masteryScore'];
+  return typeof value === 'number' && Number.isFinite(value)
+    ? String(value)
+    : undefined;
 }
 
 function lessonModeFrom(mode: LaunchMode): string {

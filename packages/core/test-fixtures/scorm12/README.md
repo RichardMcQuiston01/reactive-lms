@@ -10,7 +10,7 @@ shows up here before it shows up in a real course.
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `simple-sco`          | One SCO that runs the usual API calls: initialize, read the learner, set a bookmark, score and status, commit, finish.                                                       |
 | `chapters-and-assets` | Two organizations (the second is the default), a chapter with nested items, an asset launched before the first SCO, shared files, entities, comments, CDATA, unicode, and `datafromlms`. |
-| `bookmark-resume`     | A SCO that bookmarks on its first launch and reports `resumed` with the saved location and `suspend_data` on its second.                                                       |
+| `bookmark-resume`     | A SCO that bookmarks on its first launch and reports `resumed` with the saved location, `suspend_data`, and mastery score on its second, then finishes with a score and writes `completed` (the LMS turns that into passed or failed from the manifest's `masteryscore`).                                                       |
 | `xml-base`            | Resource paths that depend on `xml:base` at the `resources` and `resource` level.                                                                                              |
 | `launch-parameters`   | An item `parameters` string, with and without a query already on the resource `href`.                                                                                          |
 

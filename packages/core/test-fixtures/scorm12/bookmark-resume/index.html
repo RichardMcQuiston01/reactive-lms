@@ -42,8 +42,11 @@
             statusEl.textContent = 'left-early';
           } else {
             // Second launch: pick up where the learner stopped, then finish.
+            // The SCO writes "completed"; with a mastery score in the
+            // manifest the LMS replaces that with passed or failed.
             outcomeEl.textContent =
-              'resumed entry=' + entry + ' location=' + bookmark + ' suspend=' + suspend;
+              'resumed entry=' + entry + ' location=' + bookmark + ' suspend=' + suspend +
+              ' mastery=' + api.LMSGetValue('cmi.student_data.mastery_score');
             api.LMSSetValue('cmi.core.score.raw', '85');
             api.LMSSetValue('cmi.core.lesson_status', 'completed');
             api.LMSSetValue('cmi.core.session_time', '00:02:00');
