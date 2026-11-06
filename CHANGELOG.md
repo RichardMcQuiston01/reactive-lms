@@ -71,6 +71,15 @@
 
 ### Added
 
+- An availability-rule editor on the module-tree screen. A **Rules** button on
+  each module or block opens a form to add, change, and remove conditions
+  (another module completed; another module's score at least a percentage; a
+  date window; membership of a group), joined by "all" or "any". It offers only
+  valid modules (never a block, the module itself, or, for a block, anything
+  inside it), checks scores and dates before sending, and shows the server's
+  message if the rules are refused. Saving with no conditions removes the
+  rules. Rules that nest one group inside another cannot be shown in a flat
+  list, so they are left alone unless the administrator chooses to start over.
 - A person picker on the Enrolments screen: search by name, email, or host
   identifier, select a result, and enrol, instead of typing a person's UUID.
   Results come twenty at a time with "More results", and a person id can still
