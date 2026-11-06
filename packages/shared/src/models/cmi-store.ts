@@ -43,6 +43,8 @@ const SCORE_CHILDREN = 'raw,min,max';
 const STUDENT_DATA_CHILDREN =
   'mastery_score,max_time_allowed,time_limit_action';
 const OBJECTIVE_CHILDREN = 'id,score,status';
+const INTERACTION_CHILDREN =
+  'id,objectives,time,type,correct_responses,weighting,student_response,result,latency';
 
 const LESSON_STATUSES = new Set([
   'passed',
@@ -52,6 +54,30 @@ const LESSON_STATUSES = new Set([
   'browsed',
   'not attempted',
 ]);
+const INTERACTION_TYPES = new Set([
+  'true-false',
+  'choice',
+  'fill-in',
+  'matching',
+  'performance',
+  'sequencing',
+  'likert',
+  'numeric',
+]);
+const INTERACTION_RESULTS = new Set([
+  'correct',
+  'wrong',
+  'unanticipated',
+  'neutral',
+]);
+/** CMITime: a time of day, `HH:MM:SS` or `HH:MM:SS.SS`, on a 24-hour clock. */
+const TIME_OF_DAY_RE = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,2})?$/;
+/**
+ * Highest array index accepted for objectives and interactions. The
+ * specification sets no limit; this keeps one SCO from making the LMS hold or
+ * store an unbounded list.
+ */
+export const MAX_CMI_ARRAY_INDEX = 9999;
 const EXIT_VALUES = new Set(['time-out', 'suspend', 'logout', '']);
 const TIMESPAN_RE = /^\d{2,4}:[0-5]\d:[0-5]\d(?:\.\d{1,2})?$/;
 const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
@@ -149,6 +175,12 @@ const ELEMENTS: Record<string, ElementDef> = {
     defaultValue: OBJECTIVE_CHILDREN,
   },
   'cmi.objectives._count': { access: 'keyword' },
+  'cmi.interactions': { access: 'keyword' },
+  'cmi.interactions._children': {
+    access: 'keyword',
+    defaultValue: INTERACTION_CHILDREN,
+  },
+  'cmi.interactions._count': { access: 'keyword' },
 };
 
 /**
@@ -300,9 +332,10 @@ export class CmiStore {
       this.fail('201');
       return '';
     }
-    if (element === 'cmi.objectives._count') {
+    const count = this.countOf(element);
+    if (count !== undefined) {
       this.lastError = '0';
-      return String(this.objectiveCount());
+      return String(count);
     }
     const def = resolveElement(element);
     if (!def) {
@@ -340,6 +373,9 @@ export class CmiStore {
     }
     const text = coerceCmiValue(value);
     if (text === undefined) {
+      return this.fail('201');
+    }
+    if (exceedsArrayLimit(element)) {
       return this.fail('201');
     }
     const def = resolveElement(element);
@@ -400,15 +436,42 @@ export class CmiStore {
     return this.LMSGetErrorString(code);
   }
 
-  private objectiveCount(): number {
+  /**
+   * The `_count` an array element reports: one more than the highest index
+   * written so far, or `undefined` when `element` is not an array count.
+   */
+  private countOf(element: string): number | undefined {
+    if (element === 'cmi.objectives._count') {
+      return this.highestIndex(/^cmi\.objectives\.(\d+)\./) + 1;
+    }
+    if (element === 'cmi.interactions._count') {
+      return this.highestIndex(/^cmi\.interactions\.(\d+)\./) + 1;
+    }
+    const nested =
+      /^cmi\.interactions\.(\d+)\.(objectives|correct_responses)\._count$/.exec(
+        element,
+      );
+    if (nested) {
+      return (
+        this.highestIndex(
+          new RegExp(
+            `^cmi\\.interactions\\.${nested[1]}\\.${nested[2]}\\.(\\d+)\\.`,
+          ),
+        ) + 1
+      );
+    }
+    return undefined;
+  }
+
+  private highestIndex(pattern: RegExp): number {
     let max = -1;
     for (const key of this.data.keys()) {
-      const match = /^cmi\.objectives\.(\d+)\./.exec(key);
+      const match = pattern.exec(key);
       if (match) {
         max = Math.max(max, Number(match[1]));
       }
     }
-    return max + 1;
+    return max;
   }
 
   private accumulateSessionTime(): void {
@@ -515,6 +578,10 @@ function resolveElement(element: string): ElementDef | undefined {
   if (known) {
     return known;
   }
+  const interaction = resolveInteractionElement(element);
+  if (interaction) {
+    return interaction;
+  }
   const objective =
     /^cmi\.objectives\.(\d+)\.(id|status|score(?:\._children|\.raw|\.min|\.max)?)$/.exec(
       element,
@@ -539,6 +606,80 @@ function resolveElement(element: string): ElementDef | undefined {
     };
   }
   return { access: 'rw', defaultValue: '', validate: isScore };
+}
+
+/**
+ * `cmi.interactions.n.*` elements. They are write only: a SCO records what the
+ * learner did but cannot read it back (the `_count`s are the exception, and
+ * are answered before this is reached).
+ */
+function resolveInteractionElement(element: string): ElementDef | undefined {
+  const nestedCount =
+    /^cmi\.interactions\.\d+\.(?:objectives|correct_responses)\._count$/;
+  if (nestedCount.test(element)) {
+    return { access: 'keyword' };
+  }
+  const field = /^cmi\.interactions\.\d+\.(\w+)$/.exec(element)?.[1];
+  switch (field) {
+    case 'id':
+      return { access: 'wo', validate: isIdentifier };
+    case 'time':
+      return { access: 'wo', validate: (v) => TIME_OF_DAY_RE.test(v) };
+    case 'type':
+      return { access: 'wo', validate: (v) => INTERACTION_TYPES.has(v) };
+    case 'weighting':
+      return { access: 'wo', validate: isDecimal };
+    case 'student_response':
+      return { access: 'wo', validate: isFeedback };
+    case 'result':
+      return {
+        access: 'wo',
+        validate: (v) => INTERACTION_RESULTS.has(v) || isDecimal(v),
+      };
+    case 'latency':
+      return { access: 'wo', validate: isTimespan };
+    default:
+      break;
+  }
+  if (/^cmi\.interactions\.\d+\.objectives\.\d+\.id$/.test(element)) {
+    return { access: 'wo', validate: isIdentifier };
+  }
+  if (
+    /^cmi\.interactions\.\d+\.correct_responses\.\d+\.pattern$/.test(element)
+  ) {
+    return { access: 'wo', validate: isFeedback };
+  }
+  return undefined;
+}
+
+/**
+ * CMIIdentifier is limited by length only. The specification also restricts
+ * the characters, but authoring tools write ids with spaces and punctuation,
+ * and refusing them would drop the interaction.
+ */
+function isIdentifier(value: string): boolean {
+  return value.length <= 255;
+}
+
+/** CMIFeedback: kept to 255 characters; its per-type syntax is not checked. */
+function isFeedback(value: string): boolean {
+  return value.length <= 255;
+}
+
+/** True when a numeric array index in an objectives or interactions element is past the limit. */
+function exceedsArrayLimit(element: string): boolean {
+  if (
+    !element.startsWith('cmi.interactions.') &&
+    !element.startsWith('cmi.objectives.')
+  ) {
+    return false;
+  }
+  for (const match of element.matchAll(/\.(\d+)(?=\.)/g)) {
+    if (Number(match[1]) > MAX_CMI_ARRAY_INDEX) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isEmptyParam(param: unknown): boolean {

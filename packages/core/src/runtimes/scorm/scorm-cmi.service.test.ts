@@ -8,7 +8,10 @@ import {
   Person,
   Registration,
 } from '@richardmcquiston01/reactive-lms-persistence';
-import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
+import {
+  LmsError,
+  type CmiValues,
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../../audit/event-log.service';
 import { ProgressSinkService } from '../../progress/progress-sink';
@@ -348,6 +351,85 @@ describe('ScormCmiService', () => {
 
       expect(values['cmi.student_data.mastery_score']).toBe('80');
       expect(values['cmi.core.lesson_status']).toBe('failed');
+    });
+  });
+
+  describe('interactions', () => {
+    const quiz = {
+      'cmi.interactions.0.id': 'q1',
+      'cmi.interactions.0.type': 'choice',
+      'cmi.interactions.0.student_response': 'b',
+      'cmi.interactions.0.result': 'correct',
+      'cmi.interactions.1.id': 'q2',
+      'cmi.interactions.1.result': 'wrong',
+    };
+    const storedCmi = (ds: ReturnType<typeof createMockDataSource>) =>
+      (ds.rowsOf(NormalizedProgress)[0]?.extrasJson as { cmi: CmiValues }).cmi;
+
+    test('are saved with the attempt', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      await service(ds).putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      expect(storedCmi(ds)).toMatchObject(quiz);
+    });
+
+    test('are not read back to the SCO, which cannot read them anyway', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      const { values } = await cmi.getCmi(ATTEMPT_ID);
+
+      expect(
+        Object.keys(values).filter((key) =>
+          key.startsWith('cmi.interactions.'),
+        ),
+      ).toEqual([]);
+    });
+
+    test('a later session that records some replaces the earlier ones', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: {
+          'cmi.core.lesson_status': 'completed',
+          'cmi.interactions.0.id': 'retake-1',
+          'cmi.interactions.0.result': 'correct',
+        },
+      });
+
+      const stored = storedCmi(ds);
+      expect(stored['cmi.interactions.0.id']).toBe('retake-1');
+      expect(stored['cmi.interactions.1.id']).toBeUndefined();
+      expect(stored['cmi.interactions.0.student_response']).toBeUndefined();
+    });
+
+    test('a later session that records none keeps the earlier ones', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'completed' },
+        finished: true,
+      });
+
+      expect(storedCmi(ds)).toMatchObject(quiz);
     });
   });
 

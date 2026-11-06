@@ -57,7 +57,12 @@ export class ScormCmiService {
     store.applyLmsOwned(lmsOwnedFrom(ctx));
     // When a SCO finishes, the mastery score (if the manifest set one) decides
     // pass or fail from the raw score, whatever status the SCO wrote.
-    const reported = store.snapshot();
+    // Interactions are replaced when this session reported any, and kept as
+    // they were when it did not (for example a review session that records none).
+    const carried = hasInteractions(body.values ?? {})
+      ? {}
+      : onlyInteractions(ctx.persisted);
+    const reported = { ...store.snapshot(), ...carried };
     const values = body.finished ? applyMasteryScore(reported) : reported;
     const activityNodeId = ctx.activityNodeId;
     if (!activityNodeId) {
@@ -91,10 +96,13 @@ export class ScormCmiService {
    * follows SCORM 1.2: `ab-initio` the first time, `resume` when the last
    * session ended with `cmi.core.exit` set to `suspend`, and empty otherwise.
    * The saved exit belongs to the session that set it, so it is dropped here
-   * and cannot make a later session look suspended.
+   * and cannot make a later session look suspended. Interactions are dropped
+   * too: they are write only, and a SCO numbers them from 0 in every session,
+   * so loading the last session's would mix old and new under the same
+   * indexes.
    */
   private seedStore(ctx: CmiContext): CmiStore {
-    const persisted = { ...ctx.persisted };
+    const persisted = withoutInteractions({ ...ctx.persisted });
     delete persisted['cmi.core.session_time'];
     const exit = persisted['cmi.core.exit'];
     delete persisted['cmi.core.exit'];
@@ -214,6 +222,28 @@ function launchDataFrom(
 ): string | undefined {
   const value = metadata?.['launchData'];
   return typeof value === 'string' ? value : undefined;
+}
+
+const INTERACTION_PREFIX = 'cmi.interactions.';
+
+function hasInteractions(values: CmiValues): boolean {
+  return Object.keys(values).some((key) => key.startsWith(INTERACTION_PREFIX));
+}
+
+function withoutInteractions(values: CmiValues): CmiValues {
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([key]) => !key.startsWith(INTERACTION_PREFIX),
+    ),
+  );
+}
+
+function onlyInteractions(values: CmiValues): CmiValues {
+  return Object.fromEntries(
+    Object.entries(values).filter(([key]) =>
+      key.startsWith(INTERACTION_PREFIX),
+    ),
+  );
 }
 
 function textFrom(

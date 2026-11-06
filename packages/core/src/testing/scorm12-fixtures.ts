@@ -9,7 +9,8 @@ export type Scorm12FixtureName =
   | 'chapters-and-assets'
   | 'bookmark-resume'
   | 'xml-base'
-  | 'launch-parameters';
+  | 'launch-parameters'
+  | 'quiz-interactions';
 
 const FIXTURE_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
