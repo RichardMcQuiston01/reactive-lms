@@ -19,6 +19,14 @@ export const RLMS_IDENTITY_ADAPTER = Symbol('RLMS_IDENTITY_ADAPTER');
 export const RLMS_CAPABILITY_ADAPTER = Symbol('RLMS_CAPABILITY_ADAPTER');
 
 /**
+ * DI token for the host's opt-in to administrative actions when no capability
+ * adapter is configured (`allowUnrestrictedAdmin`).
+ */
+export const RLMS_ALLOW_UNRESTRICTED_ADMIN = Symbol(
+  'RLMS_ALLOW_UNRESTRICTED_ADMIN',
+);
+
+/**
  * DI token for the configured {@link import('@richardmcquiston01/reactive-lms-shared').BlobStorageAdapter}.
  */
 export const RLMS_BLOB_STORAGE_ADAPTER = Symbol('RLMS_BLOB_STORAGE_ADAPTER');

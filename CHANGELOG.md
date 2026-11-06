@@ -101,6 +101,16 @@
 
 ### Changed
 
+- **Breaking:** without a `capabilityAdapter`, `ReactiveLmsModule` now refuses
+  administrative routes (import and delete packages, create sections and
+  modules, enrol people, search people, list rosters) with 403 `FORBIDDEN`.
+  Before, they were open to any caller the identity adapter recognised, so a
+  host that forgot the adapter exposed them silently. The message names the
+  fix. Hosts that want the old behaviour while evaluating can set
+  `allowUnrestrictedAdmin: true`, which logs a warning at start; an adapter,
+  when set, always decides. Learner routes are unchanged. The standalone API
+  sets the option, since it has one demo user and no adapter. `ADMIN_LMS_ACTIONS`
+  and `isAdminAction` are exported from the shared package.
 - Availability rules that can never be met are now refused when they are saved
   (400 `AVAILABILITY_INVALID`, naming each problem) instead of locking a module
   forever. Refused: a condition on a module that is not in the section; a

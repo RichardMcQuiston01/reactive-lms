@@ -1,5 +1,6 @@
 import { APP_FILTER, RouterModule } from '@nestjs/core';
 import {
+  Logger,
   Module,
   type DynamicModule,
   type InjectionToken,
@@ -44,6 +45,7 @@ import { LmsRequestService } from './identity/lms-request.service';
 import { PersonDirectory } from './identity/person-directory';
 import { RegistrationAccess } from './identity/registration-access';
 import {
+  RLMS_ALLOW_UNRESTRICTED_ADMIN,
   RLMS_CAPABILITY_ADAPTER,
   RLMS_DATA_SOURCE,
   RLMS_IDENTITY_ADAPTER,
@@ -59,8 +61,19 @@ import {
 export interface ReactiveLmsModuleOptions {
   /** Host identity bridge. */
   identityAdapter: IdentityAdapter;
-  /** Optional host capability checks. */
+  /**
+   * Host capability checks. Without one, administrative routes (import,
+   * create, place, enrol, delete, people search) answer 403 and learners can
+   * act only on their own registrations.
+   */
   capabilityAdapter?: CapabilityAdapter;
+  /**
+   * Lets any caller the identity adapter recognises use the administrative
+   * routes when no `capabilityAdapter` is set. For evaluation and demos only;
+   * a production host should supply a capability adapter. Ignored when an
+   * adapter is set. A warning is logged at start when it takes effect.
+   */
+  allowUnrestrictedAdmin?: boolean;
   /** Blob store; created from `dataRoot` when omitted. */
   blobStorage?: BlobStorageAdapter;
   /**
@@ -192,6 +205,21 @@ function buildModule(input: {
       provide: RLMS_CAPABILITY_ADAPTER,
       useFactory: (opts: ReactiveLmsModuleOptions) =>
         opts.capabilityAdapter ?? null,
+      inject: [RLMS_MODULE_OPTIONS],
+    },
+    {
+      provide: RLMS_ALLOW_UNRESTRICTED_ADMIN,
+      useFactory: (opts: ReactiveLmsModuleOptions): boolean => {
+        const open = opts.allowUnrestrictedAdmin === true;
+        if (open && !opts.capabilityAdapter) {
+          new Logger('ReactiveLmsModule').warn(
+            'allowUnrestrictedAdmin is on and no capabilityAdapter is set: ' +
+              'any identified caller can import packages, manage sections, and enrol people. ' +
+              'Use this for evaluation only.',
+          );
+        }
+        return open;
+      },
       inject: [RLMS_MODULE_OPTIONS],
     },
     {
