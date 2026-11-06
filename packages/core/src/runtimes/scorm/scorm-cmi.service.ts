@@ -82,17 +82,26 @@ export class ScormCmiService {
     return { values };
   }
 
+  /**
+   * Builds the store for a session from what was saved. `cmi.core.entry`
+   * follows SCORM 1.2: `ab-initio` the first time, `resume` when the last
+   * session ended with `cmi.core.exit` set to `suspend`, and empty otherwise.
+   * The saved exit belongs to the session that set it, so it is dropped here
+   * and cannot make a later session look suspended.
+   */
   private seedStore(ctx: CmiContext): CmiStore {
     const persisted = { ...ctx.persisted };
     delete persisted['cmi.core.session_time'];
     const exit = persisted['cmi.core.exit'];
+    delete persisted['cmi.core.exit'];
+    const hasPriorSession = Object.keys(ctx.persisted).length > 0;
+    const entry =
+      exit === 'suspend' ? 'resume' : hasPriorSession ? '' : 'ab-initio';
     const store = new CmiStore({
       ...lmsOwnedFrom(ctx),
       values: persisted,
     });
-    store.loadValues({
-      'cmi.core.entry': exit === 'suspend' ? 'resume' : 'ab-initio',
-    });
+    store.loadValues({ 'cmi.core.entry': entry });
     store.applyLmsOwned(lmsOwnedFrom(ctx));
     return store;
   }

@@ -65,9 +65,40 @@
   periodic sweep on write.
 - The admin section and package pickers page through results with a "Load
   more" button instead of silently stopping at the first 100.
+- SCORM 1.2 manifests from real authoring tools import correctly:
+  - `&amp;`, `&lt;` and numeric character references in titles are decoded
+    (a title read "Fish &amp; Chips"), and CDATA is read literally;
+  - `xml:base` on the manifest, `resources`, and `resource` is applied to the
+    launch path, so the launch address no longer points one folder too high;
+  - the course launches its first SCO, not an asset that happens to come
+    first, and `scormtype="SCO"` in capitals counts as a SCO;
+  - an item's `parameters` are added to its launch address;
+  - a launch file that is not in the package, differs only by letter case, or
+    sits outside the package is refused at import with the item and file
+    named, instead of a blank page at launch.
+- `cmi.core.entry` follows SCORM 1.2: `ab-initio` the first time, `resume`
+  after a session that set `cmi.core.exit` to `suspend`, and empty otherwise.
+  Before, it was never empty, and a saved `suspend` made every later session
+  look like a resume.
+- A raw score with no `score.min` or `score.max` now counts: SCORM 1.2 defines
+  it on a 0 to 100 scale, so 85 is 0.85. Before, it had no scaled score.
+- A registration's score and time are now written. They were never filled in,
+  so the Progress screen's score and time columns were always empty. The
+  section score is the mean of each module's best scaled score (modules with
+  no score are left out), and the time is the sum of the modules' time.
 
 ### Added
 
+- SCORM 1.2 fixture packages (`packages/core/test-fixtures/scorm12`): a single
+  SCO; a course with two organizations, a chapter, an asset, shared files,
+  entities, comments, CDATA, and unicode; a SCO that bookmarks and resumes;
+  and courses that use `xml:base` and launch parameters. Tests import each one
+  and check what was stored. They were also run end to end in a browser
+  against the standalone API and Postgres: upload, place, enrol, launch,
+  bookmark, leave, relaunch with `entry=resume`, complete with a score, and
+  launch again with the bookmark intact.
+- The manifest parser now keeps `masteryscore`, `maxtimeallowed`, and
+  `timelimitaction` on each item. Nothing acts on them yet.
 - An availability-rule editor on the module-tree screen. A **Rules** button on
   each module or block opens a form to add, change, and remove conditions
   (another module completed; another module's score at least a percentage; a

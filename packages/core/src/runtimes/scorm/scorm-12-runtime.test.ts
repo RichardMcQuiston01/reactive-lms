@@ -49,7 +49,10 @@ describe('Scorm12Runtime', () => {
   });
 
   test('parse returns the first SCO as entryHref', async () => {
-    const files = createMemoryFileIndex({ 'imsmanifest.xml': MANIFEST });
+    const files = createMemoryFileIndex({
+      'imsmanifest.xml': MANIFEST,
+      'sco.html': '<html></html>',
+    });
     const parsed = await runtime.parse(files);
     expect(parsed.packageType).toBe('scorm_12');
     expect(parsed.entryHref).toBe('sco.html');

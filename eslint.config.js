@@ -16,7 +16,13 @@ const SHARED_FORBIDDEN_IMPORTS = [
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      // Fixture packages are course content, not project code.
+      'packages/core/test-fixtures/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

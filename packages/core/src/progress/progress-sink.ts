@@ -22,6 +22,7 @@ import { contentModules, isBlockModule } from '../courses/module-tree';
 import { rowLock } from '../db/row-lock';
 import { computeRegistrationStatus } from './course-completion';
 import type { ModuleProgressSnapshot } from './course-completion';
+import { sectionDuration, sectionScore } from './registration-totals';
 
 /**
  * Progress reported by content that is running in a launched attempt (for
@@ -218,8 +219,18 @@ export class ProgressSinkService implements ProgressSink {
           moduleIds: contentModules(modules).map((entry) => entry.id),
           progressByModuleId: mergeProgressByModule(rows),
         });
-        if (nextStatus !== registration.status) {
+        const countedModules = contentModules(modules).map((entry) => entry.id);
+        const score = sectionScore(countedModules, rows);
+        const duration = sectionDuration(countedModules, rows);
+        const nextScore = score === null ? null : score.toFixed(6);
+        const changed =
+          nextStatus !== registration.status ||
+          nextScore !== (registration.scoreScaled ?? null) ||
+          duration !== (registration.durationIso8601 ?? null);
+        if (changed) {
           registration.status = nextStatus;
+          registration.scoreScaled = nextScore;
+          registration.durationIso8601 = duration;
           await manager.save(registration);
         }
       }

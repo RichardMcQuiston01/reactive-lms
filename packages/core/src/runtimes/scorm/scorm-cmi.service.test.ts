@@ -169,6 +169,58 @@ describe('ScormCmiService', () => {
     });
   });
 
+  test('entry is empty, not ab-initio, after a session that was not suspended', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds, {
+      cmi: {
+        'cmi.core.lesson_location': 'page-2',
+        'cmi.core.lesson_status': 'incomplete',
+      },
+    });
+
+    const { values } = await service(ds).getCmi(ATTEMPT_ID);
+
+    expect(values['cmi.core.entry']).toBe('');
+  });
+
+  test('a suspended session does not make every later session a resume', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds, {
+      cmi: {
+        'cmi.core.lesson_status': 'incomplete',
+        'cmi.core.exit': 'suspend',
+      },
+    });
+    const cmi = service(ds);
+
+    expect((await cmi.getCmi(ATTEMPT_ID)).values['cmi.core.entry']).toBe(
+      'resume',
+    );
+    // This session finishes normally and does not set an exit.
+    await cmi.putCmi(ATTEMPT_ID, {
+      values: { 'cmi.core.lesson_status': 'completed' },
+      finished: true,
+    });
+
+    const after = await cmi.getCmi(ATTEMPT_ID);
+    expect(after.values['cmi.core.entry']).toBe('');
+    expect(after.values['cmi.core.exit']).toBeUndefined();
+  });
+
+  test('a score with no range is read as a percentage', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds);
+
+    await service(ds).putCmi(ATTEMPT_ID, {
+      values: {
+        'cmi.core.lesson_status': 'completed',
+        'cmi.core.score.raw': '85',
+      },
+    });
+
+    expect(ds.rowsOf(NormalizedProgress)[0]?.scoreScaled).toBe('0.85');
+  });
+
   test('throws ATTEMPT_NOT_FOUND for an unknown attempt', async () => {
     const ds = createMockDataSource();
     try {
