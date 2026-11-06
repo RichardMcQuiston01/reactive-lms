@@ -345,6 +345,18 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
     retention on due items, A/B against a no-review control) before launch.
   - **Open:** whether FSRS ever justifies parameter training for a
     multi-tenant host (default: no).
+- **D15 — Tandem development with `lms-package-maker`** (recorded
+  2026-11-04, a note for later). The owner is building a package exporter
+  (a Captivate-style authoring tool) in
+  `RichardMcQuiston01/lms-package-maker`. Its exported packages (SCORM 1.2,
+  HTML5, later others) are intended as real test content for this LMS, so the
+  two projects can evolve together.
+  - **Scope:** authoring stays a non-goal here; the exporter is a separate
+    project. This LMS only imports, launches, and tracks its output.
+  - **Revisit** when the exporter repo has more code. Then: try its packages
+    through import and launch, and consider using them as the SCORM 1.2
+    fixtures for 0.4.0 alongside the ADL conformance check.
+  - **No work is planned or blocked** on this until then.
 - **D10 — Git workflow** (decided 2026-10-20, per the owner's git-workflow
   skill). Long-lived branches: `main` (production) and `dev` (development);
   there is no `staging` branch. New work goes on `feature/<name>` off `dev`

@@ -9,6 +9,7 @@ export type {
 } from './catalog/catalog.service';
 export { CoursesController } from './controllers/courses.controller';
 export { EnrolmentsController } from './controllers/enrolments.controller';
+export { PeopleController } from './controllers/people.controller';
 export type {
   CreateMembershipBody,
   SelfEnrolBody,

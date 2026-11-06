@@ -1,5 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import type { CourseModuleDto } from '@richardmcquiston01/reactive-lms-shared';
+import type {
+  AvailabilityV1,
+  CourseModuleDto,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { ADMIN_API_CLIENT } from '../api/admin-api-client.token';
 import type { SortOrderPatch } from './module-tree';
 
@@ -81,6 +84,20 @@ export class ModuleAdminService {
    */
   rename(moduleId: string, title: string): Promise<{ id: string }> {
     return this.patch(moduleId, { title });
+  }
+
+  /**
+   * Saves a module's availability rules. `null` removes them, so the module is
+   * always open.
+   *
+   * @param moduleId - Course module id
+   * @param availability - Rules to store, or `null` for none
+   */
+  setAvailability(
+    moduleId: string,
+    availability: AvailabilityV1 | null,
+  ): Promise<{ id: string }> {
+    return this.patch(moduleId, { availability });
   }
 
   /**

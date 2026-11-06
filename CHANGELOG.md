@@ -69,8 +69,51 @@
 - The admin section and package pickers page through results with a "Load
   more" button instead of silently stopping at the first 100.
 
+### Added
+
+- An availability-rule editor on the module-tree screen. A **Rules** button on
+  each module or block opens a form to add, change, and remove conditions
+  (another module completed; another module's score at least a percentage; a
+  date window; membership of a group), joined by "all" or "any". It offers only
+  valid modules (never a block, the module itself, or, for a block, anything
+  inside it), checks scores and dates before sending, and shows the server's
+  message if the rules are refused. Saving with no conditions removes the
+  rules. Rules that nest one group inside another cannot be shown in a flat
+  list, so they are left alone unless the administrator chooses to start over.
+- A person picker on the Enrolments screen: search by name, email, or host
+  identifier, select a result, and enrol, instead of typing a person's UUID.
+  Results come twenty at a time with "More results", and a person id can still
+  be typed.
+- `GET /people?search=`: finds people for pickers, ignoring case and treating
+  `%`, `_`, and `\` as plain characters. It returns only id, name, email, and
+  host identifier, and needs the `enrol.manage` capability.
+- Admin enrolment and progress screens for one section, replacing the two
+  "arrives in a later release" placeholders. Enrolments lists who is
+  registered and enrols a person by id (manual or group); progress shows a
+  count per status and each person's status, score, and time. Both page with
+  "Load more". The Enrolments and Progress menu items open the section picker,
+  which now opens whichever screen the item stands for.
+- `GET /course-sections/:id/registrations`: a section's roster with each
+  person's name, email, status, score, and time, paged like the other lists.
+  It needs the `enrol.manage` capability on the section.
+- Host screen overrides gain `section-enrolments` and `section-progress` for
+  the section screens; `enrolments` and `progress` now override the pickers.
+
 ### Changed
 
+- Availability rules that can never be met are now refused when they are saved
+  (400 `AVAILABILITY_INVALID`, naming each problem) instead of locking a module
+  forever. Refused: a condition on a module that is not in the section; a
+  condition on a block (a block never records completion or a score); a module
+  that waits on its own completion or score, including a minimum score with no
+  module named; a block that waits on a module inside it; and modules that
+  wait on each other, directly or through the blocks around them. Rules inside
+  an `any` group only have to name real modules. This applies to placing a
+  module, adding a block, and editing a module. Rules already stored are not
+  touched.
+- Donations now point at Ko-fi instead of PayPal: the README badge, the
+  `package.json` funding link and a new `.github/FUNDING.yml`. The PayPal QR
+  image is removed.
 - Migration `0001` adds the unique constraint
   `uq_rlms_normalized_progress_slot` on (registration, module, activity node).
   It was edited in place because `0001` has not been released; after the tag,

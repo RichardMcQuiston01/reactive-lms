@@ -17,6 +17,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource, EntityManager } from 'typeorm';
 import { rowLock } from '../db/row-lock';
+import { assertAvailabilityReferences } from './availability-references';
 import { assertCanParent } from './module-tree';
 import {
   normalizeAvailabilityInput,
@@ -119,6 +120,11 @@ export class ModuleService {
         (await nextSortOrder(manager, sectionId, parentModuleId));
 
       const availabilityJson = normalizeAvailabilityInput(input.availability);
+      assertAvailabilityReferences(
+        availabilityJson,
+        { id: moduleId, isBlock: false, parentModuleId },
+        await sectionModules(manager, sectionId),
+      );
       const module = manager.create(CourseModule, {
         id: moduleId,
         courseSectionId: sectionId,
@@ -159,6 +165,11 @@ export class ModuleService {
           parentModuleId,
         );
       }
+      assertAvailabilityReferences(
+        availabilityJson,
+        { id: moduleId, isBlock: true, parentModuleId },
+        await sectionModules(manager, sectionId),
+      );
       const block = manager.create(CourseModule, {
         id: moduleId,
         courseSectionId: sectionId,

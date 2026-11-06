@@ -10,6 +10,7 @@ import {
   EnrolmentMethod,
   LineItem,
   NormalizedProgress,
+  Person,
   Registration,
   type CompletionRule,
   type EnrolmentMethodKind,
@@ -28,10 +29,12 @@ import {
   type CourseModuleDto,
   type CourseSectionDto,
   type NormalizedProgress as NormalizedProgressDto,
+  type SectionRegistrationDto,
   type BlobStorageAdapter,
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
   rowLock,
+  assertAvailabilityReferences,
   assertBlockAvailability,
   assertCanParent,
   isBlockModule,
@@ -40,7 +43,7 @@ import {
   type AvailabilityInput,
 } from '@richardmcquiston01/reactive-lms-core';
 import { randomUUID } from 'node:crypto';
-import type { DataSource } from 'typeorm';
+import { In, type DataSource } from 'typeorm';
 import { RLMS_DATA_SOURCE, RLMS_BLOB_STORAGE_ADAPTER } from '../tokens';
 
 /** Rows returned by a list call when the caller gives no `limit`. */
@@ -384,6 +387,20 @@ export class CatalogService {
         if (isBlockModule(row)) {
           assertBlockAvailability(rules);
         }
+        assertAvailabilityReferences(
+          rules,
+          {
+            id: row.id,
+            isBlock: isBlockModule(row),
+            parentModuleId:
+              input.parentModuleId !== undefined
+                ? input.parentModuleId
+                : (row.parentModuleId ?? null),
+          },
+          await manager.find(CourseModule, {
+            where: { courseSectionId: row.courseSectionId },
+          }),
+        );
         row.availabilityJson = rules;
       }
       if (input.parentModuleId !== undefined) {
@@ -487,6 +504,34 @@ export class CatalogService {
   }
 
   /**
+   * Lists the people registered on a section, with their display details,
+   * oldest registration first.
+   *
+   * @param sectionId - Course section id
+   * @param page - Paging
+   */
+  async listSectionRegistrations(
+    sectionId: string,
+    page: ListPage = {},
+  ): Promise<SectionRegistrationDto[]> {
+    const registrations = await this.dataSource.manager.find(Registration, {
+      where: { courseSectionId: sectionId },
+      order: { createdAt: 'ASC', id: 'ASC' },
+      ...clampPage(page),
+    });
+    if (registrations.length === 0) {
+      return [];
+    }
+    const people = await this.dataSource.manager.find(Person, {
+      where: { id: In(registrations.map((row) => row.personId)) },
+    });
+    const personById = new Map(people.map((person) => [person.id, person]));
+    return registrations.map((row) =>
+      toSectionRegistrationDto(row, personById.get(row.personId)),
+    );
+  }
+
+  /**
    * Lists normalized progress rows for a registration.
    *
    * @param registrationId - Registration id
@@ -517,6 +562,29 @@ function toPackageDto(row: ContentPackage): ContentPackageDto {
     storageKey: row.storageKey,
     extractedKey: row.extractedKey ?? undefined,
     checksumSha256: row.checksumSha256 ?? undefined,
+    createdAt: toIso(row.createdAt),
+    updatedAt: toIso(row.updatedAt),
+  };
+}
+
+function toSectionRegistrationDto(
+  row: Registration,
+  person: Person | undefined,
+): SectionRegistrationDto {
+  return {
+    id: row.id,
+    personId: row.personId,
+    displayName: person?.displayName ?? undefined,
+    email: person?.email ?? undefined,
+    externalId: person?.externalId,
+    courseSectionId: row.courseSectionId,
+    enrolmentMethodId: row.enrolmentMethodId ?? undefined,
+    status: row.status,
+    scoreScaled:
+      row.scoreScaled === null || row.scoreScaled === undefined
+        ? undefined
+        : Number(row.scoreScaled),
+    durationIso8601: row.durationIso8601 ?? undefined,
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
   };

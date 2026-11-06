@@ -6,7 +6,7 @@ an existing NestJS + TypeORM API and Angular frontend.
 > **Status:** pre-alpha (v0.2.0). The workspace contains working HTML5 and
 > SCORM 1.2 import, launch, and progress, a module tree with availability
 > conditions, and first admin screens (module tree, sections, packages, upload,
-> placement); the rest of the standards are planned. See
+> placement, enrolments, progress); the rest of the standards are planned. See
 > [ROADMAP.md](ROADMAP.md).
 
 ## Dual mode
@@ -132,6 +132,4 @@ it is for evaluation only. An embedding host should configure an adapter.
 
 If this app, code, or repository has helped you or someone you know, please consider donating. I appreciate any help to offset the costs of development and/or AI Credits.
 
-[**Donate via PayPal**](https://www.paypal.com/ncp/payment/NENS5EGZLW5HA), or scan:
-
-[![Donate via PayPal](./donate.png)](https://www.paypal.com/ncp/payment/NENS5EGZLW5HA)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P1V529Z7ZP)

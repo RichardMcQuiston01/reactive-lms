@@ -37,3 +37,23 @@ export { ModuleTreeScreenComponent } from './screens/module-tree-screen.componen
 export { SectionsScreenComponent } from './screens/sections-screen.component';
 export { CatalogAdminService } from './modules/catalog-admin.service';
 export { PackagesScreenComponent } from './screens/packages-screen.component';
+export { RosterAdminService } from './modules/roster-admin.service';
+export {
+  countByStatus,
+  formatDuration,
+  formatScore,
+  personChoiceLabel,
+  rosterPersonLabel,
+  statusLabel,
+} from './modules/roster';
+export { EnrolmentsScreenComponent } from './screens/enrolments-screen.component';
+export { ProgressScreenComponent } from './screens/progress-screen.component';
+export {
+  buildAvailability,
+  conditionTargets,
+  draftFromAvailability,
+  summarizeConditions,
+  type ConditionDraft,
+  type RulesDraft,
+} from './modules/availability-editor';
+export { AvailabilityEditorComponent } from './screens/availability-editor.component';

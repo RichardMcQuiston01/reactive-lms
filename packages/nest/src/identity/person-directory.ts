@@ -1,9 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Person } from '@richardmcquiston01/reactive-lms-persistence';
-import type { LearnerRef } from '@richardmcquiston01/reactive-lms-shared';
+import type {
+  LearnerRef,
+  PersonSummaryDto,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
+import { clampPage, type ListPage } from '../catalog/catalog.service';
 import { RLMS_DATA_SOURCE } from '../tokens';
+
+/** Longest search text used; anything past it is ignored. */
+export const MAX_PERSON_SEARCH_LENGTH = 100;
+
+/**
+ * Makes user-typed text safe to put inside a `LIKE` pattern, so `%`, `_`, and
+ * `\` match themselves instead of acting as wildcards.
+ *
+ * @param text - Text as typed
+ */
+export function escapeLikePattern(text: string): string {
+  return text.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
 
 /**
  * Upserts a `Person` row from a host {@link LearnerRef}.
@@ -67,5 +84,43 @@ export class PersonDirectory {
       );
     }
     return person;
+  }
+
+  /**
+   * Finds people whose name, email, or host identifier contains `search`,
+   * ignoring case, ordered by name. An empty search lists everyone.
+   *
+   * @param search - Text to look for, as typed
+   * @param page - Paging
+   */
+  async search(
+    search: string,
+    page: ListPage = {},
+  ): Promise<PersonSummaryDto[]> {
+    const text = search.trim().slice(0, MAX_PERSON_SEARCH_LENGTH);
+    const query = this.dataSource
+      .getRepository(Person)
+      .createQueryBuilder('person');
+    if (text !== '') {
+      const pattern = `%${escapeLikePattern(text.toLowerCase())}%`;
+      query.where(
+        `(LOWER(person.displayName) LIKE :pattern ESCAPE '\\' ` +
+          `OR LOWER(person.email) LIKE :pattern ESCAPE '\\' ` +
+          `OR LOWER(person.externalId) LIKE :pattern ESCAPE '\\')`,
+        { pattern },
+      );
+    }
+    const rows = await query
+      .orderBy('person.displayName', 'ASC')
+      .addOrderBy('person.id', 'ASC')
+      .take(clampPage(page).take)
+      .skip(clampPage(page).skip)
+      .getMany();
+    return rows.map((row) => ({
+      id: row.id,
+      displayName: row.displayName ?? undefined,
+      email: row.email ?? undefined,
+      externalId: row.externalId,
+    }));
   }
 }
