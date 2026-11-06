@@ -23,9 +23,6 @@
   be discarded while the lesson was told it succeeded; the state is now kept,
   the player shows "Your progress could not be saved" with a Retry button,
   and it is sent again with the next save or on exit.
-
-### Fixed
-
 - A progress report no longer erases what it leaves out. A completion-only
   report used to overwrite the saved score, bookmark, time, and suspend data
   with null, and a bookmark-only report sent `unknown` statuses that undid
