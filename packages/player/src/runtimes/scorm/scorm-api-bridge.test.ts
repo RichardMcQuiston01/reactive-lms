@@ -305,4 +305,41 @@ describe('ScormApiBridge', () => {
       await expect(bridge.flush()).resolves.toBeUndefined();
     });
   });
+
+  test('the installed API follows the SCORM 1.2 error rules a SCO relies on', async () => {
+    const puts: ScormCmiDto[] = [];
+    const bridge = new ScormApiBridge({
+      getCmi: async () => ({ values: {} }),
+      putCmi: async (body) => {
+        puts.push(body);
+      },
+    });
+    const api = await bridge.install({});
+
+    // Before LMSInitialize nothing can be read or written.
+    expect(api.LMSGetValue('cmi.core.lesson_status')).toBe('');
+    expect(api.LMSGetLastError()).toBe('301');
+    expect(api.LMSGetErrorString('301')).toBe('Not initialized');
+
+    expect(api.LMSInitialize('')).toBe('true');
+    // A bad value is a data type error, and nothing is stored.
+    expect(api.LMSSetValue('cmi.core.score.raw', '150')).toBe('false');
+    expect(api.LMSGetLastError()).toBe('405');
+    expect(api.LMSGetValue('cmi.core.score.raw')).toBe('');
+    // Read-only and write-only elements.
+    expect(api.LMSSetValue('cmi.core.student_id', 'x')).toBe('false');
+    expect(api.LMSGetLastError()).toBe('403');
+    expect(api.LMSGetValue('cmi.core.session_time')).toBe('');
+    expect(api.LMSGetLastError()).toBe('404');
+    // An element that does not exist.
+    expect(api.LMSGetValue('cmi.nonsense')).toBe('');
+    expect(api.LMSGetLastError()).toBe('401');
+
+    expect(api.LMSFinish('')).toBe('true');
+    // The session is over: a second finish is "not initialized" and saves nothing more.
+    expect(api.LMSFinish('')).toBe('false');
+    expect(api.LMSGetLastError()).toBe('301');
+    await bridge.uninstall({});
+    expect(puts.filter((body) => body.finished)).toHaveLength(1);
+  });
 });

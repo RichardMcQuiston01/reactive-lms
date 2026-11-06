@@ -99,7 +99,7 @@ describe('CmiStore', () => {
     expect(store.LMSInitialize('')).toBe('false');
     expect(store.LMSGetLastError()).toBe('101');
     expect(store.LMSFinish('')).toBe('false');
-    expect(store.LMSGetLastError()).toBe('101');
+    expect(store.LMSGetLastError()).toBe('301');
   });
 
   test('sets and gets bookmark, status, score, and suspend_data', () => {
@@ -166,28 +166,28 @@ describe('CmiStore', () => {
     expect(store.LMSGetErrorString('401')).toMatch(/implement/i);
   });
 
-  test('invalid set values return 351', () => {
+  test('invalid set values return 405 (incorrect data type)', () => {
     const store = new CmiStore();
     store.LMSInitialize('');
     expect(store.LMSSetValue('cmi.core.lesson_status', 'won')).toBe('false');
-    expect(store.LMSGetLastError()).toBe('351');
+    expect(store.LMSGetLastError()).toBe('405');
     expect(store.LMSSetValue('cmi.core.score.raw', 'not-a-number')).toBe(
       'false',
     );
-    expect(store.LMSGetLastError()).toBe('351');
+    expect(store.LMSGetLastError()).toBe('405');
     expect(store.LMSSetValue('cmi.core.session_time', '10 minutes')).toBe(
       'false',
     );
-    expect(store.LMSGetLastError()).toBe('351');
+    expect(store.LMSGetLastError()).toBe('405');
   });
 
-  test('get of an uninitialized optional value returns 391', () => {
+  test('an optional value nobody set reads as blank, not as an error', () => {
     const store = new CmiStore();
     store.LMSInitialize('');
     expect(store.LMSGetValue('cmi.core.score.raw')).toBe('');
-    expect(store.LMSGetLastError()).toBe('391');
+    expect(store.LMSGetLastError()).toBe('0');
     expect(store.LMSGetValue('cmi.comments')).toBe('');
-    expect(store.LMSGetLastError()).toBe('391');
+    expect(store.LMSGetLastError()).toBe('0');
   });
 
   test('hydrates previously persisted values after initialize', () => {
