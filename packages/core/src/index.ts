@@ -3,6 +3,11 @@ export {
   type EventLogRecord,
 } from './audit/event-log.service';
 export {
+  assertAvailabilityReferences,
+  type ReferenceModule,
+  type ReferencingModule,
+} from './courses/availability-references';
+export {
   ModuleService,
   assertBlockAvailability,
   type PlaceBlockInput,

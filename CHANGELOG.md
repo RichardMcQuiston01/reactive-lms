@@ -92,6 +92,16 @@
 
 ### Changed
 
+- Availability rules that can never be met are now refused when they are saved
+  (400 `AVAILABILITY_INVALID`, naming each problem) instead of locking a module
+  forever. Refused: a condition on a module that is not in the section; a
+  condition on a block (a block never records completion or a score); a module
+  that waits on its own completion or score, including a minimum score with no
+  module named; a block that waits on a module inside it; and modules that
+  wait on each other, directly or through the blocks around them. Rules inside
+  an `any` group only have to name real modules. This applies to placing a
+  module, adding a block, and editing a module. Rules already stored are not
+  touched.
 - Donations now point at Ko-fi instead of PayPal: the README badge, the
   `package.json` funding link and a new `.github/FUNDING.yml`. The PayPal QR
   image is removed.

@@ -34,6 +34,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-shared';
 import {
   rowLock,
+  assertAvailabilityReferences,
   assertBlockAvailability,
   assertCanParent,
   isBlockModule,
@@ -386,6 +387,20 @@ export class CatalogService {
         if (isBlockModule(row)) {
           assertBlockAvailability(rules);
         }
+        assertAvailabilityReferences(
+          rules,
+          {
+            id: row.id,
+            isBlock: isBlockModule(row),
+            parentModuleId:
+              input.parentModuleId !== undefined
+                ? input.parentModuleId
+                : (row.parentModuleId ?? null),
+          },
+          await manager.find(CourseModule, {
+            where: { courseSectionId: row.courseSectionId },
+          }),
+        );
         row.availabilityJson = rules;
       }
       if (input.parentModuleId !== undefined) {
