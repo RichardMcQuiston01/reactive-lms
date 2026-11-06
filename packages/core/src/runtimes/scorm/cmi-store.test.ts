@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CmiStore, mapCmiToProgress } from './cmi-store';
+import { CmiStore, applyMasteryScore, mapCmiToProgress } from './cmi-store';
 
 describe('CmiStore', () => {
   test('LMSInitialize accepts an empty string and enables get/set', () => {
@@ -347,5 +347,127 @@ describe('mapCmiToProgress: scaled score', () => {
         'cmi.core.score.max': '5',
       }),
     ).toBeUndefined();
+  });
+});
+
+describe('CmiStore: cmi.student_data', () => {
+  const seeded = (): CmiStore => {
+    const store = new CmiStore({
+      masteryScore: '80',
+      maxTimeAllowed: '00:30:00',
+      timeLimitAction: 'continue,no message',
+    });
+    store.LMSInitialize('');
+    return store;
+  };
+
+  test('the SCO can read what the manifest set', () => {
+    const store = seeded();
+
+    expect(store.LMSGetValue('cmi.student_data.mastery_score')).toBe('80');
+    expect(store.LMSGetValue('cmi.student_data.max_time_allowed')).toBe(
+      '00:30:00',
+    );
+    expect(store.LMSGetValue('cmi.student_data.time_limit_action')).toBe(
+      'continue,no message',
+    );
+    expect(store.LMSGetLastError()).toBe('0');
+  });
+
+  test('it lists its children', () => {
+    expect(seeded().LMSGetValue('cmi.student_data._children')).toBe(
+      'mastery_score,max_time_allowed,time_limit_action',
+    );
+  });
+
+  test('an element the manifest did not set reads as empty, not an error', () => {
+    const store = new CmiStore();
+    store.LMSInitialize('');
+
+    expect(store.LMSGetValue('cmi.student_data.mastery_score')).toBe('');
+    expect(store.LMSGetLastError()).toBe('0');
+  });
+
+  test('is read only', () => {
+    const store = seeded();
+
+    expect(store.LMSSetValue('cmi.student_data.mastery_score', '10')).toBe(
+      'false',
+    );
+    expect(store.LMSGetLastError()).toBe('403');
+    expect(store.LMSGetValue('cmi.student_data.mastery_score')).toBe('80');
+  });
+});
+
+describe('applyMasteryScore', () => {
+  const values = (extra: Record<string, string>): Record<string, string> => ({
+    'cmi.core.lesson_status': 'completed',
+    'cmi.core.lesson_mode': 'normal',
+    ...extra,
+  });
+
+  test('passes at the mastery score and above, fails below', () => {
+    const at = applyMasteryScore(
+      values({
+        'cmi.student_data.mastery_score': '70',
+        'cmi.core.score.raw': '70',
+      }),
+    );
+    const above = applyMasteryScore(
+      values({
+        'cmi.student_data.mastery_score': '70',
+        'cmi.core.score.raw': '100',
+      }),
+    );
+    const below = applyMasteryScore(
+      values({
+        'cmi.student_data.mastery_score': '70',
+        'cmi.core.score.raw': '69.99',
+      }),
+    );
+
+    expect(at['cmi.core.lesson_status']).toBe('passed');
+    expect(above['cmi.core.lesson_status']).toBe('passed');
+    expect(below['cmi.core.lesson_status']).toBe('failed');
+  });
+
+  test('a mastery score of 0 passes any score', () => {
+    expect(
+      applyMasteryScore(
+        values({
+          'cmi.student_data.mastery_score': '0',
+          'cmi.core.score.raw': '0',
+        }),
+      )['cmi.core.lesson_status'],
+    ).toBe('passed');
+  });
+
+  test('leaves the values alone without a mastery score, a raw score, or outside credit mode', () => {
+    const noMastery = values({ 'cmi.core.score.raw': '5' });
+    const noRaw = values({ 'cmi.student_data.mastery_score': '70' });
+    const blankMastery = values({
+      'cmi.student_data.mastery_score': '',
+      'cmi.core.score.raw': '5',
+    });
+    const browse = values({
+      'cmi.student_data.mastery_score': '70',
+      'cmi.core.score.raw': '5',
+      'cmi.core.lesson_mode': 'browse',
+    });
+
+    for (const input of [noMastery, noRaw, blankMastery, browse]) {
+      expect(applyMasteryScore(input)).toBe(input);
+    }
+  });
+
+  test('does not change the values it was given', () => {
+    const input = values({
+      'cmi.student_data.mastery_score': '70',
+      'cmi.core.score.raw': '10',
+    });
+
+    applyMasteryScore(input);
+
+    expect(input['cmi.core.lesson_status']).toBe('completed');
   });
 });

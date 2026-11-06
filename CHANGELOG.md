@@ -98,7 +98,14 @@
   bookmark, leave, relaunch with `entry=resume`, complete with a score, and
   launch again with the bookmark intact.
 - The manifest parser now keeps `masteryscore`, `maxtimeallowed`, and
-  `timelimitaction` on each item. Nothing acts on them yet.
+  `timelimitaction` on each item, and the SCO can read them as
+  `cmi.student_data.mastery_score`, `max_time_allowed`, and
+  `time_limit_action` (read-only; empty when the manifest sets none).
+- Mastery score: when a SCO finishes with a raw score and the manifest set a
+  `masteryscore`, the LMS now sets `cmi.core.lesson_status` to `passed` (score
+  at or above it) or `failed`, whatever the SCO wrote, as SCORM 1.2 requires.
+  It does not apply in browse mode, without a raw score, or on a commit
+  before the SCO finishes. The registration status follows.
 - An availability-rule editor on the module-tree screen. A **Rules** button on
   each module or block opens a form to add, change, and remove conditions
   (another module completed; another module's score at least a percentage; a

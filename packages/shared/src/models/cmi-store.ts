@@ -17,6 +17,12 @@ export interface CmiStoreSeed {
   lessonMode?: string;
   /** `cmi.launch_data` from the manifest (`datafromlms`). */
   launchData?: string;
+  /** `cmi.student_data.mastery_score` from the manifest (`masteryscore`). */
+  masteryScore?: string;
+  /** `cmi.student_data.max_time_allowed` from the manifest (`maxtimeallowed`). */
+  maxTimeAllowed?: string;
+  /** `cmi.student_data.time_limit_action` from the manifest (`timelimitaction`). */
+  timeLimitAction?: string;
   /** Previously persisted CMI values (hydrate). */
   values?: CmiValues;
 }
@@ -35,6 +41,8 @@ interface ElementDef {
 const CORE_CHILDREN =
   'student_id,student_name,lesson_location,credit,lesson_status,entry,score,total_time,lesson_mode,exit,session_time';
 const SCORE_CHILDREN = 'raw,min,max';
+const STUDENT_DATA_CHILDREN =
+  'mastery_score,max_time_allowed,time_limit_action';
 const OBJECTIVE_CHILDREN = 'id,score,status';
 
 const LESSON_STATUSES = new Set([
@@ -111,6 +119,14 @@ const ELEMENTS: Record<string, ElementDef> = {
     validate: isTimespan,
   },
   'cmi.suspend_data': { access: 'rw', defaultValue: '' },
+  'cmi.student_data': { access: 'keyword' },
+  'cmi.student_data._children': {
+    access: 'keyword',
+    defaultValue: STUDENT_DATA_CHILDREN,
+  },
+  'cmi.student_data.mastery_score': { access: 'ro', defaultValue: '' },
+  'cmi.student_data.max_time_allowed': { access: 'ro', defaultValue: '' },
+  'cmi.student_data.time_limit_action': { access: 'ro', defaultValue: '' },
   'cmi.launch_data': { access: 'ro', defaultValue: '' },
   'cmi.comments': { access: 'rw', optional: true },
   'cmi.objectives': { access: 'keyword' },
@@ -185,6 +201,15 @@ export class CmiStore {
     }
     if (seed.launchData !== undefined) {
       this.data.set('cmi.launch_data', seed.launchData);
+    }
+    if (seed.masteryScore !== undefined) {
+      this.data.set('cmi.student_data.mastery_score', seed.masteryScore);
+    }
+    if (seed.maxTimeAllowed !== undefined) {
+      this.data.set('cmi.student_data.max_time_allowed', seed.maxTimeAllowed);
+    }
+    if (seed.timeLimitAction !== undefined) {
+      this.data.set('cmi.student_data.time_limit_action', seed.timeLimitAction);
     }
   }
 
@@ -541,6 +566,33 @@ function isDecimal(value: string): boolean {
 
 function isTimespan(value: string): boolean {
   return TIMESPAN_RE.test(value);
+}
+
+/**
+ * Applies the manifest's mastery score when a SCO finishes. SCORM 1.2 has the
+ * LMS, not the SCO, decide pass or fail once a mastery score is set: if the
+ * SCO reported a raw score, `cmi.core.lesson_status` becomes `passed` when the
+ * score reaches the mastery score and `failed` when it does not, whatever the
+ * SCO wrote (typically `completed`). Nothing changes without a mastery score,
+ * without a raw score, or in browse mode, which is not for credit.
+ *
+ * @param values - CMI snapshot at the end of the session
+ * @returns The snapshot, with `cmi.core.lesson_status` replaced when it applies
+ */
+export function applyMasteryScore(values: CmiValues): CmiValues {
+  const mastery = parseNumber(values['cmi.student_data.mastery_score']);
+  const raw = parseNumber(values['cmi.core.score.raw']);
+  if (
+    mastery === undefined ||
+    raw === undefined ||
+    values['cmi.core.lesson_mode'] === 'browse'
+  ) {
+    return values;
+  }
+  return {
+    ...values,
+    'cmi.core.lesson_status': raw >= mastery ? 'passed' : 'failed',
+  };
 }
 
 function mapLessonStatus(
