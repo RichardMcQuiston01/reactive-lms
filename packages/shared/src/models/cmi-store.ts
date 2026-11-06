@@ -571,6 +571,11 @@ function parseNumber(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Scales a raw score to 0..1. SCORM 1.2 defines `cmi.core.score.raw` as a
+ * number from 0 to 100, so a SCO that gives no `min` or `max` is on that
+ * scale: a raw score of 85 with no range is 0.85.
+ */
 function scaleScore(
   raw: number | undefined,
   min: number | undefined,
@@ -579,13 +584,12 @@ function scaleScore(
   if (typeof raw !== 'number') {
     return undefined;
   }
-  if (typeof min === 'number' && typeof max === 'number' && max !== min) {
-    return (raw - min) / (max - min);
+  const low = typeof min === 'number' ? min : 0;
+  const high = typeof max === 'number' ? max : 100;
+  if (high === low) {
+    return undefined;
   }
-  if (typeof max === 'number' && max !== 0) {
-    return raw / max;
-  }
-  return undefined;
+  return (raw - low) / (high - low);
 }
 
 function emptyToUndefined(value: string | undefined): string | undefined {

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="XMLBASE-COURSE" version="1.0"
+    xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+    xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="XMLBASE-ORG">
+    <organization identifier="XMLBASE-ORG">
+      <title>Course with xml:base</title>
+      <item identifier="ITEM-STORY" identifierref="RES-STORY">
+        <title>Story</title>
+      </item>
+      <item identifier="ITEM-OTHER" identifierref="RES-OTHER">
+        <title>Other</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources xml:base="content/">
+    <resource identifier="RES-STORY" type="webcontent" adlcp:scormtype="sco"
+        xml:base="v2/" href="story.html">
+      <file href="story.html"/>
+    </resource>
+    <resource identifier="RES-OTHER" type="webcontent" adlcp:scormtype="sco"
+        href="other.html">
+      <file href="other.html"/>
+    </resource>
+  </resources>
+</manifest>

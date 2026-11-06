@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Welcome</title>
+  </head>
+  <body>
+    <h1>Welcome</h1>
+    <p id="status">starting</p>
+    <p id="outcome"></p>
+    <script>
+      (function () {
+        // Finds the LMS API the way SCORM 1.2 content is meant to: walk up the
+        // frames, then try the opener.
+        function findApi(win) {
+          for (var depth = 0; depth < 10 && win; depth++) {
+            if (win.API) return win.API;
+            if (win.parent === win) break;
+            win = win.parent;
+          }
+          return null;
+        }
+        var api = findApi(window) || (window.opener ? findApi(window.opener) : null);
+        var outEl = document.getElementById('outcome');
+        var statusEl = document.getElementById('status');
+        if (!api) {
+          statusEl.textContent = 'no-api';
+        } else {
+          var calls = [];
+          function call(name, arg) {
+            var result = api[name](arg === undefined ? '' : arg);
+            calls.push(name + ' -> ' + result);
+            return result;
+          }
+          function set(element, value) {
+            var result = api.LMSSetValue(element, value);
+            calls.push('LMSSetValue(' + element + ') -> ' + result);
+            return result;
+          }
+          call('LMSInitialize');
+          var learner = api.LMSGetValue('cmi.core.student_name');
+          set('cmi.core.lesson_location', 'start');
+          set('cmi.core.score.min', '0');
+          set('cmi.core.score.max', '100');
+          set('cmi.core.score.raw', '90');
+          set('cmi.core.lesson_status', 'passed');
+          set('cmi.core.session_time', '00:01:30');
+          call('LMSCommit');
+          call('LMSFinish');
+          statusEl.textContent = 'finished';
+          outEl.textContent = 'learner=' + learner + ' error=' + api.LMSGetLastError();
+          document.body.setAttribute('data-calls', calls.join('; '));
+        }
+      })();
+    </script>
+  </body>
+</html>

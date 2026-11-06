@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="BOOKMARK-COURSE" version="1.0"
+    xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+    xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="BOOKMARK-ORG">
+    <organization identifier="BOOKMARK-ORG">
+      <title>Bookmark and Resume</title>
+      <item identifier="ITEM-LONG" identifierref="RES-LONG">
+        <title>A lesson you leave and come back to</title>
+        <adlcp:masteryscore>70</adlcp:masteryscore>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES-LONG" type="webcontent" adlcp:scormtype="sco"
+        href="index.html">
+      <file href="index.html"/>
+    </resource>
+  </resources>
+</manifest>

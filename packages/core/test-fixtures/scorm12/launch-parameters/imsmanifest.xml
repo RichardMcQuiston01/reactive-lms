@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="PARAMS-COURSE" version="1.0"
+    xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+    xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="PARAMS-ORG">
+    <organization identifier="PARAMS-ORG">
+      <title>Course with launch parameters</title>
+      <item identifier="ITEM-PLAIN" identifierref="RES-PLAIN"
+          parameters="?lang=fr&amp;mode=review">
+        <title>Parameters only on the item</title>
+      </item>
+      <item identifier="ITEM-BOTH" identifierref="RES-QUERY" parameters="&amp;step=2">
+        <title>A query on the resource and parameters on the item</title>
+      </item>
+      <item identifier="ITEM-NONE" identifierref="RES-QUERY">
+        <title>A query on the resource only</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES-PLAIN" type="webcontent" adlcp:scormtype="sco"
+        href="player.html">
+      <file href="player.html"/>
+    </resource>
+    <resource identifier="RES-QUERY" type="webcontent" adlcp:scormtype="sco"
+        href="player.html?version=1">
+      <file href="player.html"/>
+    </resource>
+  </resources>
+</manifest>

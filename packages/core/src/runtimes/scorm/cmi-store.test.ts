@@ -303,3 +303,49 @@ describe('mapCmiToProgress', () => {
     });
   });
 });
+
+describe('mapCmiToProgress: scaled score', () => {
+  const ids = {
+    registrationId: 'r',
+    courseModuleId: 'm',
+    activityNodeId: 'n',
+  };
+  const scaled = (values: Record<string, string>): number | undefined =>
+    mapCmiToProgress(values, ids).scoreScaled;
+
+  test('a raw score with no range is on the 0 to 100 scale SCORM 1.2 defines', () => {
+    expect(scaled({ 'cmi.core.score.raw': '85' })).toBe(0.85);
+    expect(scaled({ 'cmi.core.score.raw': '0' })).toBe(0);
+    expect(scaled({ 'cmi.core.score.raw': '100' })).toBe(1);
+  });
+
+  test('a given range is used', () => {
+    expect(
+      scaled({
+        'cmi.core.score.raw': '30',
+        'cmi.core.score.min': '10',
+        'cmi.core.score.max': '50',
+      }),
+    ).toBe(0.5);
+    expect(
+      scaled({ 'cmi.core.score.raw': '15', 'cmi.core.score.max': '20' }),
+    ).toBe(0.75);
+  });
+
+  test('a minimum alone is measured against the default maximum of 100', () => {
+    expect(
+      scaled({ 'cmi.core.score.raw': '55', 'cmi.core.score.min': '10' }),
+    ).toBe(0.5);
+  });
+
+  test('no score, or an empty range, gives no scaled score', () => {
+    expect(scaled({})).toBeUndefined();
+    expect(
+      scaled({
+        'cmi.core.score.raw': '5',
+        'cmi.core.score.min': '5',
+        'cmi.core.score.max': '5',
+      }),
+    ).toBeUndefined();
+  });
+});
