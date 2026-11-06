@@ -34,7 +34,6 @@ type ElementAccess = 'ro' | 'rw' | 'wo' | 'keyword';
 interface ElementDef {
   access: ElementAccess;
   defaultValue?: string;
-  optional?: boolean;
   validate?: (value: string) => boolean;
 }
 
@@ -57,17 +56,21 @@ const EXIT_VALUES = new Set(['time-out', 'suspend', 'logout', '']);
 const TIMESPAN_RE = /^\d{2,4}:[0-5]\d:[0-5]\d(?:\.\d{1,2})?$/;
 const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
 
+/**
+ * SCORM 1.2 run-time error codes and their strings (RTE 3.4.1).
+ */
 const ERROR_STRINGS: Record<string, string> = {
-  '0': 'No Error',
-  '101': 'General Exception',
+  '0': 'No error',
+  '101': 'General exception',
   '201': 'Invalid argument error',
+  '202': 'Element cannot have children',
+  '203': 'Element not an array - cannot have count',
   '301': 'Not initialized',
-  '351': 'General set failure',
-  '391': 'No data stored',
   '401': 'Not implemented error',
   '402': 'Invalid set value, element is a keyword',
   '403': 'Element is read only',
   '404': 'Element is write only',
+  '405': 'Incorrect Data Type',
 };
 
 const ELEMENTS: Record<string, ElementDef> = {
@@ -78,7 +81,11 @@ const ELEMENTS: Record<string, ElementDef> = {
   },
   'cmi.core.student_id': { access: 'ro', defaultValue: '' },
   'cmi.core.student_name': { access: 'ro', defaultValue: '' },
-  'cmi.core.lesson_location': { access: 'rw', defaultValue: '' },
+  'cmi.core.lesson_location': {
+    access: 'rw',
+    defaultValue: '',
+    validate: (value) => value.length <= 255,
+  },
   'cmi.core.credit': { access: 'ro', defaultValue: 'credit' },
   'cmi.core.lesson_status': {
     access: 'rw',
@@ -93,18 +100,18 @@ const ELEMENTS: Record<string, ElementDef> = {
   },
   'cmi.core.score.raw': {
     access: 'rw',
-    optional: true,
-    validate: isDecimal,
+    defaultValue: '',
+    validate: isScore,
   },
   'cmi.core.score.min': {
     access: 'rw',
-    optional: true,
-    validate: isDecimal,
+    defaultValue: '',
+    validate: isScore,
   },
   'cmi.core.score.max': {
     access: 'rw',
-    optional: true,
-    validate: isDecimal,
+    defaultValue: '',
+    validate: isScore,
   },
   'cmi.core.total_time': { access: 'ro', defaultValue: '0000:00:00.00' },
   'cmi.core.lesson_mode': { access: 'ro', defaultValue: 'normal' },
@@ -115,10 +122,13 @@ const ELEMENTS: Record<string, ElementDef> = {
   },
   'cmi.core.session_time': {
     access: 'wo',
-    optional: true,
     validate: isTimespan,
   },
-  'cmi.suspend_data': { access: 'rw', defaultValue: '' },
+  'cmi.suspend_data': {
+    access: 'rw',
+    defaultValue: '',
+    validate: (value) => value.length <= 4096,
+  },
   'cmi.student_data': { access: 'keyword' },
   'cmi.student_data._children': {
     access: 'keyword',
@@ -128,13 +138,17 @@ const ELEMENTS: Record<string, ElementDef> = {
   'cmi.student_data.max_time_allowed': { access: 'ro', defaultValue: '' },
   'cmi.student_data.time_limit_action': { access: 'ro', defaultValue: '' },
   'cmi.launch_data': { access: 'ro', defaultValue: '' },
-  'cmi.comments': { access: 'rw', optional: true },
+  'cmi.comments': {
+    access: 'rw',
+    defaultValue: '',
+    validate: (value) => value.length <= 4096,
+  },
   'cmi.objectives': { access: 'keyword' },
   'cmi.objectives._children': {
     access: 'keyword',
     defaultValue: OBJECTIVE_CHILDREN,
   },
-  'cmi.objectives._count': { access: 'ro', defaultValue: '0' },
+  'cmi.objectives._count': { access: 'keyword' },
 };
 
 /**
@@ -145,7 +159,6 @@ export class CmiStore {
   private state: SessionState = 'not_initialized';
   private lastError = '0';
   private readonly data = new Map<string, string>();
-  private readonly explicit = new Set<string>();
 
   /**
    * @param seed - LMS-provided student fields and optional hydrate map
@@ -179,7 +192,6 @@ export class CmiStore {
         continue;
       }
       this.data.set(key, text);
-      this.explicit.add(key);
     }
   }
 
@@ -266,11 +278,8 @@ export class CmiStore {
     if (!isEmptyParam(param)) {
       return this.fail('201');
     }
-    if (this.state === 'not_initialized') {
+    if (this.state !== 'running') {
       return this.fail('301');
-    }
-    if (this.state === 'finished') {
-      return this.fail('101');
     }
     this.accumulateSessionTime();
     this.state = 'finished';
@@ -297,7 +306,7 @@ export class CmiStore {
     }
     const def = resolveElement(element);
     if (!def) {
-      this.fail('401');
+      this.fail(missingElementError(element));
       return '';
     }
     if (def.access === 'wo') {
@@ -310,10 +319,6 @@ export class CmiStore {
         return def.defaultValue;
       }
       this.fail('401');
-      return '';
-    }
-    if (def.optional && !this.explicit.has(element)) {
-      this.fail('391');
       return '';
     }
     this.lastError = '0';
@@ -335,7 +340,7 @@ export class CmiStore {
     }
     const text = coerceCmiValue(value);
     if (text === undefined) {
-      return this.fail('351');
+      return this.fail('201');
     }
     const def = resolveElement(element);
     if (!def) {
@@ -348,10 +353,9 @@ export class CmiStore {
       return this.fail('403');
     }
     if (def.validate && !def.validate(text)) {
-      return this.fail('351');
+      return this.fail('405');
     }
     this.data.set(element, text);
-    this.explicit.add(element);
     return this.ok();
   }
 
@@ -383,7 +387,7 @@ export class CmiStore {
    * @param errorCode - SCORM 1.2 error code
    */
   LMSGetErrorString(errorCode: string): string {
-    return ERROR_STRINGS[errorCode] ?? 'Unknown error';
+    return ERROR_STRINGS[errorCode] ?? '';
   }
 
   /**
@@ -414,7 +418,6 @@ export class CmiStore {
     }
     const total = this.data.get('cmi.core.total_time') ?? '0000:00:00.00';
     this.data.set('cmi.core.total_time', addCmiTimespans(total, session));
-    this.explicit.add('cmi.core.total_time');
   }
 
   private ok(): 'true' {
@@ -527,7 +530,7 @@ function resolveElement(element: string): ElementDef | undefined {
     return { access: 'keyword', defaultValue: SCORE_CHILDREN };
   }
   if (field === 'id') {
-    return { access: 'rw' };
+    return { access: 'rw', defaultValue: '', validate: (v) => v.length <= 255 };
   }
   if (field === 'status') {
     return {
@@ -535,7 +538,7 @@ function resolveElement(element: string): ElementDef | undefined {
       validate: (value) => LESSON_STATUSES.has(value),
     };
   }
-  return { access: 'rw', optional: true, validate: isDecimal };
+  return { access: 'rw', defaultValue: '', validate: isScore };
 }
 
 function isEmptyParam(param: unknown): boolean {
@@ -562,6 +565,39 @@ export function coerceCmiValue(value: unknown): string | undefined {
 
 function isDecimal(value: string): boolean {
   return DECIMAL_RE.test(value);
+}
+
+/** A score is a decimal from 0 to 100, or blank (CMIDecimal or CMIBlank). */
+function isScore(value: string): boolean {
+  if (value === '') {
+    return true;
+  }
+  return isDecimal(value) && Number(value) >= 0 && Number(value) <= 100;
+}
+
+/**
+ * The error for an element name that is not in the data model: `_children`
+ * on an element that has none is 202, `_count` on one that is not an array
+ * is 203, and anything else is not implemented (401).
+ */
+function missingElementError(element: string): string {
+  if (
+    element.endsWith('._children') &&
+    resolveElement(stripSuffix(element, '._children'))
+  ) {
+    return '202';
+  }
+  if (
+    element.endsWith('._count') &&
+    resolveElement(stripSuffix(element, '._count'))
+  ) {
+    return '203';
+  }
+  return '401';
+}
+
+function stripSuffix(value: string, suffix: string): string {
+  return value.slice(0, value.length - suffix.length);
 }
 
 function isTimespan(value: string): boolean {

@@ -86,9 +86,24 @@
   so the Progress screen's score and time columns were always empty. The
   section score is the mean of each module's best scaled score (modules with
   no score are left out), and the time is the sum of the modules' time.
+- The SCORM 1.2 API follows the run-time specification where it did not:
+  - an invalid value, range, or vocabulary answers 405 (it answered 351, and
+    an unset optional value answered 391, neither of which is a SCORM 1.2
+    code); an unset score now reads as blank with no error;
+  - scores are limited to 0 to 100, `lesson_location` to 255 characters, and
+    `suspend_data` to 4096;
+  - `_children` on an element with none answers 202, `_count` on a non-array
+    answers 203, and writing `cmi.objectives._count` answers 402;
+  - a second `LMSFinish` answers 301, and `LMSGetErrorString` of an unknown
+    code is an empty string, with the 202, 203, and 405 strings added.
 
 ### Added
 
+- An automated SCORM 1.2 run-time conformance suite
+  (`scorm12-rte-conformance.test.ts`) written from the specification, and
+  `docs/SCORM_1_2_CONFORMANCE.md` listing what it covers, what the LMS does not
+  implement, and how to run the official ADL Test Suite. The official suite
+  has not been run, so SCORM 1.2 is not claimed as certified.
 - SCORM 1.2 fixture packages (`packages/core/test-fixtures/scorm12`): a single
   SCO; a course with two organizations, a chapter, an asset, shared files,
   entities, comments, CDATA, and unicode; a SCO that bookmarks and resumes;
