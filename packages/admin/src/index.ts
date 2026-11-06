@@ -48,3 +48,12 @@ export {
 } from './modules/roster';
 export { EnrolmentsScreenComponent } from './screens/enrolments-screen.component';
 export { ProgressScreenComponent } from './screens/progress-screen.component';
+export {
+  buildAvailability,
+  conditionTargets,
+  draftFromAvailability,
+  summarizeConditions,
+  type ConditionDraft,
+  type RulesDraft,
+} from './modules/availability-editor';
+export { AvailabilityEditorComponent } from './screens/availability-editor.component';

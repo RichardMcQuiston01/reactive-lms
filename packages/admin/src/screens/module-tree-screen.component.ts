@@ -19,6 +19,7 @@ import {
   mergePage,
 } from '../modules/paging';
 import { ModuleAdminService } from '../modules/module-admin.service';
+import { AvailabilityEditorComponent } from './availability-editor.component';
 import {
   buildModuleTree,
   describeAvailability,
@@ -40,6 +41,7 @@ import {
 @Component({
   selector: 'rlms-admin-module-tree',
   standalone: true,
+  imports: [AvailabilityEditorComponent],
   styles: [
     `
       ul {
@@ -65,6 +67,9 @@ import {
       }
       .error {
         color: var(--rlms-admin-danger-color, #b00020);
+      }
+      .editor {
+        flex-basis: 100%;
       }
       .actions {
         margin-left: auto;
@@ -159,6 +164,14 @@ import {
                 <button
                   type="button"
                   [disabled]="busy()"
+                  [attr.aria-label]="'Edit rules for ' + row.module.title"
+                  (click)="rulesId.set(row.module.id)"
+                >
+                  Rules
+                </button>
+                <button
+                  type="button"
+                  [disabled]="busy()"
                   (click)="editingId.set(row.module.id)"
                 >
                   Rename
@@ -171,6 +184,16 @@ import {
                   Remove
                 </button>
               </span>
+            }
+            @if (rulesId() === row.module.id) {
+              <div class="editor">
+                <rlms-admin-availability-editor
+                  [module]="row.module"
+                  [modules]="modules()"
+                  (saved)="rulesSaved()"
+                  (cancelled)="rulesId.set(null)"
+                />
+              </div>
             }
           </li>
         }
@@ -248,6 +271,8 @@ export class ModuleTreeScreenComponent implements OnInit {
   readonly busy = signal<boolean>(false);
   readonly error = signal<string>('');
   readonly editingId = signal<string | null>(null);
+  /** Module whose rules are open in the editor. */
+  readonly rulesId = signal<string | null>(null);
   private readonly lists = new LatestOnly();
 
   readonly rows = computed<ModuleTreeNode[]>(() =>
@@ -263,6 +288,12 @@ export class ModuleTreeScreenComponent implements OnInit {
       this.sectionId.set(params.get('sectionId') ?? '');
       void this.reload();
     });
+  }
+
+  /** Closes the rules editor after a save and shows the stored result. */
+  async rulesSaved(): Promise<void> {
+    this.rulesId.set(null);
+    await this.reload();
   }
 
   /** Text for the availability column. */
