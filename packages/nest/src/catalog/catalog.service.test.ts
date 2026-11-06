@@ -92,6 +92,84 @@ describe('CatalogService module tree', () => {
     });
   });
 
+  test('updateModule saves rules that name another module of the section', async () => {
+    const intro = moduleRow('intro');
+    const lesson = moduleRow('lesson');
+    const { service } = setup([intro, lesson]);
+
+    await service.updateModule('lesson', {
+      availability: {
+        version: 1,
+        all: [{ type: 'module_completed', moduleId: 'intro' }],
+      },
+    });
+
+    expect(lesson.availabilityJson).toEqual({
+      version: 1,
+      all: [{ type: 'module_completed', moduleId: 'intro' }],
+    });
+  });
+
+  test('updateModule refuses rules that can never be met and saves nothing', async () => {
+    const intro = moduleRow('intro');
+    const lesson = moduleRow('lesson');
+    const { service } = setup([intro, lesson]);
+
+    await expect(
+      service.updateModule('lesson', {
+        availability: {
+          version: 1,
+          all: [{ type: 'module_completed', moduleId: 'gone' }],
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'AVAILABILITY_INVALID' });
+    await expect(
+      service.updateModule('lesson', {
+        availability: {
+          version: 1,
+          all: [{ type: 'module_completed', moduleId: 'lesson' }],
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'AVAILABILITY_INVALID' });
+    expect(lesson.availabilityJson).toBeNull();
+  });
+
+  test('updateModule refuses rules that would make two modules wait on each other', async () => {
+    const intro = moduleRow('intro', {
+      availabilityJson: {
+        version: 1,
+        all: [{ type: 'module_completed', moduleId: 'lesson' }],
+      },
+    });
+    const lesson = moduleRow('lesson');
+    const { service } = setup([intro, lesson]);
+
+    const attempt = service.updateModule('lesson', {
+      availability: {
+        version: 1,
+        all: [{ type: 'module_completed', moduleId: 'intro' }],
+      },
+    });
+
+    await expect(attempt).rejects.toMatchObject({
+      code: 'AVAILABILITY_INVALID',
+    });
+  });
+
+  test('updateModule clears rules with null', async () => {
+    const lesson = moduleRow('lesson', {
+      availabilityJson: {
+        version: 1,
+        all: [{ type: 'date_window', from: '2026-01-01T00:00:00.000Z' }],
+      },
+    });
+    const { service } = setup([lesson]);
+
+    await service.updateModule('lesson', { availability: null });
+
+    expect(lesson.availabilityJson).toBeNull();
+  });
+
   test('deleteModule refuses a block that still has children', async () => {
     const block = moduleRow('block', { contentPackageId: null });
     const leaf = moduleRow('leaf', { parentModuleId: 'block' });

@@ -65,21 +65,24 @@ describe('ModuleService', () => {
       storageKey: 'k',
       manifestJson: {},
     });
+    const service = new ModuleService(ds as unknown as DataSource);
+    const first = await service.place(SECTION_ID, {
+      contentPackageId: PACKAGE_ID,
+    });
     const rules = {
       version: 1 as const,
       any: [
         { type: 'group_member' as const, groupId: 'g1' },
-        { type: 'module_completed' as const, moduleId: 'm1' },
+        { type: 'module_completed' as const, moduleId: first.moduleId },
       ],
     };
 
-    const service = new ModuleService(ds as unknown as DataSource);
     await service.place(SECTION_ID, {
       contentPackageId: PACKAGE_ID,
       availability: rules,
     });
 
-    expect(ds.rowsOf(CourseModule)[0]?.availabilityJson).toEqual(rules);
+    expect(ds.rowsOf(CourseModule)[1]?.availabilityJson).toEqual(rules);
   });
 
   test('place rejects invalid availability and stores nothing', async () => {
@@ -256,20 +259,58 @@ describe('ModuleService', () => {
       await expect(attempt).rejects.toThrow('must name a moduleId');
     });
 
+    test('place refuses a rule that names a module outside the section and stores nothing', async () => {
+      const { ds, service } = setup();
+
+      const attempt = service.place(SECTION_ID, {
+        contentPackageId: PACKAGE_ID,
+        availability: {
+          version: 1,
+          all: [{ type: 'module_completed', moduleId: 'gone' }],
+        },
+      });
+
+      await expect(attempt).rejects.toMatchObject({
+        code: 'AVAILABILITY_INVALID',
+      });
+      expect(ds.rowsOf(CourseModule)).toHaveLength(0);
+    });
+
+    test('placeBlock refuses a rule that names a block', async () => {
+      const { ds, service } = setup();
+      const chapter = await service.placeBlock(SECTION_ID, { title: 'Ch' });
+
+      const attempt = service.placeBlock(SECTION_ID, {
+        title: 'Gate',
+        availability: {
+          version: 1,
+          all: [{ type: 'module_completed', moduleId: chapter.moduleId }],
+        },
+      });
+
+      await expect(attempt).rejects.toMatchObject({
+        code: 'AVAILABILITY_INVALID',
+      });
+      expect(ds.rowsOf(CourseModule)).toHaveLength(1);
+    });
+
     test('a block accepts a min_score rule that names a module', async () => {
       const { ds, service } = setup();
+      const quiz = await service.place(SECTION_ID, {
+        contentPackageId: PACKAGE_ID,
+      });
 
       await service.placeBlock(SECTION_ID, {
         title: 'Gate',
         availability: {
           version: 1,
-          all: [{ type: 'min_score', moduleId: 'm1', score: 0.8 }],
+          all: [{ type: 'min_score', moduleId: quiz.moduleId, score: 0.8 }],
         },
       });
 
-      expect(ds.rowsOf(CourseModule)[0]?.availabilityJson).toEqual({
+      expect(ds.rowsOf(CourseModule)[1]?.availabilityJson).toEqual({
         version: 1,
-        all: [{ type: 'min_score', moduleId: 'm1', score: 0.8 }],
+        all: [{ type: 'min_score', moduleId: quiz.moduleId, score: 0.8 }],
       });
     });
 
