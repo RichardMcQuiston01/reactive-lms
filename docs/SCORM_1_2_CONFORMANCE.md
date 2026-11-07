@@ -50,7 +50,8 @@ browser against the standalone API and a database. See the fixture packages in
 cannot read it back (404). Each answer is stored as a row in
 `rlms_interaction_response`, tied to its attempt, and an administrator can read
 them with `GET /registrations/:id/interactions` (optionally `?moduleId=`).
-There is no admin screen for them yet.
+In the admin, the Progress screen links each person to an Answers screen that
+lists them by attempt.
 
 - A session that records any interactions replaces that attempt's earlier
   rows; a session that records none (a review, or finishing a resumed lesson)

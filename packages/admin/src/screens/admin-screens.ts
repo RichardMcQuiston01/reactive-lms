@@ -8,7 +8,8 @@ export type AdminScreenId =
   | 'enrolments'
   | 'section-enrolments'
   | 'progress'
-  | 'section-progress';
+  | 'section-progress'
+  | 'registration-answers';
 
 /**
  * Host replacements for built-in screens, keyed by {@link AdminScreenId}.

@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import type {
+  InteractionResponseDto,
   PersonSummaryDto,
   SectionRegistrationDto,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -29,6 +30,17 @@ export class RosterAdminService {
   ): Promise<SectionRegistrationDto[]> {
     return this.client.request<SectionRegistrationDto[]>(
       `/course-sections/${encodeURIComponent(sectionId)}/registrations${pageQuery(page)}`,
+    );
+  }
+
+  /**
+   * Lists the answers SCOs reported for a registration, oldest attempt first.
+   *
+   * @param registrationId - Registration id
+   */
+  listInteractions(registrationId: string): Promise<InteractionResponseDto[]> {
+    return this.client.request<InteractionResponseDto[]>(
+      `/registrations/${encodeURIComponent(registrationId)}/interactions`,
     );
   }
 
