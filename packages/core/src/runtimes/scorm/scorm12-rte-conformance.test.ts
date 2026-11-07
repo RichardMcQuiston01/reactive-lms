@@ -478,23 +478,196 @@ describe('SCORM 1.2 RTE: cmi.student_data (RTE 3.4.2)', () => {
   });
 });
 
+describe('SCORM 1.2 RTE: cmi.interactions (RTE 3.4.2)', () => {
+  const write = (api: CmiStore, element: string, value: string): string =>
+    api.LMSSetValue(element, value);
+
+  test('lists its children and starts empty', () => {
+    const api = running();
+
+    expect(api.LMSGetValue('cmi.interactions._children')).toBe(
+      'id,objectives,time,type,correct_responses,weighting,student_response,result,latency',
+    );
+    expect(api.LMSGetValue('cmi.interactions._count')).toBe('0');
+    expect(api.LMSGetLastError()).toBe('0');
+  });
+
+  test('_count grows with the highest interaction written', () => {
+    const api = running();
+
+    write(api, 'cmi.interactions.0.id', 'q1');
+    write(api, 'cmi.interactions.1.id', 'q2');
+
+    expect(api.LMSGetValue('cmi.interactions._count')).toBe('2');
+  });
+
+  test('every field is write only: reading it fails with 404', () => {
+    const api = running();
+    write(api, 'cmi.interactions.0.id', 'q1');
+
+    for (const field of [
+      'id',
+      'time',
+      'type',
+      'weighting',
+      'student_response',
+      'result',
+      'latency',
+      'objectives.0.id',
+      'correct_responses.0.pattern',
+    ]) {
+      expect(api.LMSGetValue(`cmi.interactions.0.${field}`)).toBe('');
+      expect(api.LMSGetLastError()).toBe('404');
+    }
+  });
+
+  test('a SCO can record a whole interaction', () => {
+    const api = running();
+
+    expect(write(api, 'cmi.interactions.0.id', 'Q1_capital')).toBe('true');
+    expect(write(api, 'cmi.interactions.0.objectives.0.id', 'geography')).toBe(
+      'true',
+    );
+    expect(write(api, 'cmi.interactions.0.time', '14:05:30')).toBe('true');
+    expect(write(api, 'cmi.interactions.0.type', 'choice')).toBe('true');
+    expect(
+      write(api, 'cmi.interactions.0.correct_responses.0.pattern', 'b'),
+    ).toBe('true');
+    expect(write(api, 'cmi.interactions.0.weighting', '2')).toBe('true');
+    expect(write(api, 'cmi.interactions.0.student_response', 'b')).toBe('true');
+    expect(write(api, 'cmi.interactions.0.result', 'correct')).toBe('true');
+    expect(write(api, 'cmi.interactions.0.latency', '0000:00:12.50')).toBe(
+      'true',
+    );
+    expect(api.LMSGetLastError()).toBe('0');
+  });
+
+  test('objectives and correct_responses keep their own counts per interaction', () => {
+    const api = running();
+    write(api, 'cmi.interactions.0.id', 'q1');
+    write(api, 'cmi.interactions.0.objectives.0.id', 'a');
+    write(api, 'cmi.interactions.0.objectives.1.id', 'b');
+    write(api, 'cmi.interactions.0.correct_responses.0.pattern', 'x');
+    write(api, 'cmi.interactions.1.id', 'q2');
+    write(api, 'cmi.interactions.1.objectives.0.id', 'c');
+
+    expect(api.LMSGetValue('cmi.interactions.0.objectives._count')).toBe('2');
+    expect(api.LMSGetValue('cmi.interactions.0.correct_responses._count')).toBe(
+      '1',
+    );
+    expect(api.LMSGetValue('cmi.interactions.1.objectives._count')).toBe('1');
+    expect(api.LMSGetValue('cmi.interactions.1.correct_responses._count')).toBe(
+      '0',
+    );
+  });
+
+  test('writing a _count is a keyword error (402)', () => {
+    const api = running();
+
+    for (const element of [
+      'cmi.interactions._count',
+      'cmi.interactions.0.objectives._count',
+      'cmi.interactions.0.correct_responses._count',
+      'cmi.interactions._children',
+    ]) {
+      expect(api.LMSSetValue(element, '1')).toBe('false');
+      expect(api.LMSGetLastError()).toBe('402');
+    }
+  });
+
+  test.each([
+    ['type', 'multiple-choice'],
+    ['type', 'Choice'],
+    ['time', '25:00:00'],
+    ['time', '12:60:00'],
+    ['time', '12:00'],
+    ['time', '12:00:00.123'],
+    ['weighting', 'heavy'],
+    ['result', 'right'],
+    ['result', 'Correct'],
+    ['latency', '12 seconds'],
+    ['latency', '00:00:61'],
+    ['id', 'x'.repeat(256)],
+    ['student_response', 'x'.repeat(256)],
+    ['objectives.0.id', 'x'.repeat(256)],
+    ['correct_responses.0.pattern', 'x'.repeat(256)],
+  ])('%s %p is a data type error', (field, value) => {
+    const api = running();
+
+    expect(api.LMSSetValue(`cmi.interactions.0.${field}`, value)).toBe('false');
+    expect(api.LMSGetLastError()).toBe('405');
+  });
+
+  test.each([
+    ['type', 'true-false'],
+    ['type', 'choice'],
+    ['type', 'fill-in'],
+    ['type', 'matching'],
+    ['type', 'performance'],
+    ['type', 'sequencing'],
+    ['type', 'likert'],
+    ['type', 'numeric'],
+    ['time', '00:00:00'],
+    ['time', '23:59:59.99'],
+    ['result', 'correct'],
+    ['result', 'wrong'],
+    ['result', 'unanticipated'],
+    ['result', 'neutral'],
+    ['result', '0.5'],
+    ['result', '-1'],
+    ['weighting', '1.5'],
+    ['latency', '0000:00:01.00'],
+    ['id', 'Question 1 (spaces are common in authored ids)'],
+    ['student_response', 'x'.repeat(255)],
+  ])('%s %p is accepted', (field, value) => {
+    const api = running();
+
+    expect(api.LMSSetValue(`cmi.interactions.0.${field}`, value)).toBe('true');
+  });
+
+  test('an index past the limit is an invalid argument, not stored', () => {
+    const api = running();
+
+    expect(api.LMSSetValue('cmi.interactions.10000.id', 'q')).toBe('false');
+    expect(api.LMSGetLastError()).toBe('201');
+    expect(api.LMSGetValue('cmi.interactions._count')).toBe('0');
+    expect(api.LMSSetValue('cmi.interactions.9999.id', 'q')).toBe('true');
+  });
+
+  test('an unknown field is not implemented (401)', () => {
+    const api = running();
+
+    expect(api.LMSSetValue('cmi.interactions.0.colour', 'red')).toBe('false');
+    expect(api.LMSGetLastError()).toBe('401');
+  });
+
+  test('interactions written in a session are part of its saved snapshot', () => {
+    const first = running();
+    write(first, 'cmi.interactions.0.id', 'q1');
+    write(first, 'cmi.interactions.0.result', 'wrong');
+    first.LMSFinish('');
+
+    const saved = first.snapshot();
+    expect(saved['cmi.interactions.0.id']).toBe('q1');
+    expect(saved['cmi.interactions.0.result']).toBe('wrong');
+  });
+});
+
 describe('SCORM 1.2 RTE: optional elements this LMS does not implement', () => {
   // The RTE makes these optional. An LMS that does not support one must answer
   // 401 (not implemented), which lets a SCO fall back instead of assuming the
   // data was stored.
-  test.each([
-    'cmi.interactions._count',
-    'cmi.interactions.0.id',
-    'cmi.student_preference.audio',
-    'cmi.comments_from_lms',
-  ])('%s answers 401', (element) => {
-    const api = running();
+  test.each(['cmi.student_preference.audio', 'cmi.comments_from_lms'])(
+    '%s answers 401',
+    (element) => {
+      const api = running();
 
-    expect(api.LMSGetValue(element)).toBe('');
-    expect(api.LMSGetLastError()).toBe('401');
-    expect(api.LMSSetValue(element, '1')).toBe('false');
-    expect(api.LMSGetLastError()).toBe('401');
-  });
+      expect(api.LMSGetValue(element)).toBe('');
+      expect(api.LMSGetLastError()).toBe('401');
+      expect(api.LMSSetValue(element, '1')).toBe('false');
+      expect(api.LMSGetLastError()).toBe('401');
+    },
+  );
 });
 
 describe('SCORM 1.2 RTE: a session across launches', () => {

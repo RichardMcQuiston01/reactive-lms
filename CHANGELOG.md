@@ -99,6 +99,15 @@
 
 ### Added
 
+- `cmi.interactions` for SCORM 1.2: quiz tools record each answer (id,
+  objectives, time, type, correct responses, weighting, student response,
+  result, latency) and the answers are stored with the attempt. Fields are
+  write only, as the specification says, and are checked for type, vocabulary,
+  and length. A session that records interactions replaces the earlier ones, a
+  session that records none keeps them, and the SCO is never shown a previous
+  session's. Array indexes are limited to 9999. Nothing shows the answers yet.
+  A three-question quiz fixture (`quiz-interactions`) was run in a browser
+  against the standalone API and Postgres.
 - An automated SCORM 1.2 run-time conformance suite
   (`scorm12-rte-conformance.test.ts`) written from the specification, and
   `docs/SCORM_1_2_CONFORMANCE.md` listing what it covers, what the LMS does not

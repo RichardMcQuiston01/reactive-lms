@@ -248,6 +248,17 @@ describe('SCORM 1.2 fixture packages', () => {
     });
   });
 
+  describe('quiz-interactions', () => {
+    test('imports as one SCO', async () => {
+      const { pkg, nodes } = await importFixture('quiz-interactions');
+
+      expect(pkg.title).toBe('Quiz that records its answers');
+      expect(pkg.entryHref).toBe('quiz.html');
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0]).toMatchObject({ metadata: { scormType: 'sco' } });
+    });
+  });
+
   describe('launch-parameters', () => {
     test('adds an item parameters string to the launch address', async () => {
       const { nodes } = await importFixture('launch-parameters');
