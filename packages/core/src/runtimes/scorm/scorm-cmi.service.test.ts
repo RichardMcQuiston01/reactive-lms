@@ -4,6 +4,7 @@ import {
   Attempt,
   CourseModule,
   CourseSection,
+  InteractionResponse,
   NormalizedProgress,
   Person,
   Registration,
@@ -430,6 +431,81 @@ describe('ScormCmiService', () => {
       });
 
       expect(storedCmi(ds)).toMatchObject(quiz);
+    });
+
+    describe('answer rows', () => {
+      const answers = (ds: ReturnType<typeof createMockDataSource>) =>
+        ds.rowsOf(InteractionResponse);
+
+      test('are written one per interaction, tied to the attempt', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+
+        await service(ds).putCmi(ATTEMPT_ID, {
+          values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+        });
+
+        expect(answers(ds)).toHaveLength(2);
+        expect(answers(ds)[0]).toMatchObject({
+          attemptId: ATTEMPT_ID,
+          registrationId: REG_ID,
+          courseModuleId: MODULE_ID,
+          activityNodeId: NODE_ID,
+          interactionIndex: 0,
+          interactionId: 'q1',
+          interactionType: 'choice',
+          studentResponse: 'b',
+          result: 'correct',
+        });
+        expect(answers(ds)[1]).toMatchObject({
+          interactionIndex: 1,
+          interactionId: 'q2',
+          result: 'wrong',
+        });
+      });
+
+      test('are replaced, not duplicated, when the attempt reports again', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+        const cmi = service(ds);
+        await cmi.putCmi(ATTEMPT_ID, { values: quiz });
+
+        await cmi.putCmi(ATTEMPT_ID, {
+          values: {
+            'cmi.interactions.0.id': 'retake-1',
+            'cmi.interactions.0.result': 'correct',
+          },
+        });
+
+        expect(answers(ds).map((row) => row.interactionId)).toEqual([
+          'retake-1',
+        ]);
+      });
+
+      test('are left alone by a save that reports none', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+        const cmi = service(ds);
+        await cmi.putCmi(ATTEMPT_ID, { values: quiz });
+
+        await cmi.putCmi(ATTEMPT_ID, {
+          values: { 'cmi.core.lesson_status': 'completed' },
+          finished: true,
+        });
+
+        expect(answers(ds)).toHaveLength(2);
+      });
+
+      test('are not written when the SCO reports no interactions at all', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+
+        await service(ds).putCmi(ATTEMPT_ID, {
+          values: { 'cmi.core.lesson_status': 'incomplete' },
+        });
+
+        expect(answers(ds)).toEqual([]);
+      });
     });
   });
 

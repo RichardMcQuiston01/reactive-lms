@@ -47,12 +47,15 @@ browser against the standalone API and a database. See the fixture packages in
 ## Interactions
 
 `cmi.interactions` is implemented. A SCO records what the learner did and
-cannot read it back (404). The answers are stored on the attempt's progress
-record, and are not yet shown anywhere.
+cannot read it back (404). Each answer is stored as a row in
+`rlms_interaction_response`, tied to its attempt, and an administrator can read
+them with `GET /registrations/:id/interactions` (optionally `?moduleId=`).
+There is no admin screen for them yet.
 
-- A session that records any interactions replaces the earlier ones; a session
-  that records none (a review, or finishing a resumed lesson) keeps them. The
-  history of earlier sessions is not kept.
+- A session that records any interactions replaces that attempt's earlier
+  rows; a session that records none (a review, or finishing a resumed lesson)
+  keeps them. Rows from other attempts are kept, so each launch's answers stay
+  reviewable.
 - Every session numbers its interactions from 0, so the SCO is never shown the
   previous session's.
 - Index limit: 9999. The specification sets none, and this keeps one SCO from

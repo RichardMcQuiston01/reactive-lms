@@ -91,4 +91,32 @@ describe('ProgressController', () => {
 
     expect(await ctl.list('reg-1', {})).toEqual(rows);
   });
+
+  test('GET interactions checks grade.view and passes the module filter', async () => {
+    const checks: string[] = [];
+    const asked: Array<[string, string | undefined]> = [];
+    const ctl = new ProgressController(
+      {} as ProgressSinkService,
+      {
+        listInteractions: async (id: string, moduleId?: string) => {
+          asked.push([id, moduleId]);
+          return [];
+        },
+      } as unknown as CatalogService,
+      {
+        assertRegistration: async (_req, action, registrationId) => {
+          checks.push(`${action}:${registrationId}`);
+        },
+      } as RegistrationAccess,
+    );
+
+    await ctl.listInteractions('reg-1', {}, 'mod-1');
+    await ctl.listInteractions('reg-1', {}, '');
+
+    expect(checks).toEqual(['grade.view:reg-1', 'grade.view:reg-1']);
+    expect(asked).toEqual([
+      ['reg-1', 'mod-1'],
+      ['reg-1', undefined],
+    ]);
+  });
 });

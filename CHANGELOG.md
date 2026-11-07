@@ -99,6 +99,13 @@
 
 ### Added
 
+- Interaction answers are kept for review. Each answer a SCO reports through
+  `cmi.interactions` is stored as its own row (`rlms_interaction_response`,
+  added by migration `0002`), tied to its attempt, with the id, type,
+  objectives, correct patterns, learner response, result, weighting, and
+  latency. `GET /registrations/:id/interactions` lists them, optionally for one
+  module, with the same `grade.view` check as progress.
+
 - `cmi.interactions` for SCORM 1.2: quiz tools record each answer (id,
   objectives, time, type, correct responses, weighting, student response,
   result, latency) and the answers are stored with the attempt. Fields are
