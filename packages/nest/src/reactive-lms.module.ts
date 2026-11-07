@@ -11,6 +11,7 @@ import {
 import {
   consoleErrorSink,
   EnrolmentService,
+  EventLogService,
   FilesystemBlobStorageAdapter,
   Html5Runtime,
   LaunchService,
@@ -287,12 +288,15 @@ function buildModule(input: {
     },
     {
       provide: LaunchService,
-      useFactory: (dataSource: DataSource) =>
-        new LaunchService(dataSource, [
-          new Html5Runtime(),
-          new Scorm12Runtime(),
-        ]),
-      inject: [RLMS_DATA_SOURCE],
+      useFactory: (dataSource: DataSource, sink: ProgressSinkService) =>
+        new LaunchService(
+          dataSource,
+          [new Html5Runtime(), new Scorm12Runtime()],
+          {},
+          new EventLogService(dataSource),
+          sink,
+        ),
+      inject: [RLMS_DATA_SOURCE, ProgressSinkService],
     },
     {
       provide: ProgressSinkService,

@@ -67,6 +67,15 @@ lists them by attempt.
 - `student_response` and `correct_responses.m.pattern` are limited to 255
   characters; their per-type syntax is not checked.
 
+## Assets
+
+A resource marked `adlcp:scormtype="asset"` is a page or file with no script
+that talks to the LMS, so it can never report that it was seen. Opening it is
+the only signal there is, so a normal launch marks its module completed (the
+success status and any score already recorded are kept) and closes the
+attempt. Browse and Review launches record nothing. A SCO is never treated
+this way: it completes through its own API calls.
+
 ## Not implemented
 
 These are optional in SCORM 1.2. An unsupported element answers 401, which
