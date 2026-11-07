@@ -99,6 +99,12 @@
 
 ### Added
 
+- An Answers screen in the admin package (`registration-answers`, overridable
+  like the others). Each row of the Progress screen links to it, and it lists
+  what that person's SCOs reported, grouped by attempt: question, type,
+  answer, correct answer, result, weight, and time to answer, with a count of
+  correct and wrong answers per attempt.
+
 - Interaction answers are kept for review. Each answer a SCO reports through
   `cmi.interactions` is stored as its own row (`rlms_interaction_response`,
   added by migration `0002`), tied to its attempt, with the id, type,
