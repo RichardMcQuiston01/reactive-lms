@@ -4,11 +4,15 @@ import {
   Attempt,
   CourseModule,
   CourseSection,
+  InteractionResponse,
   NormalizedProgress,
   Person,
   Registration,
 } from '@richardmcquiston01/reactive-lms-persistence';
-import { LmsError } from '@richardmcquiston01/reactive-lms-shared';
+import {
+  LmsError,
+  type CmiValues,
+} from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../../audit/event-log.service';
 import { ProgressSinkService } from '../../progress/progress-sink';
@@ -33,6 +37,7 @@ function service(ds: ReturnType<typeof createMockDataSource>): ScormCmiService {
 function seedAttempt(
   ds: ReturnType<typeof createMockDataSource>,
   extras?: Record<string, unknown>,
+  nodeMetadata: Record<string, unknown> = { launchData: 'hole=1' },
 ): void {
   ds.seed(Person, {
     id: PERSON_ID,
@@ -57,7 +62,7 @@ function seedAttempt(
     contentPackageId: '11111111-1111-4111-8111-111111111111',
     title: 'Playing',
     href: 'sco.html',
-    metadataJson: { launchData: 'hole=1' },
+    metadataJson: nodeMetadata,
   });
   ds.seed(Registration, {
     id: REG_ID,
@@ -166,6 +171,341 @@ describe('ScormCmiService', () => {
     expect(ds.rowsOf(Registration)[0]?.status).toBe('completed');
     expect(ds.rowsOf(Attempt)[0]).toMatchObject({
       termination: 'terminated',
+    });
+  });
+
+  test('entry is empty, not ab-initio, after a session that was not suspended', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds, {
+      cmi: {
+        'cmi.core.lesson_location': 'page-2',
+        'cmi.core.lesson_status': 'incomplete',
+      },
+    });
+
+    const { values } = await service(ds).getCmi(ATTEMPT_ID);
+
+    expect(values['cmi.core.entry']).toBe('');
+  });
+
+  test('a suspended session does not make every later session a resume', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds, {
+      cmi: {
+        'cmi.core.lesson_status': 'incomplete',
+        'cmi.core.exit': 'suspend',
+      },
+    });
+    const cmi = service(ds);
+
+    expect((await cmi.getCmi(ATTEMPT_ID)).values['cmi.core.entry']).toBe(
+      'resume',
+    );
+    // This session finishes normally and does not set an exit.
+    await cmi.putCmi(ATTEMPT_ID, {
+      values: { 'cmi.core.lesson_status': 'completed' },
+      finished: true,
+    });
+
+    const after = await cmi.getCmi(ATTEMPT_ID);
+    expect(after.values['cmi.core.entry']).toBe('');
+    expect(after.values['cmi.core.exit']).toBeUndefined();
+  });
+
+  test('a score with no range is read as a percentage', async () => {
+    const ds = createMockDataSource();
+    seedAttempt(ds);
+
+    await service(ds).putCmi(ATTEMPT_ID, {
+      values: {
+        'cmi.core.lesson_status': 'completed',
+        'cmi.core.score.raw': '85',
+      },
+    });
+
+    expect(ds.rowsOf(NormalizedProgress)[0]?.scoreScaled).toBe('0.85');
+  });
+
+  describe('mastery score', () => {
+    const withMastery = {
+      masteryScore: 80,
+      maxTimeAllowed: '00:30:00',
+      timeLimitAction: 'exit,message',
+    };
+    const finishWith = (
+      raw: string,
+      status = 'completed',
+      extra: Record<string, string> = {},
+    ) => ({
+      values: {
+        'cmi.core.score.raw': raw,
+        'cmi.core.lesson_status': status,
+        ...extra,
+      },
+      finished: true,
+    });
+
+    test('the SCO can read the mastery score and time limits the manifest set', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).getCmi(ATTEMPT_ID);
+
+      expect(values['cmi.student_data.mastery_score']).toBe('80');
+      expect(values['cmi.student_data.max_time_allowed']).toBe('00:30:00');
+      expect(values['cmi.student_data.time_limit_action']).toBe('exit,message');
+    });
+
+    test('a score at or above it passes, whatever status the SCO wrote', async () => {
+      for (const written of ['completed', 'incomplete', 'failed']) {
+        const ds = createMockDataSource();
+        seedAttempt(ds, undefined, withMastery);
+
+        const { values } = await service(ds).putCmi(
+          ATTEMPT_ID,
+          finishWith('80', written),
+        );
+
+        expect(values['cmi.core.lesson_status']).toBe('passed');
+        expect(ds.rowsOf(NormalizedProgress)[0]).toMatchObject({
+          completionStatus: 'completed',
+          successStatus: 'passed',
+        });
+        expect(ds.rowsOf(Registration)[0]?.status).toBe('passed');
+      }
+    });
+
+    test('a score below it fails, even when the SCO wrote passed', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('79.5', 'passed'),
+      );
+
+      expect(values['cmi.core.lesson_status']).toBe('failed');
+      expect(ds.rowsOf(NormalizedProgress)[0]?.successStatus).toBe('failed');
+      expect(ds.rowsOf(Registration)[0]?.status).toBe('failed');
+    });
+
+    test('the verdict is what the next launch reads', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, finishWith('90'));
+
+      const { values } = await cmi.getCmi(ATTEMPT_ID);
+
+      expect(values['cmi.core.lesson_status']).toBe('passed');
+    });
+
+    test('is applied when the SCO finishes, not on every commit', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(ATTEMPT_ID, {
+        values: {
+          'cmi.core.score.raw': '95',
+          'cmi.core.lesson_status': 'incomplete',
+        },
+      });
+
+      expect(values['cmi.core.lesson_status']).toBe('incomplete');
+    });
+
+    test('changes nothing without a raw score', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'completed' },
+        finished: true,
+      });
+
+      expect(values['cmi.core.lesson_status']).toBe('completed');
+    });
+
+    test('changes nothing when the manifest set no mastery score', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      const { values } = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('10', 'completed'),
+      );
+
+      expect(values['cmi.core.lesson_status']).toBe('completed');
+      expect(values['cmi.student_data.mastery_score']).toBe('');
+    });
+
+    test('a SCO cannot change it', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const { values } = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('50', 'completed', {
+          'cmi.student_data.mastery_score': '10',
+        }),
+      );
+
+      expect(values['cmi.student_data.mastery_score']).toBe('80');
+      expect(values['cmi.core.lesson_status']).toBe('failed');
+    });
+  });
+
+  describe('interactions', () => {
+    const quiz = {
+      'cmi.interactions.0.id': 'q1',
+      'cmi.interactions.0.type': 'choice',
+      'cmi.interactions.0.student_response': 'b',
+      'cmi.interactions.0.result': 'correct',
+      'cmi.interactions.1.id': 'q2',
+      'cmi.interactions.1.result': 'wrong',
+    };
+    const storedCmi = (ds: ReturnType<typeof createMockDataSource>) =>
+      (ds.rowsOf(NormalizedProgress)[0]?.extrasJson as { cmi: CmiValues }).cmi;
+
+    test('are saved with the attempt', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      await service(ds).putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      expect(storedCmi(ds)).toMatchObject(quiz);
+    });
+
+    test('are not read back to the SCO, which cannot read them anyway', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      const { values } = await cmi.getCmi(ATTEMPT_ID);
+
+      expect(
+        Object.keys(values).filter((key) =>
+          key.startsWith('cmi.interactions.'),
+        ),
+      ).toEqual([]);
+    });
+
+    test('a later session that records some replaces the earlier ones', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: {
+          'cmi.core.lesson_status': 'completed',
+          'cmi.interactions.0.id': 'retake-1',
+          'cmi.interactions.0.result': 'correct',
+        },
+      });
+
+      const stored = storedCmi(ds);
+      expect(stored['cmi.interactions.0.id']).toBe('retake-1');
+      expect(stored['cmi.interactions.1.id']).toBeUndefined();
+      expect(stored['cmi.interactions.0.student_response']).toBeUndefined();
+    });
+
+    test('a later session that records none keeps the earlier ones', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+      });
+
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: { 'cmi.core.lesson_status': 'completed' },
+        finished: true,
+      });
+
+      expect(storedCmi(ds)).toMatchObject(quiz);
+    });
+
+    describe('answer rows', () => {
+      const answers = (ds: ReturnType<typeof createMockDataSource>) =>
+        ds.rowsOf(InteractionResponse);
+
+      test('are written one per interaction, tied to the attempt', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+
+        await service(ds).putCmi(ATTEMPT_ID, {
+          values: { 'cmi.core.lesson_status': 'incomplete', ...quiz },
+        });
+
+        expect(answers(ds)).toHaveLength(2);
+        expect(answers(ds)[0]).toMatchObject({
+          attemptId: ATTEMPT_ID,
+          registrationId: REG_ID,
+          courseModuleId: MODULE_ID,
+          activityNodeId: NODE_ID,
+          interactionIndex: 0,
+          interactionId: 'q1',
+          interactionType: 'choice',
+          studentResponse: 'b',
+          result: 'correct',
+        });
+        expect(answers(ds)[1]).toMatchObject({
+          interactionIndex: 1,
+          interactionId: 'q2',
+          result: 'wrong',
+        });
+      });
+
+      test('are replaced, not duplicated, when the attempt reports again', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+        const cmi = service(ds);
+        await cmi.putCmi(ATTEMPT_ID, { values: quiz });
+
+        await cmi.putCmi(ATTEMPT_ID, {
+          values: {
+            'cmi.interactions.0.id': 'retake-1',
+            'cmi.interactions.0.result': 'correct',
+          },
+        });
+
+        expect(answers(ds).map((row) => row.interactionId)).toEqual([
+          'retake-1',
+        ]);
+      });
+
+      test('are left alone by a save that reports none', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+        const cmi = service(ds);
+        await cmi.putCmi(ATTEMPT_ID, { values: quiz });
+
+        await cmi.putCmi(ATTEMPT_ID, {
+          values: { 'cmi.core.lesson_status': 'completed' },
+          finished: true,
+        });
+
+        expect(answers(ds)).toHaveLength(2);
+      });
+
+      test('are not written when the SCO reports no interactions at all', async () => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+
+        await service(ds).putCmi(ATTEMPT_ID, {
+          values: { 'cmi.core.lesson_status': 'incomplete' },
+        });
+
+        expect(answers(ds)).toEqual([]);
+      });
     });
   });
 

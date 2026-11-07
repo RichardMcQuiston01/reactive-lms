@@ -9,6 +9,7 @@ import { CourseTemplate } from './course-template.entity';
 import { EnrolmentMethod } from './enrolment-method.entity';
 import { EventLog } from './event-log.entity';
 import { Group } from './group.entity';
+import { InteractionResponse } from './interaction-response.entity';
 import { LineItem } from './line-item.entity';
 import { LtiLaunchNonce } from './lti-launch-nonce.entity';
 import { LtiPlatformDeployment } from './lti-platform-deployment.entity';
@@ -35,6 +36,7 @@ export { EnrolmentMethod } from './enrolment-method.entity';
 export type { EnrolmentMethodKind } from './enrolment-method.entity';
 export { EventLog } from './event-log.entity';
 export { Group } from './group.entity';
+export { InteractionResponse } from './interaction-response.entity';
 export { LineItem } from './line-item.entity';
 export { LtiLaunchNonce } from './lti-launch-nonce.entity';
 export { LtiPlatformDeployment } from './lti-platform-deployment.entity';
@@ -69,6 +71,7 @@ export const ALL_ENTITIES = [
   Registration,
   Attempt,
   NormalizedProgress,
+  InteractionResponse,
   LineItem,
   Result,
   XapiStatement,

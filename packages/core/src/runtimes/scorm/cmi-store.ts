@@ -1,6 +1,7 @@
 export {
   CmiStore,
   addCmiTimespans,
+  applyMasteryScore,
   cmiTimespanToIso8601,
   coerceCmiValue,
   mapCmiToProgress,

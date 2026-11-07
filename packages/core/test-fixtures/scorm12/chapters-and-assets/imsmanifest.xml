@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE manifest [
+  <!ENTITY brand "Fish">
+]>
+<manifest identifier="CHAPTERS-COURSE" version="2.1"
+    xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+    xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <!-- The default organization is the second one. A decoy comes first.
+       <item identifier="FAKE" identifierref="RES-NOPE"><title>Not real</title></item> -->
+  <organizations default="ORG-MAIN">
+    <organization identifier="ORG-DECOY">
+      <title>Decoy Organization</title>
+      <item identifier="DECOY-1" identifierref="RES-LESSON-2">
+        <title>Decoy item</title>
+      </item>
+    </organization>
+    <organization identifier="ORG-MAIN">
+      <title>Fish &amp; Chips &lt;Basics&gt; — Part 1</title>
+      <item identifier="ITEM-WELCOME" identifierref="RES-WELCOME" isvisible="true">
+        <title>Welcome (read first)</title>
+      </item>
+      <item identifier="CHAPTER-1">
+        <title>Chapter 1 — Café Basics</title>
+        <item identifier="ITEM-LESSON-1" identifierref="RES-LESSON-1">
+          <title>Lesson 1: Frying</title>
+          <adlcp:maxtimeallowed>00:30:00</adlcp:maxtimeallowed>
+          <adlcp:timelimitaction>exit,message</adlcp:timelimitaction>
+          <adlcp:datafromlms><![CDATA[mode=review&level=2]]></adlcp:datafromlms>
+          <adlcp:masteryscore>80</adlcp:masteryscore>
+        </item>
+        <item identifier="ITEM-LESSON-2" identifierref="RES-LESSON-2">
+          <title>Lesson 2: Seasoning</title>
+          <adlcp:prerequisites type="aicc_script">ITEM-LESSON-1</adlcp:prerequisites>
+        </item>
+      </item>
+      <item identifier="ITEM-QUIZ" identifierref="RES-QUIZ">
+        <title>Final Quiz</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES-WELCOME" type="webcontent" adlcp:scormtype="asset"
+        href="intro/welcome.html">
+      <file href="intro/welcome.html"/>
+      <dependency identifierref="RES-SHARED"/>
+    </resource>
+    <resource identifier="RES-LESSON-1" type="webcontent" adlcp:scormtype="sco"
+        href="lessons/lesson-1.html">
+      <file href="lessons/lesson-1.html"/>
+      <dependency identifierref="RES-SHARED"/>
+    </resource>
+    <resource identifier="RES-LESSON-2" type="webcontent" adlcp:scormType="SCO"
+        href="lessons/lesson-2.html">
+      <file href="lessons/lesson-2.html"/>
+      <dependency identifierref="RES-SHARED"/>
+    </resource>
+    <resource identifier="RES-QUIZ" type="webcontent" adlcp:scormtype="sco"
+        href="quiz/quiz.html">
+      <file href="quiz/quiz.html"/>
+      <dependency identifierref="RES-SHARED"/>
+    </resource>
+    <resource identifier="RES-SHARED" type="webcontent" adlcp:scormtype="asset">
+      <file href="shared/scorm-api.js"/>
+      <file href="shared/style.css"/>
+    </resource>
+  </resources>
+</manifest>

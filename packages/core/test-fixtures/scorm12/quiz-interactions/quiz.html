@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Three-question quiz</title>
+  </head>
+  <body>
+    <h1>Three-question quiz</h1>
+    <p id="status">starting</p>
+    <p id="outcome"></p>
+    <script>
+      (function () {
+        function findApi(win) {
+          for (var depth = 0; depth < 10 && win; depth++) {
+            if (win.API) return win.API;
+            if (win.parent === win) break;
+            win = win.parent;
+          }
+          return null;
+        }
+        var api = findApi(window);
+        var statusEl = document.getElementById('status');
+        var outcomeEl = document.getElementById('outcome');
+        if (!api) {
+          statusEl.textContent = 'no-api';
+          return;
+        }
+        api.LMSInitialize('');
+
+        // What a quiz tool does for each question: record the interaction.
+        var failures = [];
+        function record(index, fields) {
+          var base = 'cmi.interactions.' + index + '.';
+          Object.keys(fields).forEach(function (name) {
+            if (api.LMSSetValue(base + name, fields[name]) !== 'true') {
+              failures.push(base + name + '=' + api.LMSGetLastError());
+            }
+          });
+        }
+        record(0, {
+          id: 'Q1_sky_is_blue',
+          'objectives.0.id': 'colours',
+          time: '10:15:00',
+          type: 'true-false',
+          'correct_responses.0.pattern': 't',
+          weighting: '1',
+          student_response: 't',
+          result: 'correct',
+          latency: '0000:00:04.00'
+        });
+        record(1, {
+          id: 'Q2_capital_of_france',
+          'objectives.0.id': 'geography',
+          time: '10:15:20',
+          type: 'choice',
+          'correct_responses.0.pattern': 'b',
+          'correct_responses.1.pattern': 'b,c',
+          weighting: '2',
+          student_response: 'a',
+          result: 'wrong',
+          latency: '0000:00:11.50'
+        });
+        record(2, {
+          id: 'Q3_two_plus_two',
+          time: '10:15:45',
+          type: 'fill-in',
+          'correct_responses.0.pattern': '4',
+          weighting: '1',
+          student_response: '4',
+          result: 'correct',
+          latency: '0000:00:07.00'
+        });
+
+        // A write-only field cannot be read back, and the count can.
+        var readBack = api.LMSGetValue('cmi.interactions.0.result');
+        var readError = api.LMSGetLastError();
+        var count = api.LMSGetValue('cmi.interactions._count');
+
+        api.LMSSetValue('cmi.core.score.raw', '67');
+        api.LMSSetValue('cmi.core.lesson_status', 'completed');
+        api.LMSCommit('');
+        api.LMSFinish('');
+
+        statusEl.textContent = 'finished';
+        outcomeEl.textContent =
+          'count=' + count + ' readback="' + readBack + '" readerror=' + readError +
+          ' failures=' + failures.length + (failures.length ? ' ' + failures.join(',') : '');
+      })();
+    </script>
+  </body>
+</html>

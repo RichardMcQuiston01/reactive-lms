@@ -60,6 +60,7 @@ import { RosterAdminService } from '../modules/roster-admin.service';
             <th scope="col">Status</th>
             <th scope="col">Score</th>
             <th scope="col">Time</th>
+            <th scope="col">Answers</th>
           </tr>
         </thead>
         <tbody>
@@ -69,6 +70,9 @@ import { RosterAdminService } from '../modules/roster-admin.service';
               <td>{{ statusText(row.status) }}</td>
               <td>{{ score(row) }}</td>
               <td>{{ time(row) }}</td>
+              <td>
+                <a [routerLink]="[row.id, 'answers']">Answers</a>
+              </td>
             </tr>
           }
         </tbody>

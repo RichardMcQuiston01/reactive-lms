@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- A SCORM asset can now be completed. An asset (`adlcp:scormtype="asset"`)
+  has no script that talks to the LMS, so its module stayed incomplete
+  forever, and with it any prerequisite or section completion that depended
+  on it. Launching an asset in a normal session now marks the module
+  completed and closes the attempt, keeping any success status or score
+  already recorded; Browse and Review launches record nothing.
+
 - The HTML5 player no longer lets an old lesson report as the new one. When
   the host changed the registration or module, the previous frame stayed on
   screen while the next launch loaded, and its messages were labelled with the
@@ -23,9 +30,6 @@
   be discarded while the lesson was told it succeeded; the state is now kept,
   the player shows "Your progress could not be saved" with a Retry button,
   and it is sent again with the next save or on exit.
-
-### Fixed
-
 - A progress report no longer erases what it leaves out. A completion-only
   report used to overwrite the saved score, bookmark, time, and suspend data
   with null, and a bookmark-only report sent `unknown` statuses that undid
@@ -68,9 +72,84 @@
   periodic sweep on write.
 - The admin section and package pickers page through results with a "Load
   more" button instead of silently stopping at the first 100.
+- SCORM 1.2 manifests from real authoring tools import correctly:
+  - `&amp;`, `&lt;` and numeric character references in titles are decoded
+    (a title read "Fish &amp; Chips"), and CDATA is read literally;
+  - `xml:base` on the manifest, `resources`, and `resource` is applied to the
+    launch path, so the launch address no longer points one folder too high;
+  - the course launches its first SCO, not an asset that happens to come
+    first, and `scormtype="SCO"` in capitals counts as a SCO;
+  - an item's `parameters` are added to its launch address;
+  - a launch file that is not in the package, differs only by letter case, or
+    sits outside the package is refused at import with the item and file
+    named, instead of a blank page at launch.
+- `cmi.core.entry` follows SCORM 1.2: `ab-initio` the first time, `resume`
+  after a session that set `cmi.core.exit` to `suspend`, and empty otherwise.
+  Before, it was never empty, and a saved `suspend` made every later session
+  look like a resume.
+- A raw score with no `score.min` or `score.max` now counts: SCORM 1.2 defines
+  it on a 0 to 100 scale, so 85 is 0.85. Before, it had no scaled score.
+- A registration's score and time are now written. They were never filled in,
+  so the Progress screen's score and time columns were always empty. The
+  section score is the mean of each module's best scaled score (modules with
+  no score are left out), and the time is the sum of the modules' time.
+- The SCORM 1.2 API follows the run-time specification where it did not:
+  - an invalid value, range, or vocabulary answers 405 (it answered 351, and
+    an unset optional value answered 391, neither of which is a SCORM 1.2
+    code); an unset score now reads as blank with no error;
+  - scores are limited to 0 to 100, `lesson_location` to 255 characters, and
+    `suspend_data` to 4096;
+  - `_children` on an element with none answers 202, `_count` on a non-array
+    answers 203, and writing `cmi.objectives._count` answers 402;
+  - a second `LMSFinish` answers 301, and `LMSGetErrorString` of an unknown
+    code is an empty string, with the 202, 203, and 405 strings added.
 
 ### Added
 
+- An Answers screen in the admin package (`registration-answers`, overridable
+  like the others). Each row of the Progress screen links to it, and it lists
+  what that person's SCOs reported, grouped by attempt: question, type,
+  answer, correct answer, result, weight, and time to answer, with a count of
+  correct and wrong answers per attempt.
+
+- Interaction answers are kept for review. Each answer a SCO reports through
+  `cmi.interactions` is stored as its own row (`rlms_interaction_response`,
+  added by migration `0002`), tied to its attempt, with the id, type,
+  objectives, correct patterns, learner response, result, weighting, and
+  latency. `GET /registrations/:id/interactions` lists them, optionally for one
+  module, with the same `grade.view` check as progress.
+
+- `cmi.interactions` for SCORM 1.2: quiz tools record each answer (id,
+  objectives, time, type, correct responses, weighting, student response,
+  result, latency) and the answers are stored with the attempt. Fields are
+  write only, as the specification says, and are checked for type, vocabulary,
+  and length. A session that records interactions replaces the earlier ones, a
+  session that records none keeps them, and the SCO is never shown a previous
+  session's. Array indexes are limited to 9999. Nothing shows the answers yet.
+  A three-question quiz fixture (`quiz-interactions`) was run in a browser
+  against the standalone API and Postgres.
+- An automated SCORM 1.2 run-time conformance suite
+  (`scorm12-rte-conformance.test.ts`) written from the specification, and
+  `docs/SCORM_1_2_CONFORMANCE.md` listing what it covers, what the LMS does not
+  implement, and how to run the official ADL Test Suite. The official suite
+  has not been run, so SCORM 1.2 is not claimed as certified.
+- SCORM 1.2 fixture packages (`packages/core/test-fixtures/scorm12`): a single
+  SCO; a course with two organizations, a chapter, an asset, shared files,
+  entities, comments, CDATA, and unicode; a SCO that bookmarks and resumes;
+  and courses that use `xml:base` and launch parameters. Tests import each one
+  and check what was stored. They were also run end to end in a browser
+  against the standalone API and Postgres: upload, place, enrol, launch,
+  bookmark, leave, relaunch with `entry=resume`, complete with a score, and
+  launch again with the bookmark intact.
+- The manifest parser now keeps `masteryscore`, `maxtimeallowed`, and
+  `timelimitaction` on each item, and the SCO can read them as
+  `cmi.student_data.mastery_score`, `max_time_allowed`, and
+  `time_limit_action` (read-only; empty when the manifest sets none).
+- Mastery score: when a SCO finishes with a raw score and the manifest set a
+  `masteryscore`, the LMS now sets `cmi.core.lesson_status` to `passed` (score
+  at or above it) or `failed`, whatever the SCO wrote, as SCORM 1.2 requires.
+  It does not apply in browse mode, without a raw score, or on a commit
+  before the SCO finishes. The registration status follows.
 - An availability-rule editor on the module-tree screen. A **Rules** button on
   each module or block opens a form to add, change, and remove conditions
   (another module completed; another module's score at least a percentage; a
@@ -101,6 +180,28 @@
 
 ### Changed
 
+- SCORM 1.2 manifests are now checked against the Content Aggregation Model
+  rules that decide whether a course can be launched and tracked. An import
+  is refused, naming the item or resource, when the default organization does
+  not exist, an item or resource has no identifier or repeats one, an item
+  refers to a resource the manifest does not define, a launched resource has
+  no `href`, a resource has a `type` other than `webcontent` or a `scormtype`
+  other than `sco` or `asset`, a dependency names no resource, or an ADL
+  extension is out of range (`masteryscore` outside 0 to 100, an unknown
+  `timelimitaction`, a `maxtimeallowed` that is not a time span, or
+  `datafromlms` over 255 characters). Before, these imported and failed, or
+  silently did the wrong thing, at launch.
+
+- **Breaking:** without a `capabilityAdapter`, `ReactiveLmsModule` now refuses
+  administrative routes (import and delete packages, create sections and
+  modules, enrol people, search people, list rosters) with 403 `FORBIDDEN`.
+  Before, they were open to any caller the identity adapter recognised, so a
+  host that forgot the adapter exposed them silently. The message names the
+  fix. Hosts that want the old behaviour while evaluating can set
+  `allowUnrestrictedAdmin: true`, which logs a warning at start; an adapter,
+  when set, always decides. Learner routes are unchanged. The standalone API
+  sets the option, since it has one demo user and no adapter. `ADMIN_LMS_ACTIONS`
+  and `isAdminAction` are exported from the shared package.
 - Availability rules that can never be met are now refused when they are saved
   (400 `AVAILABILITY_INVALID`, naming each problem) instead of locking a module
   forever. Refused: a condition on a module that is not in the section; a

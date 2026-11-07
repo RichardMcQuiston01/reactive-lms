@@ -7,6 +7,7 @@ import {
   type AdminScreenId,
 } from './screens/admin-screens';
 import { EnrolmentsScreenComponent } from './screens/enrolments-screen.component';
+import { AnswersScreenComponent } from './screens/answers-screen.component';
 import { ProgressScreenComponent } from './screens/progress-screen.component';
 import { ModuleTreeScreenComponent } from './screens/module-tree-screen.component';
 import { PackagesScreenComponent } from './screens/packages-screen.component';
@@ -52,6 +53,12 @@ const SCREENS: readonly ScreenRoute[] = [
     path: 'sections/:sectionId/progress',
     title: 'Progress',
     builtIn: ProgressScreenComponent,
+  },
+  {
+    id: 'registration-answers',
+    path: 'sections/:sectionId/progress/:registrationId/answers',
+    title: 'Answers',
+    builtIn: AnswersScreenComponent,
   },
   {
     id: 'enrolments',

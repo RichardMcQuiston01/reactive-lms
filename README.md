@@ -109,11 +109,15 @@ Without an adapter:
 
 - learner routes (launch, progress, SCORM CMI) are limited to the learner who
   owns the registration, so one learner cannot read or write another's;
-- admin routes (import, create, place, enrol, delete) are open to any caller
-  the `IdentityAdapter` identifies.
+- administrative routes (import, create, place, enrol, delete, people search,
+  rosters) answer 403 with a message that says how to fix it. To try the
+  library without writing an adapter, set `allowUnrestrictedAdmin: true` on
+  `ReactiveLmsModule`: any caller the `IdentityAdapter` identifies can then use
+  them, and a warning is logged at start. An adapter always takes precedence.
 
-The standalone API runs without an adapter and with one fixed demo learner, so
-it is for evaluation only. An embedding host should configure an adapter.
+The standalone API runs without an adapter, with one fixed demo learner, and
+with `allowUnrestrictedAdmin` on, so it is for evaluation only. An embedding
+host should configure an adapter.
 
 ## Documentation
 

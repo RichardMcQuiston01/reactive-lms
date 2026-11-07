@@ -48,6 +48,7 @@ export {
 } from './modules/roster';
 export { EnrolmentsScreenComponent } from './screens/enrolments-screen.component';
 export { ProgressScreenComponent } from './screens/progress-screen.component';
+export { AnswersScreenComponent } from './screens/answers-screen.component';
 export {
   buildAvailability,
   conditionTargets,

@@ -9,6 +9,7 @@ import {
   CourseTemplate,
   EnrolmentMethod,
   LineItem,
+  InteractionResponse,
   NormalizedProgress,
   Person,
   Registration,
@@ -28,6 +29,7 @@ import {
   type ContentPackageDto,
   type CourseModuleDto,
   type CourseSectionDto,
+  type InteractionResponseDto,
   type NormalizedProgress as NormalizedProgressDto,
   type SectionRegistrationDto,
   type BlobStorageAdapter,
@@ -550,6 +552,34 @@ export class CatalogService {
     });
     return rows.map(toProgressDto);
   }
+
+  /**
+   * Lists the answers SCOs reported for a registration, oldest attempt first
+   * and in the SCO's own order within an attempt.
+   *
+   * @param registrationId - Registration id
+   * @param moduleId - Limit to one course module
+   */
+  async listInteractions(
+    registrationId: string,
+    moduleId?: string,
+  ): Promise<InteractionResponseDto[]> {
+    const registration = await this.dataSource.manager.findOne(Registration, {
+      where: { id: registrationId },
+    });
+    if (!registration) {
+      throw notFound(REGISTRATION_NOT_FOUND, 'Registration not found.', {
+        registrationId,
+      });
+    }
+    const rows = await this.dataSource.manager.find(InteractionResponse, {
+      where: moduleId
+        ? { registrationId, courseModuleId: moduleId }
+        : { registrationId },
+      order: { createdAt: 'ASC', attemptId: 'ASC', interactionIndex: 'ASC' },
+    });
+    return rows.map(toInteractionResponseDto);
+  }
 }
 
 function toPackageDto(row: ContentPackage): ContentPackageDto {
@@ -587,6 +617,29 @@ function toSectionRegistrationDto(
     durationIso8601: row.durationIso8601 ?? undefined,
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
+  };
+}
+
+function toInteractionResponseDto(
+  row: InteractionResponse,
+): InteractionResponseDto {
+  return {
+    id: row.id,
+    attemptId: row.attemptId,
+    registrationId: row.registrationId,
+    courseModuleId: row.courseModuleId,
+    activityNodeId: row.activityNodeId ?? undefined,
+    interactionIndex: row.interactionIndex,
+    interactionId: row.interactionId ?? undefined,
+    interactionType: row.interactionType ?? undefined,
+    objectiveIds: row.objectiveIds ?? [],
+    correctPatterns: row.correctPatterns ?? [],
+    timeOfDay: row.timeOfDay ?? undefined,
+    studentResponse: row.studentResponse ?? undefined,
+    result: row.result ?? undefined,
+    weighting: row.weighting ?? undefined,
+    latency: row.latency ?? undefined,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 

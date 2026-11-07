@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="QUIZ-COURSE" version="1.0"
+    xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+    xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="QUIZ-ORG">
+    <organization identifier="QUIZ-ORG">
+      <title>Quiz that records its answers</title>
+      <item identifier="ITEM-QUIZ" identifierref="RES-QUIZ">
+        <title>Three-question quiz</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES-QUIZ" type="webcontent" adlcp:scormtype="sco"
+        href="quiz.html">
+      <file href="quiz.html"/>
+    </resource>
+  </resources>
+</manifest>

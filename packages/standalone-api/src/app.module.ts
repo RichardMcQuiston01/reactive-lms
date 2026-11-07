@@ -37,6 +37,10 @@ import {
         }
         return {
           identityAdapter: new DemoIdentityAdapter(),
+          // The standalone app has one fixed demo user and no capability
+          // adapter, so its admin screens need this to work. It is for
+          // evaluation only; an embedding host should supply an adapter.
+          allowUnrestrictedAdmin: true,
           dataSource,
           dataRoot: resolveDataRoot(),
           routePrefix: 'lms',

@@ -17,6 +17,12 @@ export interface CmiStoreSeed {
   lessonMode?: string;
   /** `cmi.launch_data` from the manifest (`datafromlms`). */
   launchData?: string;
+  /** `cmi.student_data.mastery_score` from the manifest (`masteryscore`). */
+  masteryScore?: string;
+  /** `cmi.student_data.max_time_allowed` from the manifest (`maxtimeallowed`). */
+  maxTimeAllowed?: string;
+  /** `cmi.student_data.time_limit_action` from the manifest (`timelimitaction`). */
+  timeLimitAction?: string;
   /** Previously persisted CMI values (hydrate). */
   values?: CmiValues;
 }
@@ -28,14 +34,17 @@ type ElementAccess = 'ro' | 'rw' | 'wo' | 'keyword';
 interface ElementDef {
   access: ElementAccess;
   defaultValue?: string;
-  optional?: boolean;
   validate?: (value: string) => boolean;
 }
 
 const CORE_CHILDREN =
   'student_id,student_name,lesson_location,credit,lesson_status,entry,score,total_time,lesson_mode,exit,session_time';
 const SCORE_CHILDREN = 'raw,min,max';
+const STUDENT_DATA_CHILDREN =
+  'mastery_score,max_time_allowed,time_limit_action';
 const OBJECTIVE_CHILDREN = 'id,score,status';
+const INTERACTION_CHILDREN =
+  'id,objectives,time,type,correct_responses,weighting,student_response,result,latency';
 
 const LESSON_STATUSES = new Set([
   'passed',
@@ -45,21 +54,49 @@ const LESSON_STATUSES = new Set([
   'browsed',
   'not attempted',
 ]);
+const INTERACTION_TYPES = new Set([
+  'true-false',
+  'choice',
+  'fill-in',
+  'matching',
+  'performance',
+  'sequencing',
+  'likert',
+  'numeric',
+]);
+const INTERACTION_RESULTS = new Set([
+  'correct',
+  'wrong',
+  'unanticipated',
+  'neutral',
+]);
+/** CMITime: a time of day, `HH:MM:SS` or `HH:MM:SS.SS`, on a 24-hour clock. */
+const TIME_OF_DAY_RE = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,2})?$/;
+/**
+ * Highest array index accepted for objectives and interactions. The
+ * specification sets no limit; this keeps one SCO from making the LMS hold or
+ * store an unbounded list.
+ */
+export const MAX_CMI_ARRAY_INDEX = 9999;
 const EXIT_VALUES = new Set(['time-out', 'suspend', 'logout', '']);
 const TIMESPAN_RE = /^\d{2,4}:[0-5]\d:[0-5]\d(?:\.\d{1,2})?$/;
 const DECIMAL_RE = /^-?\d+(?:\.\d+)?$/;
 
+/**
+ * SCORM 1.2 run-time error codes and their strings (RTE 3.4.1).
+ */
 const ERROR_STRINGS: Record<string, string> = {
-  '0': 'No Error',
-  '101': 'General Exception',
+  '0': 'No error',
+  '101': 'General exception',
   '201': 'Invalid argument error',
+  '202': 'Element cannot have children',
+  '203': 'Element not an array - cannot have count',
   '301': 'Not initialized',
-  '351': 'General set failure',
-  '391': 'No data stored',
   '401': 'Not implemented error',
   '402': 'Invalid set value, element is a keyword',
   '403': 'Element is read only',
   '404': 'Element is write only',
+  '405': 'Incorrect Data Type',
 };
 
 const ELEMENTS: Record<string, ElementDef> = {
@@ -70,7 +107,11 @@ const ELEMENTS: Record<string, ElementDef> = {
   },
   'cmi.core.student_id': { access: 'ro', defaultValue: '' },
   'cmi.core.student_name': { access: 'ro', defaultValue: '' },
-  'cmi.core.lesson_location': { access: 'rw', defaultValue: '' },
+  'cmi.core.lesson_location': {
+    access: 'rw',
+    defaultValue: '',
+    validate: (value) => value.length <= 255,
+  },
   'cmi.core.credit': { access: 'ro', defaultValue: 'credit' },
   'cmi.core.lesson_status': {
     access: 'rw',
@@ -85,18 +126,18 @@ const ELEMENTS: Record<string, ElementDef> = {
   },
   'cmi.core.score.raw': {
     access: 'rw',
-    optional: true,
-    validate: isDecimal,
+    defaultValue: '',
+    validate: isScore,
   },
   'cmi.core.score.min': {
     access: 'rw',
-    optional: true,
-    validate: isDecimal,
+    defaultValue: '',
+    validate: isScore,
   },
   'cmi.core.score.max': {
     access: 'rw',
-    optional: true,
-    validate: isDecimal,
+    defaultValue: '',
+    validate: isScore,
   },
   'cmi.core.total_time': { access: 'ro', defaultValue: '0000:00:00.00' },
   'cmi.core.lesson_mode': { access: 'ro', defaultValue: 'normal' },
@@ -107,18 +148,39 @@ const ELEMENTS: Record<string, ElementDef> = {
   },
   'cmi.core.session_time': {
     access: 'wo',
-    optional: true,
     validate: isTimespan,
   },
-  'cmi.suspend_data': { access: 'rw', defaultValue: '' },
+  'cmi.suspend_data': {
+    access: 'rw',
+    defaultValue: '',
+    validate: (value) => value.length <= 4096,
+  },
+  'cmi.student_data': { access: 'keyword' },
+  'cmi.student_data._children': {
+    access: 'keyword',
+    defaultValue: STUDENT_DATA_CHILDREN,
+  },
+  'cmi.student_data.mastery_score': { access: 'ro', defaultValue: '' },
+  'cmi.student_data.max_time_allowed': { access: 'ro', defaultValue: '' },
+  'cmi.student_data.time_limit_action': { access: 'ro', defaultValue: '' },
   'cmi.launch_data': { access: 'ro', defaultValue: '' },
-  'cmi.comments': { access: 'rw', optional: true },
+  'cmi.comments': {
+    access: 'rw',
+    defaultValue: '',
+    validate: (value) => value.length <= 4096,
+  },
   'cmi.objectives': { access: 'keyword' },
   'cmi.objectives._children': {
     access: 'keyword',
     defaultValue: OBJECTIVE_CHILDREN,
   },
-  'cmi.objectives._count': { access: 'ro', defaultValue: '0' },
+  'cmi.objectives._count': { access: 'keyword' },
+  'cmi.interactions': { access: 'keyword' },
+  'cmi.interactions._children': {
+    access: 'keyword',
+    defaultValue: INTERACTION_CHILDREN,
+  },
+  'cmi.interactions._count': { access: 'keyword' },
 };
 
 /**
@@ -129,7 +191,6 @@ export class CmiStore {
   private state: SessionState = 'not_initialized';
   private lastError = '0';
   private readonly data = new Map<string, string>();
-  private readonly explicit = new Set<string>();
 
   /**
    * @param seed - LMS-provided student fields and optional hydrate map
@@ -163,7 +224,6 @@ export class CmiStore {
         continue;
       }
       this.data.set(key, text);
-      this.explicit.add(key);
     }
   }
 
@@ -185,6 +245,15 @@ export class CmiStore {
     }
     if (seed.launchData !== undefined) {
       this.data.set('cmi.launch_data', seed.launchData);
+    }
+    if (seed.masteryScore !== undefined) {
+      this.data.set('cmi.student_data.mastery_score', seed.masteryScore);
+    }
+    if (seed.maxTimeAllowed !== undefined) {
+      this.data.set('cmi.student_data.max_time_allowed', seed.maxTimeAllowed);
+    }
+    if (seed.timeLimitAction !== undefined) {
+      this.data.set('cmi.student_data.time_limit_action', seed.timeLimitAction);
     }
   }
 
@@ -241,11 +310,8 @@ export class CmiStore {
     if (!isEmptyParam(param)) {
       return this.fail('201');
     }
-    if (this.state === 'not_initialized') {
+    if (this.state !== 'running') {
       return this.fail('301');
-    }
-    if (this.state === 'finished') {
-      return this.fail('101');
     }
     this.accumulateSessionTime();
     this.state = 'finished';
@@ -266,13 +332,14 @@ export class CmiStore {
       this.fail('201');
       return '';
     }
-    if (element === 'cmi.objectives._count') {
+    const count = this.countOf(element);
+    if (count !== undefined) {
       this.lastError = '0';
-      return String(this.objectiveCount());
+      return String(count);
     }
     const def = resolveElement(element);
     if (!def) {
-      this.fail('401');
+      this.fail(missingElementError(element));
       return '';
     }
     if (def.access === 'wo') {
@@ -285,10 +352,6 @@ export class CmiStore {
         return def.defaultValue;
       }
       this.fail('401');
-      return '';
-    }
-    if (def.optional && !this.explicit.has(element)) {
-      this.fail('391');
       return '';
     }
     this.lastError = '0';
@@ -310,7 +373,10 @@ export class CmiStore {
     }
     const text = coerceCmiValue(value);
     if (text === undefined) {
-      return this.fail('351');
+      return this.fail('201');
+    }
+    if (exceedsArrayLimit(element)) {
+      return this.fail('201');
     }
     const def = resolveElement(element);
     if (!def) {
@@ -323,10 +389,9 @@ export class CmiStore {
       return this.fail('403');
     }
     if (def.validate && !def.validate(text)) {
-      return this.fail('351');
+      return this.fail('405');
     }
     this.data.set(element, text);
-    this.explicit.add(element);
     return this.ok();
   }
 
@@ -358,7 +423,7 @@ export class CmiStore {
    * @param errorCode - SCORM 1.2 error code
    */
   LMSGetErrorString(errorCode: string): string {
-    return ERROR_STRINGS[errorCode] ?? 'Unknown error';
+    return ERROR_STRINGS[errorCode] ?? '';
   }
 
   /**
@@ -371,15 +436,42 @@ export class CmiStore {
     return this.LMSGetErrorString(code);
   }
 
-  private objectiveCount(): number {
+  /**
+   * The `_count` an array element reports: one more than the highest index
+   * written so far, or `undefined` when `element` is not an array count.
+   */
+  private countOf(element: string): number | undefined {
+    if (element === 'cmi.objectives._count') {
+      return this.highestIndex(/^cmi\.objectives\.(\d+)\./) + 1;
+    }
+    if (element === 'cmi.interactions._count') {
+      return this.highestIndex(/^cmi\.interactions\.(\d+)\./) + 1;
+    }
+    const nested =
+      /^cmi\.interactions\.(\d+)\.(objectives|correct_responses)\._count$/.exec(
+        element,
+      );
+    if (nested) {
+      return (
+        this.highestIndex(
+          new RegExp(
+            `^cmi\\.interactions\\.${nested[1]}\\.${nested[2]}\\.(\\d+)\\.`,
+          ),
+        ) + 1
+      );
+    }
+    return undefined;
+  }
+
+  private highestIndex(pattern: RegExp): number {
     let max = -1;
     for (const key of this.data.keys()) {
-      const match = /^cmi\.objectives\.(\d+)\./.exec(key);
+      const match = pattern.exec(key);
       if (match) {
         max = Math.max(max, Number(match[1]));
       }
     }
-    return max + 1;
+    return max;
   }
 
   private accumulateSessionTime(): void {
@@ -389,7 +481,6 @@ export class CmiStore {
     }
     const total = this.data.get('cmi.core.total_time') ?? '0000:00:00.00';
     this.data.set('cmi.core.total_time', addCmiTimespans(total, session));
-    this.explicit.add('cmi.core.total_time');
   }
 
   private ok(): 'true' {
@@ -487,6 +578,10 @@ function resolveElement(element: string): ElementDef | undefined {
   if (known) {
     return known;
   }
+  const interaction = resolveInteractionElement(element);
+  if (interaction) {
+    return interaction;
+  }
   const objective =
     /^cmi\.objectives\.(\d+)\.(id|status|score(?:\._children|\.raw|\.min|\.max)?)$/.exec(
       element,
@@ -502,7 +597,7 @@ function resolveElement(element: string): ElementDef | undefined {
     return { access: 'keyword', defaultValue: SCORE_CHILDREN };
   }
   if (field === 'id') {
-    return { access: 'rw' };
+    return { access: 'rw', defaultValue: '', validate: (v) => v.length <= 255 };
   }
   if (field === 'status') {
     return {
@@ -510,7 +605,81 @@ function resolveElement(element: string): ElementDef | undefined {
       validate: (value) => LESSON_STATUSES.has(value),
     };
   }
-  return { access: 'rw', optional: true, validate: isDecimal };
+  return { access: 'rw', defaultValue: '', validate: isScore };
+}
+
+/**
+ * `cmi.interactions.n.*` elements. They are write only: a SCO records what the
+ * learner did but cannot read it back (the `_count`s are the exception, and
+ * are answered before this is reached).
+ */
+function resolveInteractionElement(element: string): ElementDef | undefined {
+  const nestedCount =
+    /^cmi\.interactions\.\d+\.(?:objectives|correct_responses)\._count$/;
+  if (nestedCount.test(element)) {
+    return { access: 'keyword' };
+  }
+  const field = /^cmi\.interactions\.\d+\.(\w+)$/.exec(element)?.[1];
+  switch (field) {
+    case 'id':
+      return { access: 'wo', validate: isIdentifier };
+    case 'time':
+      return { access: 'wo', validate: (v) => TIME_OF_DAY_RE.test(v) };
+    case 'type':
+      return { access: 'wo', validate: (v) => INTERACTION_TYPES.has(v) };
+    case 'weighting':
+      return { access: 'wo', validate: isDecimal };
+    case 'student_response':
+      return { access: 'wo', validate: isFeedback };
+    case 'result':
+      return {
+        access: 'wo',
+        validate: (v) => INTERACTION_RESULTS.has(v) || isDecimal(v),
+      };
+    case 'latency':
+      return { access: 'wo', validate: isTimespan };
+    default:
+      break;
+  }
+  if (/^cmi\.interactions\.\d+\.objectives\.\d+\.id$/.test(element)) {
+    return { access: 'wo', validate: isIdentifier };
+  }
+  if (
+    /^cmi\.interactions\.\d+\.correct_responses\.\d+\.pattern$/.test(element)
+  ) {
+    return { access: 'wo', validate: isFeedback };
+  }
+  return undefined;
+}
+
+/**
+ * CMIIdentifier is limited by length only. The specification also restricts
+ * the characters, but authoring tools write ids with spaces and punctuation,
+ * and refusing them would drop the interaction.
+ */
+function isIdentifier(value: string): boolean {
+  return value.length <= 255;
+}
+
+/** CMIFeedback: kept to 255 characters; its per-type syntax is not checked. */
+function isFeedback(value: string): boolean {
+  return value.length <= 255;
+}
+
+/** True when a numeric array index in an objectives or interactions element is past the limit. */
+function exceedsArrayLimit(element: string): boolean {
+  if (
+    !element.startsWith('cmi.interactions.') &&
+    !element.startsWith('cmi.objectives.')
+  ) {
+    return false;
+  }
+  for (const match of element.matchAll(/\.(\d+)(?=\.)/g)) {
+    if (Number(match[1]) > MAX_CMI_ARRAY_INDEX) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isEmptyParam(param: unknown): boolean {
@@ -539,8 +708,68 @@ function isDecimal(value: string): boolean {
   return DECIMAL_RE.test(value);
 }
 
+/** A score is a decimal from 0 to 100, or blank (CMIDecimal or CMIBlank). */
+function isScore(value: string): boolean {
+  if (value === '') {
+    return true;
+  }
+  return isDecimal(value) && Number(value) >= 0 && Number(value) <= 100;
+}
+
+/**
+ * The error for an element name that is not in the data model: `_children`
+ * on an element that has none is 202, `_count` on one that is not an array
+ * is 203, and anything else is not implemented (401).
+ */
+function missingElementError(element: string): string {
+  if (
+    element.endsWith('._children') &&
+    resolveElement(stripSuffix(element, '._children'))
+  ) {
+    return '202';
+  }
+  if (
+    element.endsWith('._count') &&
+    resolveElement(stripSuffix(element, '._count'))
+  ) {
+    return '203';
+  }
+  return '401';
+}
+
+function stripSuffix(value: string, suffix: string): string {
+  return value.slice(0, value.length - suffix.length);
+}
+
 function isTimespan(value: string): boolean {
   return TIMESPAN_RE.test(value);
+}
+
+/**
+ * Applies the manifest's mastery score when a SCO finishes. SCORM 1.2 has the
+ * LMS, not the SCO, decide pass or fail once a mastery score is set: if the
+ * SCO reported a raw score, `cmi.core.lesson_status` becomes `passed` when the
+ * score reaches the mastery score and `failed` when it does not, whatever the
+ * SCO wrote (typically `completed`). Nothing changes without a mastery score,
+ * without a raw score, or in browse mode, which is not for credit.
+ *
+ * @param values - CMI snapshot at the end of the session
+ * @returns The snapshot, with `cmi.core.lesson_status` replaced when it applies
+ */
+export function applyMasteryScore(values: CmiValues): CmiValues {
+  const mastery = parseNumber(values['cmi.student_data.mastery_score']);
+  const raw = parseNumber(values['cmi.core.score.raw']);
+  if (
+    mastery === undefined ||
+    raw === undefined ||
+    values['cmi.core.lesson_mode'] === 'browse'
+  ) {
+    return values;
+  }
+  return {
+    ...values,
+    'cmi.core.lesson_status': raw >= mastery ? 'passed' : 'failed',
+  };
 }
 
 function mapLessonStatus(
@@ -571,6 +800,11 @@ function parseNumber(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Scales a raw score to 0..1. SCORM 1.2 defines `cmi.core.score.raw` as a
+ * number from 0 to 100, so a SCO that gives no `min` or `max` is on that
+ * scale: a raw score of 85 with no range is 0.85.
+ */
 function scaleScore(
   raw: number | undefined,
   min: number | undefined,
@@ -579,13 +813,12 @@ function scaleScore(
   if (typeof raw !== 'number') {
     return undefined;
   }
-  if (typeof min === 'number' && typeof max === 'number' && max !== min) {
-    return (raw - min) / (max - min);
+  const low = typeof min === 'number' ? min : 0;
+  const high = typeof max === 'number' ? max : 100;
+  if (high === low) {
+    return undefined;
   }
-  if (typeof max === 'number' && max !== 0) {
-    return raw / max;
-  }
-  return undefined;
+  return (raw - low) / (high - low);
 }
 
 function emptyToUndefined(value: string | undefined): string | undefined {

@@ -66,6 +66,14 @@ export interface MockEntityManager {
     criteria: string | Record<string, unknown>,
     partial: Record<string, unknown>,
   ) => Promise<void>;
+  delete: (
+    entityClass: MockEntityClass,
+    criteria: Record<string, unknown>,
+  ) => Promise<void>;
+  insert: (
+    entityClass: MockEntityClass,
+    rows: Record<string, unknown>[],
+  ) => Promise<void>;
   getRepository: (entity: MockEntityClass) => MockRepository;
 }
 
@@ -207,6 +215,19 @@ export function createMockDataSource(): MockDataSource {
       repositoryFor(entityClass).findOne(options),
     update: async (entityClass, criteria, partial) =>
       repositoryFor(entityClass).update(criteria, partial),
+    delete: async (entityClass, criteria) => {
+      const list = rowsOf(entityClass);
+      for (let index = list.length - 1; index >= 0; index -= 1) {
+        if (matches(list[index] as Record<string, unknown>, criteria)) {
+          list.splice(index, 1);
+        }
+      }
+    },
+    insert: async (entityClass, rows) => {
+      for (const row of rows) {
+        persist(entityClass, { ...row });
+      }
+    },
     getRepository: (entity) => repositoryFor(entity),
   };
 

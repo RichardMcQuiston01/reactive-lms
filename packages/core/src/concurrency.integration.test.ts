@@ -7,6 +7,7 @@ import {
   CourseOffering,
   CourseSection,
   CourseTemplate,
+  InteractionResponse,
   NormalizedProgress,
   Person,
   Registration,
@@ -21,6 +22,8 @@ import { ancestorsOf } from './courses/module-tree';
 import { LaunchService } from './launch/launch-service';
 import { ProgressSinkService } from './progress/progress-sink';
 import { Html5Runtime } from './runtimes/html5/html5-runtime';
+import { Scorm12Runtime } from './runtimes/scorm/scorm-12-runtime';
+import { ScormCmiService } from './runtimes/scorm/scorm-cmi.service';
 
 /**
  * These run only against a real Postgres (`RLMS_TEST_DATABASE_URL`), because
@@ -283,5 +286,109 @@ describe.skipIf(!databaseUrl)('concurrent writers (real Postgres)', () => {
         .find({ where: { courseSectionId: course.sectionId } })
     ).map((row) => row.sortOrder);
     expect(new Set(orders).size).toBe(6);
+  });
+
+  test('interaction answers are stored per attempt, replaced on a new report, and unique per index', async () => {
+    const course = await seedCourse(1);
+    const moduleId = course.moduleIds[0] as string;
+    const attempt = await ds.getRepository(Attempt).save({
+      registrationId: course.registrationId,
+      courseModuleId: moduleId,
+      activityNodeId: course.nodeId,
+      sessionId: `session-${randomUUID()}`,
+      launchMode: 'Normal',
+    });
+    const cmi = new ScormCmiService(ds, sink());
+    const report = (id: string, count: number): Record<string, string> => {
+      const values: Record<string, string> = {
+        'cmi.core.lesson_status': 'incomplete',
+      };
+      for (let index = 0; index < count; index += 1) {
+        values[`cmi.interactions.${index}.id`] = `${id}-${index}`;
+        values[`cmi.interactions.${index}.objectives.0.id`] = 'obj';
+        values[`cmi.interactions.${index}.correct_responses.0.pattern`] = 'a';
+        values[`cmi.interactions.${index}.result`] = 'correct';
+      }
+      return values;
+    };
+    const stored = () =>
+      ds.getRepository(InteractionResponse).find({
+        where: { attemptId: attempt.id },
+        order: { interactionIndex: 'ASC' },
+      });
+
+    await cmi.putCmi(attempt.id, { values: report('first', 3) });
+    const first = await stored();
+    expect(first.map((row) => row.interactionId)).toEqual([
+      'first-0',
+      'first-1',
+      'first-2',
+    ]);
+    expect(first[0]?.objectiveIds).toEqual(['obj']);
+    expect(first[0]?.correctPatterns).toEqual(['a']);
+
+    await cmi.putCmi(attempt.id, { values: report('second', 1) });
+    expect((await stored()).map((row) => row.interactionId)).toEqual([
+      'second-0',
+    ]);
+
+    const duplicate = ds.getRepository(InteractionResponse).insert({
+      attemptId: attempt.id,
+      registrationId: course.registrationId,
+      courseModuleId: moduleId,
+      interactionIndex: 0,
+      objectiveIds: [],
+      correctPatterns: [],
+    });
+    await expect(duplicate).rejects.toThrow();
+  });
+
+  test('launching a SCORM asset completes it once, even when launched together', async () => {
+    const course = await seedCourse(1);
+    const moduleId = course.moduleIds[0] as string;
+    const node = await ds
+      .getRepository(ActivityNode)
+      .findOneByOrFail({ id: course.nodeId });
+    await ds.getRepository(ActivityNode).update(node.id, {
+      metadataJson: { scormType: 'asset' },
+    });
+    await ds
+      .getRepository(ContentPackage)
+      .update(node.contentPackageId, { packageType: 'scorm_12' });
+    const launches = new LaunchService(
+      ds,
+      [new Html5Runtime(), new Scorm12Runtime()],
+      {},
+      new EventLogService(ds),
+      sink(),
+    );
+
+    await Promise.all(
+      Array.from({ length: 6 }, () =>
+        launches.launch({
+          registrationId: course.registrationId,
+          courseModuleId: moduleId,
+          learner: { externalId: 'ignored', displayName: 'Learner' },
+          launchMode: 'Normal',
+        }),
+      ),
+    );
+
+    const rows = await ds.getRepository(NormalizedProgress).find({
+      where: { registrationId: course.registrationId },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.completionStatus).toBe('completed');
+    const open = await ds.getRepository(Attempt).find({
+      where: {
+        registrationId: course.registrationId,
+        termination: 'still_open',
+      },
+    });
+    expect(open).toEqual([]);
+    const registration = await ds
+      .getRepository(Registration)
+      .findOneByOrFail({ id: course.registrationId });
+    expect(registration.status).toBe('completed');
   });
 });

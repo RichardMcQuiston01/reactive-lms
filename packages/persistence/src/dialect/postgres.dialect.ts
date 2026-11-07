@@ -1,4 +1,5 @@
 import { InitialSchema0001 } from '../migrations/postgres/0001-initial-schema';
+import { InteractionResponses0002 } from '../migrations/postgres/0002-interaction-responses';
 import type { PersistenceDialect } from './persistence-dialect';
 
 /**
@@ -8,6 +9,6 @@ import type { PersistenceDialect } from './persistence-dialect';
  */
 export const postgresDialect: PersistenceDialect = {
   name: 'postgres',
-  migrations: [InitialSchema0001],
+  migrations: [InitialSchema0001, InteractionResponses0002],
   driverOptions: ({ url }) => ({ type: 'postgres', url }),
 };

@@ -192,3 +192,57 @@ describe('ProgressSinkService.upsert keeps what a report leaves out', () => {
     expect(ds.rowsOf(NormalizedProgress)).toHaveLength(0);
   });
 });
+
+describe('ProgressSinkService.upsert keeps the section score and time on the registration', () => {
+  const registration = (ds: ReturnType<typeof createMockDataSource>) =>
+    ds.rowsOf(Registration)[0];
+
+  test('writes the scaled score and total time once a module reports them', async () => {
+    const { ds, sink, slot } = setup();
+
+    await sink.upsert({
+      ...slot,
+      completionStatus: 'completed',
+      successStatus: 'passed',
+      scoreScaled: 0.85,
+      totalTime: 'PT2M',
+    });
+
+    expect(Number(registration(ds)?.scoreScaled)).toBeCloseTo(0.85, 6);
+    expect(registration(ds)?.durationIso8601).toBe('PT2M');
+  });
+
+  test('a later report that leaves them out does not clear them', async () => {
+    const { ds, sink, slot } = setup();
+    await sink.upsert({
+      ...slot,
+      completionStatus: 'incomplete',
+      successStatus: 'unknown',
+      scoreScaled: 0.6,
+      totalTime: 'PT5M',
+    });
+
+    await sink.upsert({
+      ...slot,
+      completionStatus: 'completed',
+      successStatus: 'unknown',
+    });
+
+    expect(Number(registration(ds)?.scoreScaled)).toBeCloseTo(0.6, 6);
+    expect(registration(ds)?.durationIso8601).toBe('PT5M');
+  });
+
+  test('stay empty while nothing has reported a score or time', async () => {
+    const { ds, sink, slot } = setup();
+
+    await sink.upsert({
+      ...slot,
+      completionStatus: 'incomplete',
+      successStatus: 'unknown',
+      location: 'page-1',
+    });
+
+    expect(registration(ds)?.scoreScaled ?? null).toBeNull();
+    expect(registration(ds)?.durationIso8601 ?? null).toBeNull();
+  });
+});

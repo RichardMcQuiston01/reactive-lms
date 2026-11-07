@@ -5,3 +5,4 @@ bun.lock
 *.md
 .worktrees
 .superpowers
+packages/core/test-fixtures

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bookmark and Resume</title>
+  </head>
+  <body>
+    <h1>A lesson you leave and come back to</h1>
+    <p id="status">starting</p>
+    <p id="outcome"></p>
+    <script>
+      (function () {
+        function findApi(win) {
+          for (var depth = 0; depth < 10 && win; depth++) {
+            if (win.API) return win.API;
+            if (win.parent === win) break;
+            win = win.parent;
+          }
+          return null;
+        }
+        var api = findApi(window);
+        var statusEl = document.getElementById('status');
+        var outcomeEl = document.getElementById('outcome');
+        if (!api) {
+          statusEl.textContent = 'no-api';
+        } else {
+          api.LMSInitialize('');
+          var entry = api.LMSGetValue('cmi.core.entry');
+          var bookmark = api.LMSGetValue('cmi.core.lesson_location');
+          var suspend = api.LMSGetValue('cmi.suspend_data');
+          if (bookmark === '') {
+            // First launch: get to page 3, remember where, and leave without
+            // finishing (the learner closes the tab), telling the LMS the session was
+            // suspended so the next launch is a resume.
+            api.LMSSetValue('cmi.core.lesson_location', 'page-3');
+            api.LMSSetValue('cmi.suspend_data', '{"page":3,"answers":[1,0,1]}');
+            api.LMSSetValue('cmi.core.lesson_status', 'incomplete');
+            api.LMSSetValue('cmi.core.exit', 'suspend');
+            api.LMSSetValue('cmi.core.session_time', '00:04:00');
+            api.LMSCommit('');
+            outcomeEl.textContent = 'first-run entry=' + entry;
+            statusEl.textContent = 'left-early';
+          } else {
+            // Second launch: pick up where the learner stopped, then finish.
+            // The SCO writes "completed"; with a mastery score in the
+            // manifest the LMS replaces that with passed or failed.
+            outcomeEl.textContent =
+              'resumed entry=' + entry + ' location=' + bookmark + ' suspend=' + suspend +
+              ' mastery=' + api.LMSGetValue('cmi.student_data.mastery_score');
+            api.LMSSetValue('cmi.core.score.raw', '85');
+            api.LMSSetValue('cmi.core.lesson_status', 'completed');
+            api.LMSSetValue('cmi.core.session_time', '00:02:00');
+            api.LMSCommit('');
+            api.LMSFinish('');
+            statusEl.textContent = 'finished';
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

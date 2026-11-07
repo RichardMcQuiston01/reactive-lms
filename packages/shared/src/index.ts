@@ -12,6 +12,7 @@ export type {
 export {
   CmiStore,
   addCmiTimespans,
+  applyMasteryScore,
   cmiTimespanToIso8601,
   coerceCmiValue,
   mapCmiToProgress,
@@ -52,6 +53,10 @@ export type {
 export type { ErrorSink, ErrorSinkEntry } from './contracts/error-sink';
 export type { ContentRuntime, ProgressSink } from './contracts/content-runtime';
 export type { IdentityAdapter } from './contracts/identity-adapter';
+export {
+  ADMIN_LMS_ACTIONS,
+  isAdminAction,
+} from './contracts/capability-adapter';
 export type {
   CapabilityAdapter,
   LmsAction,
@@ -86,6 +91,7 @@ export type { CourseSectionDto } from './dto/course-section.dto';
 export type { ImportPackageResultDto } from './dto/import-package-result.dto';
 export type { RegistrationDto } from './dto/registration.dto';
 export type { SectionRegistrationDto } from './dto/section-registration.dto';
+export type { InteractionResponseDto } from './dto/interaction-response.dto';
 export type { PersonSummaryDto } from './dto/person-summary.dto';
 export type { CreateLaunchDto, LaunchDto } from './dto/launch.dto';
 export type { ScormCmiDto } from './dto/scorm-cmi.dto';
