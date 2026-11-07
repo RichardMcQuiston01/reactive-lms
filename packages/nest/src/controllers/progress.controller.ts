@@ -5,11 +5,15 @@ import {
   HttpCode,
   Param,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ProgressSinkService } from '@richardmcquiston01/reactive-lms-core';
-import type { NormalizedProgress } from '@richardmcquiston01/reactive-lms-shared';
+import type {
+  InteractionResponseDto,
+  NormalizedProgress,
+} from '@richardmcquiston01/reactive-lms-shared';
 import { CatalogService } from '../catalog/catalog.service';
 import { RegistrationAccess } from '../identity/registration-access';
 
@@ -45,6 +49,27 @@ export class ProgressController {
   ): Promise<NormalizedProgress[]> {
     await this.access.assertRegistration(req, 'grade.view', id);
     return this.catalog.listProgress(id);
+  }
+
+  /**
+   * Lists the answers SCOs reported through `cmi.interactions` for a
+   * registration.
+   *
+   * @param id - Registration id
+   * @param req - Host request
+   * @param moduleId - Limit to one course module
+   */
+  @Get(':id/interactions')
+  @ApiOperation({ summary: 'List reported interaction answers' })
+  @ApiParam({ name: 'id' })
+  @ApiQuery({ name: 'moduleId', required: false })
+  async listInteractions(
+    @Param('id') id: string,
+    @Req() req: unknown,
+    @Query('moduleId') moduleId?: string,
+  ): Promise<InteractionResponseDto[]> {
+    await this.access.assertRegistration(req, 'grade.view', id);
+    return this.catalog.listInteractions(id, moduleId || undefined);
   }
 
   /**

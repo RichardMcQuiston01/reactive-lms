@@ -22,6 +22,7 @@ const EXPECTED_TABLE_NAMES = [
   'rlms_enrolment_method',
   'rlms_event_log',
   'rlms_group',
+  'rlms_interaction_response',
   'rlms_line_item',
   'rlms_lti_launch_nonce',
   'rlms_lti_platform_deployment',

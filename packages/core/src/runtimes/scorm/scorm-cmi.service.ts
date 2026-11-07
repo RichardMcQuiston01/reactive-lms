@@ -1,6 +1,7 @@
 import {
   ActivityNode,
   Attempt,
+  InteractionResponse,
   NormalizedProgress as NormalizedProgressRow,
   Person,
   Registration,
@@ -19,6 +20,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { ProgressSinkService } from '../../progress/progress-sink';
+import { extractInteractions } from './interaction-records';
 
 /**
  * Hydrates and commits SCORM 1.2 CMI for an attempt, mapping
@@ -82,6 +84,12 @@ export class ScormCmiService {
       }),
     );
 
+    // Only a session that reported interactions replaces what was stored for
+    // its attempt; one that reported none leaves the earlier answers alone.
+    if (hasInteractions(body.values ?? {})) {
+      await this.replaceInteractions(ctx, activityNodeId, values);
+    }
+
     if (body.finished) {
       ctx.attempt.termination = 'terminated';
       ctx.attempt.endedAt = new Date();
@@ -89,6 +97,31 @@ export class ScormCmiService {
     }
 
     return { values };
+  }
+
+  /** Replaces the stored answers for the attempt with what the SCO reported. */
+  private async replaceInteractions(
+    ctx: CmiContext,
+    activityNodeId: string,
+    values: CmiValues,
+  ): Promise<void> {
+    const records = extractInteractions(values);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.delete(InteractionResponse, { attemptId: ctx.attempt.id });
+      if (records.length === 0) {
+        return;
+      }
+      await manager.insert(
+        InteractionResponse,
+        records.map((record) => ({
+          ...record,
+          attemptId: ctx.attempt.id,
+          registrationId: ctx.attempt.registrationId,
+          courseModuleId: ctx.attempt.courseModuleId,
+          activityNodeId,
+        })),
+      );
+    });
   }
 
   /**
