@@ -89,12 +89,36 @@ lets a SCO fall back.
 - Time limits (`maxtimeallowed`, `timelimitaction`) are passed to the SCO but
   not enforced by the LMS
 
-## Not checked
+## Content Aggregation Model
 
-- **Content Aggregation Model checks** the ADL suite makes: importing its
-  catalogue of valid and invalid packages and comparing the LMS's response.
-  The importer is covered by the fixture packages and by tests for broken
-  exports, but not against ADL's packages.
+`scorm12-cam-conformance.test.ts` checks the importer against the manifest
+rules of SCORM 1.2 (IMS Content Packaging 1.1.2 with ADL's extensions). A
+manifest that breaks one is refused at import with the item or resource and the
+problem named.
+
+| Rule | Result |
+| --- | --- |
+| The default organization must be one of the organizations; organization ids are unique | refused |
+| Every item has an identifier, and item ids are unique across the tree | refused |
+| An item's `identifierref` names a resource the manifest defines | refused |
+| Every resource has an identifier, and resource ids are unique | refused |
+| Resource `type`, when given, is `webcontent`; `adlcp:scormtype`, when given, is `sco` or `asset` (any letter case) | refused |
+| A resource an item launches has an `href`, and the file exists, inside the package, with the exact letter case | refused |
+| A `dependency` names a resource the manifest defines | refused |
+| `adlcp:masteryscore` is a number from 0 to 100 | refused |
+| `adlcp:timelimitaction` is one of the four defined values | refused |
+| `adlcp:maxtimeallowed` is a time span (`HH:MM:SS`, hours of two to four digits) | refused |
+| `adlcp:datafromlms` is at most 255 characters | refused |
+| Heading items with no resource, items that share a resource, and resources no item launches | accepted |
+
+Read leniently, because no LMS behaviour depends on them or real authoring
+tools break them: a missing `adlcp:scormtype`, an omitted `default` on
+`<organizations>` (the first organization is used), `<metadata>` beyond the
+schema version, `<file>` lists (the launch file is checked, the others are
+not), `isvisible`, and `adlcp:prerequisites`.
+- **ADL's catalogue of valid and invalid packages**, which the official suite
+  imports and compares against the LMS's response. The rules above are written
+  from the specification, so ADL's packages may find cases they miss.
 - **XML Schema validation** of manifests against the IMS and ADL schemas.
   Manifests are read leniently, so a package that does not validate may still
   import.

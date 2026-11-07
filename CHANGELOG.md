@@ -180,6 +180,18 @@
 
 ### Changed
 
+- SCORM 1.2 manifests are now checked against the Content Aggregation Model
+  rules that decide whether a course can be launched and tracked. An import
+  is refused, naming the item or resource, when the default organization does
+  not exist, an item or resource has no identifier or repeats one, an item
+  refers to a resource the manifest does not define, a launched resource has
+  no `href`, a resource has a `type` other than `webcontent` or a `scormtype`
+  other than `sco` or `asset`, a dependency names no resource, or an ADL
+  extension is out of range (`masteryscore` outside 0 to 100, an unknown
+  `timelimitaction`, a `maxtimeallowed` that is not a time span, or
+  `datafromlms` over 255 characters). Before, these imported and failed, or
+  silently did the wrong thing, at launch.
+
 - **Breaking:** without a `capabilityAdapter`, `ReactiveLmsModule` now refuses
   administrative routes (import and delete packages, create sections and
   modules, enrol people, search people, list rosters) with 403 `FORBIDDEN`.
