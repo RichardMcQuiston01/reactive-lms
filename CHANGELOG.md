@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- A SCORM asset can now be completed. An asset (`adlcp:scormtype="asset"`)
+  has no script that talks to the LMS, so its module stayed incomplete
+  forever, and with it any prerequisite or section completion that depended
+  on it. Launching an asset in a normal session now marks the module
+  completed and closes the attempt, keeping any success status or score
+  already recorded; Browse and Review launches record nothing.
+
 - The HTML5 player no longer lets an old lesson report as the new one. When
   the host changed the registration or module, the previous frame stayed on
   screen while the next launch loaded, and its messages were labelled with the

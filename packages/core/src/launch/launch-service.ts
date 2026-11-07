@@ -35,6 +35,7 @@ import type { AvailabilityProgress } from './availability';
 import { assertChainAvailable, readStoredAvailability } from './availability';
 import { ancestorsOf, isBlockModule } from '../courses/module-tree';
 import { rowLock } from '../db/row-lock';
+import type { ProgressSinkService } from '../progress/progress-sink';
 
 const LAUNCHABLE = new Set(['html5', 'scorm_12']);
 
@@ -60,12 +61,15 @@ export class LaunchService {
    * @param runtimes - Registered content runtimes (HTML5 / SCORM 1.2)
    * @param options - Content URL prefix
    * @param events - Audit writer; constructed from `dataSource` when omitted
+   * @param sink - Progress writer. Without it, launching a SCORM asset does
+   *   not mark the module completed.
    */
   constructor(
     private readonly dataSource: DataSource,
     private readonly runtimes: ContentRuntime[],
     private readonly options: LaunchServiceOptions = {},
     private readonly events: EventLogService = new EventLogService(dataSource),
+    private readonly sink?: ProgressSinkService,
   ) {}
 
   /**
@@ -74,6 +78,44 @@ export class LaunchService {
    * @param request - Registration, module, learner, and launch mode
    */
   async launch(request: LaunchRequest): Promise<LaunchDescriptor> {
+    const { descriptor, asset } = await this.launchInTransaction(request);
+    if (asset) {
+      await this.completeAsset(asset);
+    }
+    return descriptor;
+  }
+
+  /**
+   * A SCORM asset is a page or file with no script that talks to the LMS, so
+   * it can never report that it was seen. Opening it is the only signal there
+   * is, so a normal launch marks the module completed and closes the attempt.
+   * This runs after the launch transaction commits, because the progress
+   * writer takes the same registration lock.
+   */
+  private async completeAsset(asset: AssetLaunch): Promise<void> {
+    if (!this.sink) {
+      return;
+    }
+    await this.sink.upsert({
+      registrationId: asset.registrationId,
+      courseModuleId: asset.courseModuleId,
+      activityNodeId: asset.activityNodeId,
+      completionStatus: 'completed',
+      successStatus: 'unknown',
+    });
+    const attempt = await this.dataSource.manager.findOne(Attempt, {
+      where: { id: asset.attemptId },
+    });
+    if (attempt && attempt.termination === 'still_open') {
+      attempt.termination = 'terminated';
+      attempt.endedAt = new Date();
+      await this.dataSource.manager.save(attempt);
+    }
+  }
+
+  private async launchInTransaction(
+    request: LaunchRequest,
+  ): Promise<{ descriptor: LaunchDescriptor; asset?: AssetLaunch }> {
     return this.dataSource.transaction(async (manager) => {
       // Lock the registration so two launches for it run one after another:
       // each abandons the other's open attempt instead of both leaving one open.
@@ -274,9 +316,32 @@ export class LaunchService {
         manager,
       );
 
-      return descriptor;
+      const isAsset =
+        contentPackage.packageType === 'scorm_12' &&
+        activityNode?.metadataJson?.['scormType'] === 'asset' &&
+        request.launchMode === 'Normal';
+      return {
+        descriptor,
+        asset:
+          isAsset && activityNode
+            ? {
+                attemptId: attempt.id,
+                registrationId: registration.id,
+                courseModuleId: courseModule.id,
+                activityNodeId: activityNode.id,
+              }
+            : undefined,
+      };
     });
   }
+}
+
+/** A launched SCORM asset that should be marked completed. */
+interface AssetLaunch {
+  attemptId: string;
+  registrationId: string;
+  courseModuleId: string;
+  activityNodeId: string;
 }
 
 async function createRuntimeLaunch(

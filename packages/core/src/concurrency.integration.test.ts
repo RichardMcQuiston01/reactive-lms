@@ -22,6 +22,7 @@ import { ancestorsOf } from './courses/module-tree';
 import { LaunchService } from './launch/launch-service';
 import { ProgressSinkService } from './progress/progress-sink';
 import { Html5Runtime } from './runtimes/html5/html5-runtime';
+import { Scorm12Runtime } from './runtimes/scorm/scorm-12-runtime';
 import { ScormCmiService } from './runtimes/scorm/scorm-cmi.service';
 
 /**
@@ -340,5 +341,54 @@ describe.skipIf(!databaseUrl)('concurrent writers (real Postgres)', () => {
       correctPatterns: [],
     });
     await expect(duplicate).rejects.toThrow();
+  });
+
+  test('launching a SCORM asset completes it once, even when launched together', async () => {
+    const course = await seedCourse(1);
+    const moduleId = course.moduleIds[0] as string;
+    const node = await ds
+      .getRepository(ActivityNode)
+      .findOneByOrFail({ id: course.nodeId });
+    await ds.getRepository(ActivityNode).update(node.id, {
+      metadataJson: { scormType: 'asset' },
+    });
+    await ds
+      .getRepository(ContentPackage)
+      .update(node.contentPackageId, { packageType: 'scorm_12' });
+    const launches = new LaunchService(
+      ds,
+      [new Html5Runtime(), new Scorm12Runtime()],
+      {},
+      new EventLogService(ds),
+      sink(),
+    );
+
+    await Promise.all(
+      Array.from({ length: 6 }, () =>
+        launches.launch({
+          registrationId: course.registrationId,
+          courseModuleId: moduleId,
+          learner: { externalId: 'ignored', displayName: 'Learner' },
+          launchMode: 'Normal',
+        }),
+      ),
+    );
+
+    const rows = await ds.getRepository(NormalizedProgress).find({
+      where: { registrationId: course.registrationId },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.completionStatus).toBe('completed');
+    const open = await ds.getRepository(Attempt).find({
+      where: {
+        registrationId: course.registrationId,
+        termination: 'still_open',
+      },
+    });
+    expect(open).toEqual([]);
+    const registration = await ds
+      .getRepository(Registration)
+      .findOneByOrFail({ id: course.registrationId });
+    expect(registration.status).toBe('completed');
   });
 });

@@ -4,6 +4,7 @@ import {
   Attempt,
   ContentPackage,
   CourseModule,
+  CourseSection,
   Membership,
   EventLog,
   NormalizedProgress,
@@ -15,6 +16,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
+import { ProgressSinkService } from '../progress/progress-sink';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import { createMockDataSource } from '../test/mock-data-source';
@@ -82,6 +84,42 @@ function seedLaunchable(
     sortOrder: 0,
     availabilityJson: availability ?? null,
   });
+}
+
+function launchServiceWithSink(
+  ds: ReturnType<typeof createMockDataSource>,
+): LaunchService {
+  const events = new EventLogService(ds as unknown as DataSource);
+  return new LaunchService(
+    ds as unknown as DataSource,
+    [new Html5Runtime(), new Scorm12Runtime()],
+    {},
+    events,
+    new ProgressSinkService(ds as unknown as DataSource, events),
+  );
+}
+
+/** A SCORM 1.2 module whose launched node is of the given `adlcp:scormtype`. */
+function seedScormNode(
+  ds: ReturnType<typeof createMockDataSource>,
+  scormType: string,
+): void {
+  seedLaunchable(ds);
+  ds.seed(CourseSection, {
+    id: SECTION_ID,
+    title: 'Section',
+    completionRule: { allModules: true },
+  });
+  const pkg = ds.rowsOf(ContentPackage)[0];
+  if (pkg) {
+    pkg.packageType = 'scorm_12';
+    pkg.entryHref = 'page.html';
+  }
+  const node = ds.rowsOf(ActivityNode)[0];
+  if (node) {
+    node.href = 'page.html';
+    node.metadataJson = { scormType };
+  }
 }
 
 describe('LaunchService', () => {
@@ -492,6 +530,126 @@ describe('LaunchService', () => {
         code: 'MODULE_NOT_AVAILABLE',
       });
       await expect(attempt).rejects.toThrow('Module is not yet available.');
+    });
+  });
+
+  describe('SCORM assets', () => {
+    const progress = (ds: ReturnType<typeof createMockDataSource>) =>
+      ds.rowsOf(NormalizedProgress);
+
+    test('a normal launch marks the module completed and closes the attempt', async () => {
+      const ds = createMockDataSource();
+      seedScormNode(ds, 'asset');
+
+      const descriptor = await launchServiceWithSink(ds).launch(REQUEST);
+
+      expect(progress(ds)).toEqual([
+        expect.objectContaining({
+          registrationId: REG_ID,
+          courseModuleId: MODULE_ID,
+          activityNodeId: NODE_ID,
+          completionStatus: 'completed',
+          successStatus: 'unknown',
+        }),
+      ]);
+      expect(ds.rowsOf(Attempt)[0]).toMatchObject({
+        id: descriptor.attemptId,
+        termination: 'terminated',
+      });
+      expect(ds.rowsOf(Attempt)[0]?.endedAt).toBeInstanceOf(Date);
+    });
+
+    test('a SCO is left for its own API calls to complete', async () => {
+      const ds = createMockDataSource();
+      seedScormNode(ds, 'sco');
+
+      await launchServiceWithSink(ds).launch(REQUEST);
+
+      expect(progress(ds)).toEqual([]);
+      expect(ds.rowsOf(Attempt)[0]?.termination).toBe('still_open');
+    });
+
+    test.each(['Browse', 'Review'] as const)(
+      'a %s launch does not record anything',
+      async (launchMode) => {
+        const ds = createMockDataSource();
+        seedScormNode(ds, 'asset');
+
+        await launchServiceWithSink(ds).launch({ ...REQUEST, launchMode });
+
+        expect(progress(ds)).toEqual([]);
+        expect(ds.rowsOf(Attempt)[0]?.termination).toBe('still_open');
+      },
+    );
+
+    test('an HTML5 module is not treated as an asset', async () => {
+      const ds = createMockDataSource();
+      seedLaunchable(ds);
+      const node = ds.rowsOf(ActivityNode)[0];
+      if (node) {
+        node.metadataJson = { scormType: 'asset' };
+      }
+
+      await launchServiceWithSink(ds).launch(REQUEST);
+
+      expect(progress(ds)).toEqual([]);
+    });
+
+    test('opening it again keeps a score or pass already recorded', async () => {
+      const ds = createMockDataSource();
+      seedScormNode(ds, 'asset');
+      ds.seed(NormalizedProgress, {
+        registrationId: REG_ID,
+        courseModuleId: MODULE_ID,
+        activityNodeId: NODE_ID,
+        completionStatus: 'completed',
+        successStatus: 'passed',
+        scoreScaled: '0.9',
+      });
+
+      await launchServiceWithSink(ds).launch(REQUEST);
+
+      expect(progress(ds)).toHaveLength(1);
+      expect(progress(ds)[0]).toMatchObject({
+        completionStatus: 'completed',
+        successStatus: 'passed',
+        scoreScaled: '0.9',
+      });
+    });
+
+    test('without a progress writer, a launch still works and records nothing', async () => {
+      const ds = createMockDataSource();
+      seedScormNode(ds, 'asset');
+
+      const descriptor = await launchService(ds).launch(REQUEST);
+
+      expect(descriptor.packageType).toBe('scorm_12');
+      expect(progress(ds)).toEqual([]);
+    });
+
+    test('completing it satisfies a prerequisite for the next module', async () => {
+      const ds = createMockDataSource();
+      seedScormNode(ds, 'asset');
+      const next = '34343434-3434-4343-8343-343434343434';
+      ds.seed(CourseModule, {
+        id: next,
+        courseSectionId: SECTION_ID,
+        contentPackageId: PACKAGE_ID,
+        activityNodeId: NODE_ID,
+        title: 'Module 2',
+        sortOrder: 1,
+        availabilityJson: {
+          version: 1,
+          all: [{ type: 'module_completed', moduleId: MODULE_ID }],
+        },
+      });
+      const service = launchServiceWithSink(ds);
+
+      await service.launch(REQUEST);
+
+      await expect(
+        service.launch({ ...REQUEST, courseModuleId: next }),
+      ).resolves.toMatchObject({ packageType: 'scorm_12' });
     });
   });
 });
