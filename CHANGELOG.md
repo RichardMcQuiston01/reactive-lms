@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Planned
+
+- AICC (HACP) support added to the roadmap as 0.4.1 (D16), replacing the earlier
+  decision to leave AICC out of scope. See `ROADMAP.md`.
+
 ### Fixed
 
 - A SCORM asset can now be completed. An asset (`adlcp:scormtype="asset"`)
