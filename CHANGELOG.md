@@ -111,6 +111,16 @@
 
 ### Added
 
+- AICC (level 1) packages can be imported. A package with a `.crs` course
+  file and a `.au` unit file at its root is detected as the new `aicc` package
+  type (checked before plain HTML5, since AICC packages also hold HTML). The
+  four course description files are read into the course title and version,
+  its assignable units with their launch files, parameters, mastery score,
+  score range, time limit, and launch data, and the blocks they nest in under
+  `ROOT`. A package that cannot be launched as described is refused with the
+  unit and the problem named. Launching an AICC package is not implemented
+  yet; it needs the HACP endpoint, which comes next.
+
 - An Answers screen in the admin package (`registration-answers`, overridable
   like the others). Each row of the Progress screen links to it, and it lists
   what that person's SCOs reported, grouped by attempt: question, type,

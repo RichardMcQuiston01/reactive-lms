@@ -12,6 +12,8 @@ import { zipSync, strToU8 } from 'fflate';
 import type { DataSource } from 'typeorm';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
+import { AiccRuntime } from '../runtimes/aicc/aicc-runtime';
+import { zipAiccFixture } from '../testing/aicc-fixtures';
 import { FilesystemBlobStorageAdapter } from '../storage/filesystem-blob-storage.adapter';
 import { PackageImporter } from './package-importer';
 
@@ -73,6 +75,7 @@ describe('PackageImporter', () => {
     importer = new PackageImporter(createMockDataSource(saved), storage, [
       new Html5Runtime(),
       new Scorm12Runtime(),
+      new AiccRuntime(),
     ]);
   });
 
@@ -172,6 +175,52 @@ describe('PackageImporter', () => {
     expect(nodes.some((row) => row.href === 'etiquette/etiquette.html')).toBe(
       true,
     );
+  });
+
+  test('imports an AICC ZIP with its blocks as parent and child nodes', async () => {
+    const result = await importer.import(zipAiccFixture('blocks-and-params'));
+    expect(result.packageType).toBe('aicc');
+
+    const pkg = saved.find((row) => row.id === result.packageId);
+    expect(pkg?.packageType).toBe('aicc');
+    expect(pkg?.title).toBe('Safety Basics, Level 1');
+    expect(pkg?.entryHref).toBe('units/intro.html');
+
+    const nodes = saved.filter(
+      (row) => row.contentPackageId === result.packageId,
+    );
+    const byPublisher = new Map(nodes.map((row) => [row.publisherId, row]));
+    expect([...byPublisher.keys()].sort()).toEqual([
+      'A1',
+      'A2',
+      'A3',
+      'B1',
+      'B2',
+    ]);
+    expect(byPublisher.get('A1')?.id).toBe(result.activityNodeId);
+    expect(byPublisher.get('A2')?.parentId).toBe(byPublisher.get('B1')?.id);
+    expect(byPublisher.get('A3')?.parentId).toBe(byPublisher.get('B2')?.id);
+    expect(byPublisher.get('A2')?.metadataJson).toMatchObject({
+      masteryScore: 70,
+    });
+    const extracted = await readKey(
+      storage,
+      `${pkg!.extractedKey}/units/Lesson One.html`,
+    );
+    expect(new TextDecoder().decode(extracted)).toContain('Lesson 1');
+  });
+
+  test('refuses an AICC ZIP whose unit file is missing and stores nothing', async () => {
+    const buffer = zipAiccFixture('single-au', { 'index.html': null });
+    try {
+      await importer.import(buffer);
+      throw new Error('expected import to reject the package');
+    } catch (error) {
+      expect(error).toBeInstanceOf(LmsError);
+      expect((error as LmsError).message).toContain('AICC unit "A1"');
+    }
+    expect(saved).toEqual([]);
+    expect(await readdir(dataRoot)).toEqual([]);
   });
 
   test('throws PACKAGE_TYPE_UNSUPPORTED for a detected non-importable package', async () => {

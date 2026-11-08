@@ -1,0 +1,4 @@
+﻿"System_ID","Type","Command_Line","Max_Time_Allowed","Time_Limit_Action","File_Name","Max_Score","Mastery_Score","System_Vendor","Core_Vendor","Web_Launch","AU_Password"
+"A1","","","00:00:00","","units/intro.html",100,,"","","",""
+"A2","","","00:45:00","E,M","units/Lesson One.html",50,70,"","stage=2, mode=""easy""","?lang=en",""
+"A3","","","","C,M","units/quiz.html",100,85,"","","?mode=quiz&retry=1",""
