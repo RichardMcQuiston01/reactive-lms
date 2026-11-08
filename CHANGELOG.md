@@ -1,5 +1,9 @@
 # CHANGELOG
 
+[Back to README](./README.md)
+
+| [Unreleased](#unreleased) | [0.2.0 - 2026-10-29](#020---2026-10-29) | [0.1.0 - 2026-10-20](#010---2026-10-20) |
+
 ## Unreleased
 
 ### Planned
@@ -259,6 +263,8 @@
   `CatalogService.moduleActivityNodeId` and `packageEntryActivityNodeId` are
   removed because the attempt now supplies the node.
 
+[Back to Top](#changelog)
+
 ## 0.2.0 - 2026-10-29
 
 ### Added
@@ -460,6 +466,8 @@
 - Shared `LMS_ERROR_HTTP_STATUS` maps `PACKAGE_ZIP_BOMB`, `PACKAGE_INVALID_ZIP`,
   `STORAGE_KEY_*`, and `LAUNCH_NOT_IMPLEMENTED`
 
+[Back to Top](#changelog)
+
 ## 0.1.0 - 2026-10-20
 
 ### Added
@@ -474,3 +482,8 @@
   API; Angular 18+ + TailwindCSS + RxJS for the demo. Angular Material
   is no longer a required demo dependency.
 
+[Back to Top](#changelog)
+
+---
+
+[Back to README](./README.md)

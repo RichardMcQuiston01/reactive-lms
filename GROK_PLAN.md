@@ -1,5 +1,9 @@
 # ReactiveLMS Implementation Plan
 
+[Back to README](./README.md)
+
+| [Global Constraints](#global-constraints) | [1. Project understanding](#1-project-understanding) | [2. Recommended approach](#2-recommended-approach) | [3. Repository layout](#3-repository-layout) | [4. Domain model](#4-domain-model) | [5. Runtime architecture](#5-runtime-architecture) | [6. File map (first implementation cut)](#6-file-map-first-implementation-cut) | [7. Phased work](#7-phased-work) | [8. API surface (v1)](#8-api-surface-v1) | [9. Testing strategy](#9-testing-strategy) | [10. Explicit non-goals (v1)](#10-explicit-non-goals-v1) | [11. Risks](#11-risks) | [12. Key decisions](#12-key-decisions) | [13. Open questions](#13-open-questions) | [14. PR plan](#14-pr-plan) | [15. First concrete task (Phase 0, Task 1)](#15-first-concrete-task-phase-0-task-1) | [16. Sources read](#16-sources-read) |
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a TypeScript LMS that can run standalone or embed into an existing NestJS + TypeORM backend and Angular frontend, with first-class support for SCORM 1.2, SCORM 2004, xAPI, cmi5, HTML5 bundles, H5P, and LTI 1.3.
@@ -31,6 +35,8 @@
 - Shared Interfaces and DTOs live only in `@reactive-lms/shared` and must be usable from both frontend and backend.
 
 ---
+
+[Back to Top](#reactivelms-implementation-plan)
 
 ## 1. Project understanding
 
@@ -119,6 +125,8 @@ That file is short and binding. It does not add LMS features; it locks the stack
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 2. Recommended approach
 
 Three approaches were considered:
@@ -132,6 +140,8 @@ Three approaches were considered:
 **Recommendation: C.** It matches the design doc, keeps the shared library honest, and sequences risk: HTML5 and SCORM 1.2 prove the pipeline before cmi5, H5P, LTI, and SCORM 2004 sequencing.
 
 ---
+
+[Back to Top](#reactivelms-implementation-plan)
 
 ## 3. Repository layout
 
@@ -205,6 +215,8 @@ Responsibilities:
 Files that change together stay together: each runtime (`scorm12`, `scorm2004`, `xapi`, `cmi5`, `html5`, `h5p`, `lti`) has a `core` adapter and a `player` counterpart that share types from `shared`.
 
 ---
+
+[Back to Top](#reactivelms-implementation-plan)
 
 ## 4. Domain model
 
@@ -513,7 +525,11 @@ Every runtime writes progress only through `ProgressSink`. That is how SCORM CMI
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 5. Runtime architecture
+
+| [5.1 Import pipeline](#51-import-pipeline) | [5.2 Launch pipeline](#52-launch-pipeline) | [5.3 Progress rollup](#53-progress-rollup) | [5.4 SCORM runtime notes](#54-scorm-runtime-notes) | [5.5 xAPI LRS notes](#55-xapi-lrs-notes) | [5.6 LTI 1.3 platform notes](#56-lti-13-platform-notes) | [5.7 Angular player and standalone demo](#57-angular-player-and-standalone-demo) | [5.8 NestJS embedding](#58-nestjs-embedding) |
 
 ### 5.1 Import pipeline
 
@@ -657,6 +673,8 @@ Standalone mode is the same module plus a local JWT identity adapter and a local
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 6. File map (first implementation cut)
 
 Create these files. Later tasks fill them; do not invent parallel trees.
@@ -759,7 +777,11 @@ Create these files. Later tasks fill them; do not invent parallel trees.
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 7. Phased work
+
+| [Phase 0 — Scaffold the monorepo](#phase-0--scaffold-the-monorepo) | [Phase 1 — Shared contracts and error model](#phase-1--shared-contracts-and-error-model) | [Phase 2 — Persistence and migrations](#phase-2--persistence-and-migrations) | [Phase 3 — Course container, enrolment, HTML5 (proves the pipeline)](#phase-3--course-container-enrolment-html5-proves-the-pipeline) | [Phase 4 — SCORM 1.2](#phase-4--scorm-12) | [Phase 5 — xAPI LRS + cmi5](#phase-5--xapi-lrs--cmi5) | [Phase 6 — SCORM 2004 (CMI first, sequencing second)](#phase-6--scorm-2004-cmi-first-sequencing-second) | [Phase 7 — H5P](#phase-7--h5p) | [Phase 8 — LTI 1.3 Platform + Advantage](#phase-8--lti-13-platform--advantage) | [Phase 9 — NestJS host integration and standalone polish](#phase-9--nestjs-host-integration-and-standalone-polish) | [Phase 10 — Reporting that the host actually needs](#phase-10--reporting-that-the-host-actually-needs) | [Phase 11 — Multi-database drivers and Redis cache (after v1)](#phase-11--multi-database-drivers-and-redis-cache-after-v1) |
 
 Each phase produces working, testable software. Do not start a later phase until the previous phase’s automated tests pass and the CHANGELOG / README are updated.
 
@@ -965,6 +987,8 @@ Required by `docs/TECHNOLOGY.md`, not by the first shippable LMS slice.
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 8. API surface (v1)
 
 Prefix is configurable (`/lms` default). All write bodies are JSON. All error bodies:
@@ -1008,6 +1032,8 @@ Authn is the host’s problem. The Nest module receives the already-authenticate
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 9. Testing strategy
 
 | Layer | Tool | What |
@@ -1023,6 +1049,8 @@ Do not claim a format is “supported” until its fixture test is green.
 SCORM 2004 full sequencing gets its own conformance fixtures (ADL test suite) in the SN follow-up plan, not in Phase 6 CMI.
 
 ---
+
+[Back to Top](#reactivelms-implementation-plan)
 
 ## 10. Explicit non-goals (v1)
 
@@ -1048,6 +1076,8 @@ These appeared in PHP LMS feature lists or vendor checklists and are **not** req
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 11. Risks
 
 | Risk | Why it matters | Mitigation |
@@ -1062,6 +1092,8 @@ These appeared in PHP LMS feature lists or vendor checklists and are **not** req
 The `rlms_` table prefix is a hard decision: it is the only safe way to ship migrations into an unknown host database.
 
 ---
+
+[Back to Top](#reactivelms-implementation-plan)
 
 ## 12. Key decisions
 
@@ -1086,6 +1118,8 @@ The `rlms_` table prefix is a hard decision: it is the only safe way to ship mig
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 13. Open questions
 
 These do not block Phase 0–3. They should be answered before the named phase.
@@ -1102,6 +1136,8 @@ These do not block Phase 0–3. They should be answered before the named phase.
 10. **Redis in standalone-api or only when the host injects it?** Recommendation: inject only. Standalone stays in-memory until someone runs more than one API process.
 
 ---
+
+[Back to Top](#reactivelms-implementation-plan)
 
 ## 14. PR plan
 
@@ -1127,6 +1163,8 @@ PRs 5, 6a, 7, and 8 can proceed in parallel after PR 3, because each runtime onl
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 15. First concrete task (Phase 0, Task 1)
 
 **Files:**
@@ -1148,6 +1186,8 @@ Do not start Phase 0 in this session unless asked. This document is the plan, no
 
 ---
 
+[Back to Top](#reactivelms-implementation-plan)
+
 ## 16. Sources read
 
 - `docs/DESIGN_CONSIDERATIONS.md`
@@ -1165,3 +1205,9 @@ Do not start Phase 0 in this session unless asked. This document is the plan, no
 - [Chamilo LMS](https://github.com/chamilo/chamilo-lms) — sessions, learning paths, SCORM/LTI/xAPI/cmi5, SIS API, GDPR export
 - [ILIAS](https://www.ilias.de/en/about-ilias/) — repository objects, SCORM 1.2/2004, xAPI/cmi5, QTI, LOM
 - [Forma LMS](https://www.formalms.org/) — corporate catalog, certificates, rule-based enrolment (v1 takes catalog + enrolment ideas only)
+
+[Back to Top](#reactivelms-implementation-plan)
+
+---
+
+[Back to README](./README.md)

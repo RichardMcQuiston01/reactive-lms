@@ -1,5 +1,9 @@
 # SCORM 1.2 conformance status
 
+[Back to README](../README.md)
+
+| [What is checked automatically](#what-is-checked-automatically) | [Found and fixed while writing the checks](#found-and-fixed-while-writing-the-checks) | [Interactions](#interactions) | [Assets](#assets) | [Not implemented](#not-implemented) | [Content Aggregation Model](#content-aggregation-model) | [To run the official suite](#to-run-the-official-suite) |
+
 What has been checked against SCORM 1.2, how, and what has not.
 
 **The official ADL Test Suite has not been run, and cannot be on a current
@@ -36,6 +40,8 @@ bookmark, score, complete, resume, mastery score) has been run in a real
 browser against the standalone API and a database. See the fixture packages in
 `packages/core/test-fixtures/scorm12`.
 
+[Back to Top](#scorm-12-conformance-status)
+
 ## Found and fixed while writing the checks
 
 - Invalid values answered 351, and unset optional values answered 391. Neither
@@ -48,6 +54,8 @@ browser against the standalone API and a database. See the fixture packages in
 - A second `LMSFinish` answered 101 instead of 301.
 - `LMSGetErrorString` of an unknown code returned text instead of `""`, and the
   405, 202, and 203 strings did not exist.
+
+[Back to Top](#scorm-12-conformance-status)
 
 ## Interactions
 
@@ -72,6 +80,8 @@ lists them by attempt.
 - `student_response` and `correct_responses.m.pattern` are limited to 255
   characters; their per-type syntax is not checked.
 
+[Back to Top](#scorm-12-conformance-status)
+
 ## Assets
 
 A resource marked `adlcp:scormtype="asset"` is a page or file with no script
@@ -80,6 +90,8 @@ the only signal there is, so a normal launch marks its module completed (the
 success status and any score already recorded are kept) and closes the
 attempt. Browse and Review launches record nothing. A SCO is never treated
 this way: it completes through its own API calls.
+
+[Back to Top](#scorm-12-conformance-status)
 
 ## Not implemented
 
@@ -93,6 +105,8 @@ lets a SCO fall back.
 - `credit` / `no-credit`: the adapter always reports `credit`
 - Time limits (`maxtimeallowed`, `timelimitaction`) are passed to the SCO but
   not enforced by the LMS
+
+[Back to Top](#scorm-12-conformance-status)
 
 ## Content Aggregation Model
 
@@ -130,6 +144,8 @@ not), `isvisible`, and `adlcp:prerequisites`.
 - Behaviours the specification leaves to the LMS, such as what status to set
   when a SCO finishes without setting one.
 
+[Back to Top](#scorm-12-conformance-status)
+
 ## To run the official suite
 
 This is blocked for now: the suite does not run on current systems. If it can
@@ -145,3 +161,9 @@ it has been ported, the steps are:
 
 Until then, the practical checks are the automated suites above, the fixture
 packages, and packages from other tools that are known to be good.
+
+[Back to Top](#scorm-12-conformance-status)
+
+---
+
+[Back to README](../README.md)
