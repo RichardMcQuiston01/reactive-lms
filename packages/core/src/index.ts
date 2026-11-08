@@ -83,6 +83,8 @@ export {
   Scorm12Runtime,
   type Scorm12LaunchContext,
 } from './runtimes/scorm/scorm-12-runtime';
+export { AiccRuntime } from './runtimes/aicc/aicc-runtime';
+export { parseAicc } from './runtimes/aicc/parse-aicc';
 export { ScormCmiService } from './runtimes/scorm/scorm-cmi.service';
 export { FilesystemBlobStorageAdapter } from './storage/filesystem-blob-storage.adapter';
 export { MemoryBlobStorageAdapter } from './storage/memory-blob-storage.adapter';

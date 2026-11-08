@@ -1,0 +1,15 @@
+[Course]
+Course_Creator=Older Authoring Tool 4.2
+Course_ID=BLOCKS-1
+Course_System=HTML
+Course_Title=Safety Basics, Level 1
+Level=1
+Max_Fields_CST=2
+Total_AUs=3
+Total_Blocks=2
+Version=3.4
+; a comment line
+[Course_Behavior]
+Max_Normal=3
+[Course_Description]
+Covers "safe" practice, in three units.

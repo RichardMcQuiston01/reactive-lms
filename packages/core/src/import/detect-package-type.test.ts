@@ -150,3 +150,44 @@ describe('detectPackageType', () => {
     }
   });
 });
+
+describe('detectPackageType: AICC', () => {
+  const aicc = { 'course.crs': '[Course]', 'course.au': '"system_id"' };
+
+  test('detects aicc from a .crs and a .au at the root, before html5', () => {
+    expect(detectPackageType(memoryIndex({ ...aicc, 'index.html': '' }))).toBe(
+      'aicc',
+    );
+  });
+
+  test('reads the extensions without regard to case', () => {
+    expect(
+      detectPackageType(
+        memoryIndex({ 'COURSE.CRS': '', 'Course.Au': '', 'a.html': '' }),
+      ),
+    ).toBe('aicc');
+  });
+
+  test('needs both files, and only at the root', () => {
+    expect(
+      detectPackageType(memoryIndex({ 'course.crs': '', 'a.html': '' })),
+    ).toBe('html5');
+    expect(
+      detectPackageType(
+        memoryIndex({
+          'sub/course.crs': '',
+          'sub/course.au': '',
+          'a.html': '',
+        }),
+      ),
+    ).toBe('html5');
+  });
+
+  test('a SCORM manifest still wins over AICC files', () => {
+    expect(
+      detectPackageType(
+        memoryIndex({ ...aicc, 'imsmanifest.xml': SCORM_12_MANIFEST }),
+      ),
+    ).toBe('scorm_12');
+  });
+});
