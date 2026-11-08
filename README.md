@@ -89,6 +89,7 @@ curl http://localhost:3000/lms/packages
 Working today:
 
 - Import of HTML5 and SCORM 1.2 ZIP files. A broken SCORM manifest is refused with a message that names the problem.
+- Import of Aviation Industry Computer-Based Training Committee (AICC) ZIP files. They cannot be launched yet.
 - Launch in a frame, with SCORM 1.2 bookmarks, scores, pass marks, quiz answers, and assets tracked.
 - Course sections with modules, nested blocks, and rules for when a module opens.
 - Enrolment by the `manual`, `self`, or `group` method.
@@ -99,7 +100,7 @@ Working today:
 Planned:
 
 - SCORM 2004, xAPI, cmi5, H5P, and Learning Tools Interoperability (LTI) 1.3.
-- Aviation Industry Computer-Based Training Committee (AICC) packages.
+- Launching AICC packages. This needs a Hypertext Transfer Protocol (HTTP) endpoint for the content to report to.
 - Support for more databases, and Redis caching.
 
 [Back to Top](#table-of-contents)

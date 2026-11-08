@@ -18,7 +18,7 @@ Use [Bun](https://bun.sh) to install and to run scripts. Do not use npm for eith
 | --- | --- | --- |
 | `packages/shared` | `@richardmcquiston01/reactive-lms-shared` | Enums, data transfer objects (DTOs), adapter contracts, launch and progress models, and `LmsError`. It has no Nest, Angular, or TypeORM code. |
 | `packages/persistence` | `@richardmcquiston01/reactive-lms-persistence` | The `rlms_*` TypeORM entities, the `createPersistenceDataSource` factory, and the Postgres migrations. |
-| `packages/core` | `@richardmcquiston01/reactive-lms-core` | Import, launch, and progress. It holds the HTML5 and Sharable Content Object Reference Model (SCORM) 1.2 runtimes, the SCORM 1.2 data store, module placement, enrolment, and course completion. |
+| `packages/core` | `@richardmcquiston01/reactive-lms-core` | Import, launch, and progress. It holds the HTML5, Sharable Content Object Reference Model (SCORM) 1.2, and Aviation Industry Computer-Based Training Committee (AICC) runtimes, the SCORM 1.2 data store, module placement, enrolment, and course completion. |
 | `packages/nest` | `@richardmcquiston01/reactive-lms-nest` | An embeddable NestJS module with web routes and OpenAPI docs. |
 | `packages/player` | `@richardmcquiston01/reactive-lms-player` | The Angular player, `provideReactiveLms`, the HTML5 `postMessage` mapper, and the SCORM `window.API` bridge. |
 | `packages/admin` | `@richardmcquiston01/reactive-lms-admin` | Angular admin screens that a host can mount or replace. |
@@ -39,7 +39,7 @@ Progress is written through `ProgressSinkService`. It works out the status of ea
 
 `@richardmcquiston01/reactive-lms-nest` exposes these services over the web. Register it with `ReactiveLmsModule.registerAsync`. Its routes start with `/lms` unless you change the prefix. The player package provides `provideReactiveLms` and the `<rlms-player>` component. The component launches a module, loads `contentUrl` in a frame, and receives HTML5 progress messages.
 
-SCORM 2004, xAPI, cmi5, and H5P packages are detected when you upload them, but they cannot be imported yet.
+AICC packages can be imported, but not launched yet. SCORM 2004, xAPI, cmi5, and H5P packages are detected when you upload them, but they cannot be imported yet.
 
 [Back to Top](#packages)
 
