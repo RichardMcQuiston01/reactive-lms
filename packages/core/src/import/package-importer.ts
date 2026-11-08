@@ -50,10 +50,10 @@ export interface ImportPackageResult {
   packageType: PackageType;
 }
 
-const IMPORTABLE = new Set<PackageType>(['html5', 'scorm_12']);
+const IMPORTABLE = new Set<PackageType>(['html5', 'scorm_12', 'aicc']);
 
 /**
- * Detects a ZIP package, stores it, and persists HTML5 / SCORM 1.2
+ * Detects a ZIP package, stores it, and persists HTML5 / SCORM 1.2 / AICC
  * packages plus their activity trees.
  */
 export class PackageImporter {

@@ -11,6 +11,7 @@ import {
 import {
   consoleErrorSink,
   EnrolmentService,
+  AiccRuntime,
   EventLogService,
   FilesystemBlobStorageAdapter,
   Html5Runtime,
@@ -263,7 +264,7 @@ function buildModule(input: {
         new PackageImporter(
           dataSource,
           storage,
-          [new Html5Runtime(), new Scorm12Runtime()],
+          [new Html5Runtime(), new Scorm12Runtime(), new AiccRuntime()],
           {
             antivirusScan: opts.antivirusScan,
             maxUncompressedBytes: opts.maxUncompressedBytes,

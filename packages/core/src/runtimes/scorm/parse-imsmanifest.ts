@@ -17,6 +17,7 @@ import {
   type XmlElement,
 } from './manifest-xml';
 import { assertManifestRules } from './manifest-rules';
+import { assertLaunchFile, withParameters } from '../../import/launch-file';
 
 interface ResourceRef {
   /** Launch path inside the package, with any query the manifest gave. */
@@ -194,28 +195,6 @@ function resolveAgainstBase(base: string, href: string): string {
   return normalizePackagePath(`${base}${cleaned}`);
 }
 
-/**
- * Applies an item's `parameters` to its launch address, as the SCORM 1.2
- * content aggregation model describes: they are appended to the resource
- * address. A `?` where the address already has a query continues that query,
- * and a `&` where it has none starts one.
- */
-function withParameters(href: string, parameters: string | undefined): string {
-  const extra = parameters?.trim() ?? '';
-  if (extra === '') {
-    return href;
-  }
-  if (extra.startsWith('#')) {
-    return `${href}${extra}`;
-  }
-  const hasQuery = href.includes('?');
-  if (extra.startsWith('?') || extra.startsWith('&')) {
-    const rest = extra.slice(1);
-    return `${href}${hasQuery ? '&' : '?'}${rest}`;
-  }
-  return `${href}${hasQuery ? '&' : '?'}${extra}`;
-}
-
 /** First launchable item whose resource is a SCO, depth first. */
 function firstScoHref(activities: ActivityNodeTree[]): string | undefined {
   for (const node of activities) {
@@ -255,50 +234,11 @@ function assertLaunchFilesExist(
 ): void {
   for (const node of activities) {
     if (node.href) {
-      const filePath = filePartOf(node.href);
-      if (escapesPackage(filePath)) {
-        throw notDetected(
-          `SCORM item "${node.title}" launches "${filePath}", which is outside the package. Launch paths must stay inside it.`,
-        );
-      }
-      if (!hasFile(files, filePath)) {
-        const sameName = files.paths
-          .map((path) => normalizePackagePath(path))
-          .find((path) => path.toLowerCase() === filePath.toLowerCase());
-        throw notDetected(
-          sameName
-            ? `SCORM item "${node.title}" launches "${filePath}", but the package has "${sameName}", which differs only in letter case. File names are case sensitive.`
-            : `SCORM item "${node.title}" launches "${filePath}", which is not in the package.`,
-        );
-      }
+      assertLaunchFile(`SCORM item "${node.title}"`, node.href, files);
     }
     if (node.children) {
       assertLaunchFilesExist(node.children, files);
     }
-  }
-}
-
-/** The file part of a launch address: no query, no fragment. */
-function filePartOf(href: string): string {
-  return href.split(/[?#]/, 1)[0] ?? href;
-}
-
-function escapesPackage(filePath: string): boolean {
-  return (
-    /^[a-z][a-z0-9+.-]*:/i.test(filePath) ||
-    filePath.split('/').some((segment) => segment === '..')
-  );
-}
-
-/** True when the package has the file, as written or with %-escapes decoded. */
-function hasFile(files: PackageFileIndex, filePath: string): boolean {
-  if (files.has(filePath)) {
-    return true;
-  }
-  try {
-    return files.has(decodeURIComponent(filePath));
-  } catch {
-    return false;
   }
 }
 
