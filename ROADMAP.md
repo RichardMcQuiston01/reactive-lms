@@ -42,8 +42,8 @@ Boundaries, so the two don't blur:
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ✅ released 2026-10-29 (see `docs/PLAN_0.2.0.md`) |
-| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, and placement screens built; enrolment and progress screens remain |
-| 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, player bridge, and fixture packages, `masteryscore`, and an automated run-time conformance suite built and run end to end in a browser; the official ADL Test Suite run remains (see `docs/SCORM_1_2_CONFORMANCE.md`) |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, placement, enrolment, progress, and interaction-answer screens built |
+| 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, player bridge, and fixture packages, `masteryscore`, and an automated run-time conformance suite, `cmi.interactions` with stored answers, asset completion, and Content Aggregation Model checks built and run end to end in a browser; the official ADL Test Suite could not be run on a current system (see `docs/SCORM_1_2_CONFORMANCE.md`) |
 | 0.4.1   | AICC (HACP)                 | —                   | ⬜ (D16) |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |

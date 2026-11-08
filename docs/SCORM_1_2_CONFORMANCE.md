@@ -2,11 +2,16 @@
 
 What has been checked against SCORM 1.2, how, and what has not.
 
-**The official ADL Test Suite has not been run.** It is a Windows application
-published by ADL, and it could not be downloaded or run where this was built.
-Until it is run, ReactiveLMS does not claim SCORM 1.2 certification. What is
-below is an automated check written from the SCORM 1.2 specification, plus the
-gaps found while writing it.
+**The official ADL Test Suite has not been run, and cannot be on a current
+system.** It is a Windows application published by ADL, and it does not run on
+modern computers. Until it is run, ReactiveLMS does not claim SCORM 1.2
+certification. What is below is an automated check written from the SCORM 1.2
+specification, plus the gaps found while writing it.
+
+SCORM Cloud has been used to validate packages exported by `lms-package-maker`.
+That checks the packages (the content side) against another vendor's engine. It
+does not test this LMS, so it is not evidence of LMS conformance. Packages that
+play correctly there are useful as known-good inputs for ReactiveLMS.
 
 ## What is checked automatically
 
@@ -127,9 +132,16 @@ not), `isvisible`, and `adlcp:prerequisites`.
 
 ## To run the official suite
 
+This is blocked for now: the suite does not run on current systems. If it can
+be run, for example in a virtual machine with a supported older Windows or after
+it has been ported, the steps are:
+
 1. Get the ADL SCORM 1.2 Test Suite from ADL (a Windows application).
 2. Start the standalone API and a database (see the README).
-3. Point the suite at the LMS's launch page, following its LMS test
-   instructions, and run the Run-Time Environment and Content Aggregation
-   Model tests.
+3. Follow the suite's own instructions for testing an LMS, and run the
+   Run-Time Environment and Content Aggregation Model tests. How the suite
+   reaches the LMS has not been confirmed here.
 4. Record the result here, and fix what it reports.
+
+Until then, the practical checks are the automated suites above, the fixture
+packages, and packages from other tools that are known to be good.
