@@ -1,5 +1,9 @@
 # TECHNOLOGY
 
+[Back to README](../README.md)
+
+| [TECH STACK](#tech-stack) |
+
 ## TECH STACK
 
 ### BACKEND
@@ -19,3 +23,9 @@
 ### SHARE LIBRARY
 
 - Shared Interfaces, DTOs, etc. that could be useful on both frontend and backend projects
+
+[Back to Top](#technology)
+
+---
+
+[Back to README](../README.md)
