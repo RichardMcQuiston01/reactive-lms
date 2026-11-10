@@ -186,7 +186,9 @@ that has been exited refuses further requests with an AICC error.
   address; set `publicBaseUrl` behind a proxy that changes the host or scheme).
   The endpoint has no sign-in: the session id is the only credential, and it
   works only while the attempt is open. Every outcome is an HTTP 200 reply with
-  an error code in the body, as HACP defines. An unknown, ended, replaced, or
+  an error code in the body, as HACP defines, including a request whose body
+  cannot be read or is too large and a method other than POST (error 1 with the
+  reason); only a server fault is a 5xx. An unknown, ended, replaced, or
   non-AICC session is always error 3 with the same words; an unknown command,
   an empty `PutParam`, or a value the CMI store refuses is error 1 naming the
   value, and nothing is saved. `PutParam` reads `[Core]` location, status with

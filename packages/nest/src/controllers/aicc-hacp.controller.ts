@@ -1,6 +1,15 @@
-import { Body, Controller, Header, HttpCode, Post } from '@nestjs/common';
+import {
+  All,
+  Body,
+  Controller,
+  Header,
+  HttpCode,
+  Post,
+  UseFilters,
+} from '@nestjs/common';
 import {
   ApiBody,
+  ApiExcludeEndpoint,
   ApiConsumes,
   ApiOkResponse,
   ApiOperation,
@@ -11,7 +20,11 @@ import {
   AiccHacpService,
   formatHacpResponse,
 } from '@richardmcquiston01/reactive-lms-core';
-import type { HacpRequestDto } from '@richardmcquiston01/reactive-lms-shared';
+import {
+  AICC_ERROR,
+  type HacpRequestDto,
+} from '@richardmcquiston01/reactive-lms-shared';
+import { AllExceptionsFilter } from '../filters/all-exceptions.filter';
 
 /**
  * The address AICC content calls (`AICC_URL`). It speaks HACP, the AICC
@@ -24,6 +37,7 @@ import type { HacpRequestDto } from '@richardmcquiston01/reactive-lms-shared';
  */
 @ApiTags('aicc')
 @Controller('aicc')
+@UseFilters(AllExceptionsFilter)
 export class AiccHacpController {
   /**
    * @param hacp - Core HACP service
@@ -33,8 +47,9 @@ export class AiccHacpController {
   /**
    * Answers a HACP command (`GetParam`, `PutParam`, `ExitAU`, and the `Put*`
    * commands that are accepted and ignored). HACP reports every outcome in the
-   * body of an HTTP 200 reply, including refusals, so a client that treats a
-   * non-200 reply as a network failure keeps working.
+   * body of an HTTP 200 reply, including refusals, so every answer from this
+   * route is a 200 with a HACP body, including a request whose body cannot be
+   * read (see `writeHacpClientError`). Only a server fault is a 5xx.
    *
    * @param body - Form fields of the request
    * @returns The reply as HACP plain text
@@ -81,5 +96,25 @@ export class AiccHacpController {
   async handle(@Body() body: Partial<HacpRequestDto>): Promise<string> {
     const reply = await this.hacp.handle(body ?? {});
     return formatHacpResponse(reply);
+  }
+
+  /**
+   * Any other method on the route is answered in HACP too: error 1, saying
+   * requests must be POSTed.
+   *
+   * @returns The reply as HACP plain text
+   */
+  @All('hacp')
+  @HttpCode(200)
+  @Header('Content-Type', 'text/plain; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiExcludeEndpoint()
+  notPost(): string {
+    return formatHacpResponse({
+      errorCode: AICC_ERROR.invalidCommand,
+      errorText: 'Invalid Command: HACP requests must be sent with POST.',
+      version: '3.5',
+      aiccData: '',
+    });
   }
 }

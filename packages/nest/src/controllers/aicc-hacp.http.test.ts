@@ -27,7 +27,10 @@ interface Harness {
  * Boots the HACP controller and the launch controller over HTTP. There is no
  * identity adapter at all: HACP is identified by its session id alone.
  */
-async function startHarness(publicBaseUrl?: string): Promise<Harness> {
+async function startHarness(
+  publicBaseUrl?: string,
+  failure?: Error,
+): Promise<Harness> {
   const forms: Record<string, unknown>[] = [];
   const launches: Array<{ callbackBaseUrl?: string }> = [];
   const reply: HacpResponseDto = {
@@ -44,6 +47,9 @@ async function startHarness(publicBaseUrl?: string): Promise<Harness> {
         provide: AiccHacpService,
         useValue: {
           handle: async (form: Record<string, unknown>) => {
+            if (failure) {
+              throw failure;
+            }
             forms.push(form);
             return reply;
           },
@@ -138,13 +144,61 @@ describe('POST /aicc/hacp', () => {
     expect(harness.forms).toEqual([{}]);
   });
 
-  test('other methods are not accepted', async () => {
+  test('every client mistake is a HACP reply at HTTP 200, never an HTTP error', async () => {
     harness = await startHarness();
+    const url = `${harness.baseUrl}/aicc/hacp`;
+    const send = async (init: RequestInit) => {
+      const response = await fetch(url, init);
+      return { response, text: await response.text() };
+    };
 
-    const response = await fetch(`${harness.baseUrl}/aicc/hacp`);
-
-    expect(response.status).toBe(404);
+    const cases: Array<[string, RequestInit, string]> = [
+      ['GET', { method: 'GET' }, 'must be sent with POST'],
+      ['PUT', { method: 'PUT' }, 'must be sent with POST'],
+      ['DELETE', { method: 'DELETE' }, 'must be sent with POST'],
+      [
+        'a body that is too large',
+        {
+          method: 'POST',
+          headers: FORM,
+          body: `command=PutParam&aicc_data=${'x'.repeat(300_000)}`,
+        },
+        'larger than this LMS accepts',
+      ],
+      [
+        'JSON that cannot be read',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{nope',
+        },
+        'could not be read',
+      ],
+    ];
+    for (const [name, init, reason] of cases) {
+      const { response, text } = await send(init);
+      expect(response.status, name).toBe(200);
+      expect(response.headers.get('content-type'), name).toContain(
+        'text/plain',
+      );
+      expect(text, name).toStartWith('error=1\r\nerror_text=Invalid Command: ');
+      expect(text, name).toContain(reason);
+      expect(text, name).toContain('\r\nversion=3.5\r\naicc_data=');
+    }
     expect(harness.forms).toEqual([]);
+  });
+
+  test('a server fault is not a HACP outcome, so it stays a 5xx and is reported', async () => {
+    harness = await startHarness(undefined, new Error('database is down'));
+
+    const response = await fetch(`${harness.baseUrl}/aicc/hacp`, {
+      method: 'POST',
+      headers: FORM,
+      body: 'command=GetParam&session_id=x',
+    });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({ code: 'INTERNAL_ERROR' });
   });
 });
 

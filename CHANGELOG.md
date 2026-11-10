@@ -13,6 +13,10 @@
 
 ### Fixed
 
+- A request body that a body parser refused (too large, or not readable) was
+  reported as a 500 `INTERNAL_ERROR` and logged as a server error. It now keeps
+  its 4xx status (413 `PAYLOAD_TOO_LARGE`, 400 `BAD_REQUEST`).
+
 - A SCORM asset can now be completed. An asset (`adlcp:scormtype="asset"`)
   has no script that talks to the LMS, so its module stayed incomplete
   forever, and with it any prerequisite or section completion that depended
@@ -123,8 +127,10 @@
   the same checks, progress roll-up, and mastery score. It needs no sign-in:
   the session id is the only credential, and it stops working when `ExitAU`
   ends the attempt or a newer launch replaces it. Every outcome is an HTTP 200
-  reply with an error code, as HACP requires; a refused value is error 1 with
-  the reason, and an unknown or ended session is error 3. Packages exported by
+  reply with an error code, as HACP requires, including a body that cannot be
+  read or is too large and a method other than POST; a refused value is error 1
+  with the reason, and an unknown or ended session is error 3. Only a server
+  fault is a 5xx. Packages exported by
   `lms-package-maker` were played in a browser against it: import, launch,
   score, complete, resume, and refuse after exit all work.
 - `LaunchRequest.callbackBaseUrl`, the address of the API root that content
