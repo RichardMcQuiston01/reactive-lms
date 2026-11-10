@@ -2,7 +2,7 @@
 
 [Back to README](../README.md)
 
-| [Environment Variables](#environment-variables) | [Database Migrations](#database-migrations) | [Tests](#tests) |
+| [Environment Variables](#environment-variables) | [Database Migrations](#database-migrations) | [AICC Callback Address](#aicc-callback-address) | [Tests](#tests) |
 
 The standalone API reads its settings from environment variables.
 
@@ -31,6 +31,18 @@ The standalone API owns its database. A new, empty database is set up on the fir
 Set `RLMS_RUN_MIGRATIONS` to `false`, `0`, `no`, or `off` if you apply migrations yourself. The values `true`, `1`, `yes`, and `on` turn it on. Any other value stops the process with a message that names the variable.
 
 If you run several API processes against one database, start one of them first. That way two processes do not migrate at the same time.
+
+[Back to Top](#configuration)
+
+## AICC Callback Address
+
+Aviation Industry Computer-Based Training Committee (AICC) content calls the LMS from the learner's browser. At launch the LMS tells the content where, as an address that starts with `http://` or `https://`. The launch route builds it from the request: the scheme and host of the request, plus the route prefix, plus `/aicc/hacp`.
+
+Behind a proxy, the API may see a different host or scheme than the browser does. Set the `publicBaseUrl` option of `ReactiveLmsModule` to the scheme, host, and port that browsers use, such as `https://lms.example.com`, with no path. The route prefix is still added for you.
+
+A host that calls `LaunchService.launch` itself must pass `callbackBaseUrl`, the full API root such as `https://lms.example.com/lms`. An AICC launch without it is refused with a message that names it.
+
+The route that content calls, `/aicc/hacp`, does not use the host's sign-in or permission checks. Content identifies itself with the session id from the launch, which works only while that launch is open.
 
 [Back to Top](#configuration)
 

@@ -92,6 +92,12 @@ export type { ImportPackageResultDto } from './dto/import-package-result.dto';
 export type { RegistrationDto } from './dto/registration.dto';
 export type { SectionRegistrationDto } from './dto/section-registration.dto';
 export type { InteractionResponseDto } from './dto/interaction-response.dto';
+export { AICC_ERROR } from './dto/aicc-hacp.dto';
+export type {
+  AiccErrorCode,
+  HacpRequestDto,
+  HacpResponseDto,
+} from './dto/aicc-hacp.dto';
 export type { PersonSummaryDto } from './dto/person-summary.dto';
 export type { CreateLaunchDto, LaunchDto } from './dto/launch.dto';
 export type { ScormCmiDto } from './dto/scorm-cmi.dto';

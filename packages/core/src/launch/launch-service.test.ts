@@ -17,6 +17,7 @@ import {
 import type { DataSource } from 'typeorm';
 import { EventLogService } from '../audit/event-log.service';
 import { ProgressSinkService } from '../progress/progress-sink';
+import { AiccRuntime } from '../runtimes/aicc/aicc-runtime';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import { createMockDataSource } from '../test/mock-data-source';
@@ -650,6 +651,59 @@ describe('LaunchService', () => {
       await expect(
         service.launch({ ...REQUEST, courseModuleId: next }),
       ).resolves.toMatchObject({ packageType: 'scorm_12' });
+    });
+  });
+
+  describe('AICC', () => {
+    const aiccService = (ds: ReturnType<typeof createMockDataSource>) =>
+      new LaunchService(
+        ds as unknown as DataSource,
+        [new Html5Runtime(), new AiccRuntime()],
+        {},
+        new EventLogService(ds as unknown as DataSource),
+      );
+    const seedAicc = (ds: ReturnType<typeof createMockDataSource>): void => {
+      seedLaunchable(ds);
+      const pkg = ds.rowsOf(ContentPackage)[0];
+      if (pkg) {
+        pkg.packageType = 'aicc';
+        pkg.entryHref = 'units/quiz.html?mode=quiz';
+      }
+      const node = ds.rowsOf(ActivityNode)[0];
+      if (node) {
+        node.href = 'units/quiz.html?mode=quiz';
+      }
+    };
+
+    test('launches with the attempt session as AICC_SID and the endpoint as AICC_URL', async () => {
+      const ds = createMockDataSource();
+      seedAicc(ds);
+
+      const descriptor = await aiccService(ds).launch({
+        ...REQUEST,
+        callbackBaseUrl: 'https://lms.example.com/lms',
+      });
+
+      expect(descriptor.packageType).toBe('aicc');
+      const url = new URL(descriptor.contentUrl, 'https://lms.example.com');
+      expect(url.pathname).toBe(
+        `/lms/content/packages/${PACKAGE_ID}/content/units/quiz.html`,
+      );
+      expect(url.searchParams.get('mode')).toBe('quiz');
+      expect(url.searchParams.get('AICC_SID')).toBe(descriptor.sessionId);
+      expect(ds.rowsOf(Attempt)[0]).toMatchObject({
+        sessionId: descriptor.sessionId,
+        termination: 'still_open',
+      });
+    });
+
+    test('a launch without the callback address is refused with the setting named', async () => {
+      const ds = createMockDataSource();
+      seedAicc(ds);
+
+      await expect(aiccService(ds).launch(REQUEST)).rejects.toThrow(
+        'callbackBaseUrl',
+      );
     });
   });
 });

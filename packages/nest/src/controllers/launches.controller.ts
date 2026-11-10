@@ -1,4 +1,13 @@
-import { Body, Controller, HttpCode, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Optional,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { LaunchService } from '@richardmcquiston01/reactive-lms-core';
 import type {
@@ -7,6 +16,9 @@ import type {
 } from '@richardmcquiston01/reactive-lms-shared';
 import { LmsRequestService } from '../identity/lms-request.service';
 import { RegistrationAccess } from '../identity/registration-access';
+import type { ReactiveLmsModuleOptions } from '../reactive-lms.module';
+import { RLMS_MODULE_OPTIONS } from '../tokens';
+import { callbackBaseUrl } from './callback-url';
 
 /**
  * Creates launch attempts for an existing registration.
@@ -18,11 +30,15 @@ export class LaunchesController {
    * @param launches - Core launch service
    * @param request - Identity
    * @param access - Registration ownership / capability checks
+   * @param options - Module options; `publicBaseUrl` shapes the callback address
    */
   constructor(
     private readonly launches: LaunchService,
     private readonly request: LmsRequestService,
     private readonly access: RegistrationAccess,
+    @Optional()
+    @Inject(RLMS_MODULE_OPTIONS)
+    private readonly options?: Pick<ReactiveLmsModuleOptions, 'publicBaseUrl'>,
   ) {}
 
   /**
@@ -49,6 +65,7 @@ export class LaunchesController {
       activityNodeId: body.activityNodeId,
       learner,
       launchMode: body.launchMode ?? 'Normal',
+      callbackBaseUrl: callbackBaseUrl(req, this.options?.publicBaseUrl),
     });
   }
 }

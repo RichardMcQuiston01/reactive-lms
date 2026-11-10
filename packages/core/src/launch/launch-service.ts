@@ -30,6 +30,7 @@ import {
 } from '../content/content-serving';
 import { EventLogService } from '../audit/event-log.service';
 import { Html5Runtime } from '../runtimes/html5/html5-runtime';
+import { AiccRuntime } from '../runtimes/aicc/aicc-runtime';
 import { Scorm12Runtime } from '../runtimes/scorm/scorm-12-runtime';
 import type { AvailabilityProgress } from './availability';
 import { assertChainAvailable, readStoredAvailability } from './availability';
@@ -37,7 +38,7 @@ import { ancestorsOf, isBlockModule } from '../courses/module-tree';
 import { rowLock } from '../db/row-lock';
 import type { ProgressSinkService } from '../progress/progress-sink';
 
-const LAUNCHABLE = new Set(['html5', 'scorm_12']);
+const LAUNCHABLE = new Set(['html5', 'scorm_12', 'aicc']);
 
 /**
  * Options for {@link LaunchService}.
@@ -357,6 +358,9 @@ async function createRuntimeLaunch(
   },
 ) {
   if (runtime instanceof Scorm12Runtime) {
+    return runtime.createLaunch(request, context);
+  }
+  if (runtime instanceof AiccRuntime) {
     return runtime.createLaunch(request, context);
   }
   const html5 = runtime instanceof Html5Runtime ? runtime : new Html5Runtime();

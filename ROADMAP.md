@@ -52,7 +52,7 @@ Boundaries, so the two don't blur:
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ✅ released 2026-10-29 (see `docs/PLAN_0.2.0.md`) |
 | 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, placement, enrolment, progress, and interaction-answer screens built |
 | 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, player bridge, and fixture packages, `masteryscore`, and an automated run-time conformance suite, `cmi.interactions` with stored answers, asset completion, and Content Aggregation Model checks built and run end to end in a browser; the official ADL Test Suite could not be run on a current system (see `docs/SCORM_1_2_CONFORMANCE.md`) |
-| 0.4.1   | AICC (HACP)                 | —                   | 🚧 (D16) importer built: detection, `.crs`/`.au`/`.des`/`.cst` parser, fixtures; the HACP endpoint and launch remain |
+| 0.4.1   | AICC (HACP)                 | —                   | 🚧 (D16) import, launch, and the HACP endpoint built, and packages exported by `lms-package-maker` import, launch, score, complete, and resume in a browser; the format is not claimed until a package from an independent tool passes (see the spec gap) |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
@@ -180,6 +180,22 @@ that has been exited refuses further requests with an AICC error.
   from the same sources. Agreement between the two proves consistency, not
   correctness. Before the format is claimed (see Principles), check the
   details against the CMI001 text or a real AICC package from another tool.
+- **HACP choices** (also unchecked against CMI001): the launch gives the
+  content `AICC_SID`, which is the attempt's session id, and `AICC_URL`, the
+  absolute address `<API root>/aicc/hacp` (the content needs an absolute
+  address; set `publicBaseUrl` behind a proxy that changes the host or scheme).
+  The endpoint has no sign-in: the session id is the only credential, and it
+  works only while the attempt is open. Every outcome is an HTTP 200 reply with
+  an error code in the body, as HACP defines. An unknown, ended, replaced, or
+  non-AICC session is always error 3 with the same words; an unknown command,
+  an empty `PutParam`, or a value the CMI store refuses is error 1 naming the
+  value, and nothing is saved. `PutParam` reads `[Core]` location, status with
+  an exit flag (`Time-out`, `Suspend`, `Logout`, or `T`, `S`, `L`), score
+  (`raw[,max[,min]]`), and time, and `[Core_Lesson]` as suspend data; keys only
+  the LMS sets are ignored. `GetParam` also sends `Lesson_Mode` in `[Core]`,
+  `[Core_Vendor]` (launch data), and `[Student_Data]` (mastery score, time limit
+  and action). `ExitAU` adds the session time to the total, applies the mastery
+  score, and ends the attempt. `au_password` is not checked.
 - **Import choices** (also unchecked against CMI001): `core_vendor` becomes the
   launch data the content reads back; `web_launch` is appended to `file_name`
   as launch parameters; `time_limit_action` (`E,M`, `E,N`, `C,M`, `C,N`) is

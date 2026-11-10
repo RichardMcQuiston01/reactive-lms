@@ -47,6 +47,27 @@ export class ScormCmiService {
   }
 
   /**
+   * Ends a session from the server side and persists the result. A SCO's
+   * `LMSFinish` adds the session time to the total in the browser; content that
+   * talks to the server directly (AICC) cannot, so this does it here. Safe to
+   * repeat: the session time is dropped once it has been added.
+   *
+   * @param attemptId - Attempt id from launch
+   */
+  async finishSession(attemptId: string): Promise<ScormCmiDto> {
+    const ctx = await this.loadContext(attemptId);
+    const store = new CmiStore({
+      ...lmsOwnedFrom(ctx),
+      values: withoutInteractions({ ...ctx.persisted }),
+    });
+    store.LMSInitialize('');
+    store.LMSFinish('');
+    const values = store.snapshot();
+    delete values['cmi.core.session_time'];
+    return this.putCmi(attemptId, { values, finished: true });
+  }
+
+  /**
    * Persists a CMI snapshot and rolls it into {@link ProgressSinkService}.
    *
    * @param attemptId - Attempt id from launch
