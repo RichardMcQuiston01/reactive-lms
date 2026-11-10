@@ -39,7 +39,7 @@ Progress is written through `ProgressSinkService`. It works out the status of ea
 
 `@richardmcquiston01/reactive-lms-nest` exposes these services over the web. Register it with `ReactiveLmsModule.registerAsync`. Its routes start with `/lms` unless you change the prefix. The player package provides `provideReactiveLms` and the `<rlms-player>` component. The component launches a module, loads `contentUrl` in a frame, and receives HTML5 progress messages.
 
-AICC packages can be imported, but not launched yet. SCORM 2004, xAPI, cmi5, and H5P packages are detected when you upload them, but they cannot be imported yet.
+AICC content reports to the LMS itself. A launch gives it a session id and the address of the `/aicc/hacp` route, and the content calls that route. The route keeps the values in the SCORM 1.2 data store. SCORM 2004, xAPI, cmi5, and H5P packages are detected when you upload them, but they cannot be imported yet.
 
 [Back to Top](#packages)
 

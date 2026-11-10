@@ -13,6 +13,10 @@
 
 ### Fixed
 
+- A request body that a body parser refused (too large, or not readable) was
+  reported as a 500 `INTERNAL_ERROR` and logged as a server error. It now keeps
+  its 4xx status (413 `PAYLOAD_TOO_LARGE`, 400 `BAD_REQUEST`).
+
 - A SCORM asset can now be completed. An asset (`adlcp:scormtype="asset"`)
   has no script that talks to the LMS, so its module stayed incomplete
   forever, and with it any prerequisite or section completion that depended
@@ -115,6 +119,25 @@
 
 ### Added
 
+- AICC packages can be launched and tracked. A launch opens the unit's file
+  with `AICC_SID` (the attempt's session id) and `AICC_URL` (the HACP endpoint,
+  `<API root>/aicc/hacp`). The endpoint, `POST /aicc/hacp`, answers `GetParam`,
+  `PutParam`, and `ExitAU` from the content (and accepts and ignores the other
+  `Put*` commands), holding the values in the SCORM 1.2 data store so they get
+  the same checks, progress roll-up, and mastery score. It needs no sign-in:
+  the session id is the only credential, and it stops working when `ExitAU`
+  ends the attempt or a newer launch replaces it. Every outcome is an HTTP 200
+  reply with an error code, as HACP requires, including a body that cannot be
+  read or is too large and a method other than POST; a refused value is error 1
+  with the reason, and an unknown or ended session is error 3. Only a server
+  fault is a 5xx. Packages exported by
+  `lms-package-maker` were played in a browser against it: import, launch,
+  score, complete, resume, and refuse after exit all work.
+- `LaunchRequest.callbackBaseUrl`, the address of the API root that content
+  calls back, which the launch route works out from the request. The new
+  `publicBaseUrl` module option sets the scheme and host when a proxy changes
+  them. `createContentRuntimes()` gives the importer and the launch service one
+  list of formats, so a format cannot be importable and not launchable.
 - AICC (level 1) packages can be imported. A package with a `.crs` course
   file and a `.au` unit file at its root is detected as the new `aicc` package
   type (checked before plain HTML5, since AICC packages also hold HTML). The
@@ -122,8 +145,7 @@
   its assignable units with their launch files, parameters, mastery score,
   score range, time limit, and launch data, and the blocks they nest in under
   `ROOT`. A package that cannot be launched as described is refused with the
-  unit and the problem named. Launching an AICC package is not implemented
-  yet; it needs the HACP endpoint, which comes next.
+  unit and the problem named.
 
 - An Answers screen in the admin package (`registration-answers`, overridable
   like the others). Each row of the Progress screen links to it, and it lists

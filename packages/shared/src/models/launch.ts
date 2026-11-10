@@ -26,6 +26,13 @@ export interface LaunchRequest {
   learner: LearnerRef;
   /** How the content should treat the attempt. */
   launchMode: LaunchMode;
+  /**
+   * Address of this LMS's API root (scheme, host, and route prefix), such as
+   * `https://lms.example.com/lms`. Formats whose content calls the LMS
+   * directly from the browser (AICC) need it to tell the content where to
+   * call. Omit it for formats that do not.
+   */
+  callbackBaseUrl?: string;
 }
 
 /**

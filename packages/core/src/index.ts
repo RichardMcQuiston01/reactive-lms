@@ -83,6 +83,8 @@ export {
   Scorm12Runtime,
   type Scorm12LaunchContext,
 } from './runtimes/scorm/scorm-12-runtime';
+export { AiccHacpService } from './runtimes/aicc/aicc-hacp.service';
+export { formatHacpResponse } from './runtimes/aicc/hacp-data';
 export { AiccRuntime } from './runtimes/aicc/aicc-runtime';
 export { parseAicc } from './runtimes/aicc/parse-aicc';
 export { ScormCmiService } from './runtimes/scorm/scorm-cmi.service';
