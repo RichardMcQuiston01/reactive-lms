@@ -164,6 +164,10 @@ export function aiccDataToCmi(text: string): CmiWrites {
   return { writes, problems };
 }
 
+/**
+ * Reads `Lesson_Status`: the AICC status word, and the exit flag after a comma.
+ * Each becomes a CMI write, or a problem when AICC does not define it.
+ */
 function readStatus(
   value: string,
   writes: CmiWrite[],
@@ -247,6 +251,7 @@ export function cmiToAiccData(values: CmiValues): string {
   return `${lines.join('\r\n')}\r\n`;
 }
 
+/** The `Score` of a `GetParam`: raw, then max and min when there are any. */
 function scoreOf(values: CmiValues): string {
   const raw = values['cmi.core.score.raw'] ?? '';
   if (raw === '') {
@@ -263,6 +268,7 @@ function scoreOf(values: CmiValues): string {
   return parts.join(',');
 }
 
+/** The `[Student_Data]` lines: mastery score, time limit, and its action. */
 function studentData(values: CmiValues): string[] {
   const lines: string[] = [];
   const mastery = values['cmi.student_data.mastery_score'] ?? '';
@@ -297,6 +303,7 @@ export function aiccTime(timespan: string): string {
   return `${hours}:${match[2]}:${match[3]}${fraction}`;
 }
 
+/** The AICC name for a SCORM 1.2 lesson mode. */
 function modeName(mode: string): string {
   if (mode === 'browse') {
     return 'Browse';

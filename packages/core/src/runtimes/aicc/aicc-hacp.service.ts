@@ -6,6 +6,7 @@ import {
 import {
   AICC_ERROR,
   CmiStore,
+  type CmiValues,
   type AiccErrorCode,
   type HacpResponseDto,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -15,6 +16,16 @@ import { aiccDataToCmi, cmiToAiccData, hacpVersionFor } from './hacp-data';
 
 /** Longest session id looked up; real ones are UUIDs. */
 const MAX_SESSION_ID_LENGTH = 128;
+
+/**
+ * CMI key that records which attempt wrote the session values below. The CMI
+ * blob is shared by every attempt on a module, so without it a new attempt
+ * could pick up the time or exit flag of an earlier one that never ended.
+ */
+const SESSION_OWNER_KEY = 'rlms.aicc.session_attempt';
+
+/** CMI values that belong to one session: its time so far and how it left. */
+const SESSION_KEYS = ['cmi.core.session_time', 'cmi.core.exit'] as const;
 
 /** Commands that are answered with success and otherwise ignored. */
 const IGNORED_COMMANDS = new Set([
@@ -91,6 +102,7 @@ export class AiccHacpService {
     }
   }
 
+  /** Answers `GetParam` with what the LMS holds for the attempt. */
   private async getParam(
     attemptId: string,
     version: string,
@@ -99,6 +111,10 @@ export class AiccHacpService {
     return succeed(version, cmiToAiccData(values));
   }
 
+  /**
+   * Answers `PutParam`: checks every value the content reported with a CMI
+   * store and saves them all, or refuses the request and saves nothing.
+   */
   private async putParam(
     attemptId: string,
     version: string,
@@ -112,8 +128,7 @@ export class AiccHacpService {
       );
     }
     const { writes, problems } = aiccDataToCmi(data);
-    const { values } = await this.cmi.getCmi(attemptId);
-    const store = new CmiStore({ values });
+    const store = await this.sessionStore(attemptId);
     store.LMSInitialize('');
     for (const write of writes) {
       if (store.LMSSetValue(write.element, write.value) === 'false') {
@@ -127,17 +142,50 @@ export class AiccHacpService {
       return refuse(version, AICC_ERROR.invalidCommand, problems.join(' '));
     }
     if (writes.length > 0) {
-      await this.cmi.putCmi(attemptId, { values: store.snapshot() });
+      await this.cmi.putCmi(attemptId, {
+        values: { ...store.snapshot(), [SESSION_OWNER_KEY]: attemptId },
+      });
     }
     return succeed(version);
   }
 
+  /** Answers `ExitAU`: ends the session and the attempt. */
   private async exitAu(
     attemptId: string,
     version: string,
   ): Promise<HacpResponseDto> {
-    await this.cmi.finishSession(attemptId);
+    const store = await this.sessionStore(attemptId);
+    store.LMSInitialize('');
+    // Finishing adds the session time to the total, as a SCO's LMSFinish does.
+    store.LMSFinish('');
+    const values = store.snapshot();
+    // The time has been added; a repeated exit must not add it again.
+    delete values['cmi.core.session_time'];
+    await this.cmi.putCmi(attemptId, {
+      values: { ...values, [SESSION_OWNER_KEY]: attemptId },
+      finished: true,
+    });
     return succeed(version);
+  }
+
+  /**
+   * A CMI store holding what the attempt has so far: the hydrated values, plus
+   * the time and exit flag that earlier requests of this same session reported.
+   * An earlier session's time and exit flag are not carried over.
+   */
+  private async sessionStore(attemptId: string): Promise<CmiStore> {
+    const { values } = await this.cmi.getCmi(attemptId);
+    const stored = await this.cmi.getStoredCmi(attemptId);
+    const sessionValues: CmiValues = {};
+    if (stored[SESSION_OWNER_KEY] === attemptId) {
+      for (const key of SESSION_KEYS) {
+        const value = stored[key];
+        if (value !== undefined) {
+          sessionValues[key] = value;
+        }
+      }
+    }
+    return new CmiStore({ values: { ...values, ...sessionValues } });
   }
 
   /**
@@ -173,6 +221,7 @@ export class AiccHacpService {
   }
 }
 
+/** A successful reply, with the data of a `GetParam` when there is some. */
 function succeed(version: string, aiccData = ''): HacpResponseDto {
   return {
     errorCode: AICC_ERROR.successful,
@@ -189,6 +238,7 @@ const ERROR_TEXT: Record<AiccErrorCode, string> = {
   [AICC_ERROR.invalidSession]: 'Invalid Session ID',
 };
 
+/** A refusal. The session error carries no reason, so it reveals nothing about ids. */
 function refuse(
   version: string,
   errorCode: AiccErrorCode,
@@ -215,6 +265,7 @@ function lowerCaseStrings(form: Record<string, unknown>): Map<string, string> {
   return fields;
 }
 
+/** Shortens a value echoed in an error message. */
 function truncate(text: string): string {
   return text.length > 40 ? `${text.slice(0, 40)}…` : text;
 }

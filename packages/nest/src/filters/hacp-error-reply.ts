@@ -67,6 +67,7 @@ export function writeHacpClientError(
   return true;
 }
 
+/** The 4xx status of a client error, or `undefined` for anything else. */
 function clientStatusOf(exception: unknown): number | undefined {
   if (exception instanceof LmsError) {
     return exception.status < 500 ? exception.status : undefined;
@@ -78,6 +79,7 @@ function clientStatusOf(exception: unknown): number | undefined {
   return clientErrorStatus(exception);
 }
 
+/** Words for why the request was refused, for the reply's error text. */
 function reasonFor(status: number, exception: unknown): string {
   if (status === 413) {
     return 'the request is larger than this LMS accepts.';

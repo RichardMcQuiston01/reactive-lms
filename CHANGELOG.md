@@ -145,8 +145,7 @@
   its assignable units with their launch files, parameters, mastery score,
   score range, time limit, and launch data, and the blocks they nest in under
   `ROOT`. A package that cannot be launched as described is refused with the
-  unit and the problem named. Launching an AICC package is not implemented
-  yet; it needs the HACP endpoint, which comes next.
+  unit and the problem named.
 
 - An Answers screen in the admin package (`registration-answers`, overridable
   like the others). Each row of the Progress screen links to it, and it lists

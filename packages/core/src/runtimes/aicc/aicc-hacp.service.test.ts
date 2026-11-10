@@ -558,4 +558,64 @@ describe('AiccHacpService: ExitAU', () => {
     expect(ds.rowsOf(Attempt)[0]).toMatchObject({ termination: 'terminated' });
     expect(ds.rowsOf(NormalizedProgress)[0]?.totalTimeIso8601).toBe('PT0S');
   });
+
+  test('values a later partial PutParam leaves out are kept for the session: time and the exit flag survive to ExitAU', async () => {
+    const ds = createMockDataSource();
+    seedCourse(ds);
+    seedAttempt(ds, 's1');
+    const service = build(ds);
+    await service.handle(
+      request(
+        'PutParam',
+        's1',
+        put('[Core]', 'Lesson_Status=Incomplete,Suspend', 'Time=00:05:10'),
+      ),
+    );
+    // A second report that says nothing about time or how the unit is leaving.
+    await service.handle(
+      request('PutParam', 's1', put('[Core]', 'Lesson_Location=page 9')),
+    );
+
+    await service.handle(request('ExitAU', 's1'));
+
+    expect(ds.rowsOf(NormalizedProgress)[0]?.totalTimeIso8601).toBe('PT5M10S');
+    expect(
+      (
+        ds.rowsOf(NormalizedProgress)[0]?.extrasJson as {
+          cmi: Record<string, string>;
+        }
+      ).cmi['cmi.core.exit'],
+    ).toBe('suspend');
+  });
+
+  test('a new session does not inherit time or the exit flag from an earlier one', async () => {
+    const ds = createMockDataSource();
+    seedCourse(ds);
+    seedAttempt(ds, 's1');
+    const service = build(ds);
+    await service.handle(
+      request(
+        'PutParam',
+        's1',
+        put('[Core]', 'Lesson_Status=Incomplete,Suspend', 'Time=00:05:10'),
+      ),
+    );
+    // The first session ends without ExitAU: the learner launches again.
+    ds.rowsOf(Attempt)[0]!.termination = 'abandoned';
+    seedAttempt(ds, 's2');
+
+    await service.handle(
+      request('PutParam', 's2', put('[Core]', 'Lesson_Location=page 2')),
+    );
+    await service.handle(request('ExitAU', 's2'));
+
+    expect(ds.rowsOf(NormalizedProgress)[0]?.totalTimeIso8601).toBe('PT0S');
+    expect(
+      (
+        ds.rowsOf(NormalizedProgress)[0]?.extrasJson as {
+          cmi: Record<string, string>;
+        }
+      ).cmi['cmi.core.exit'] ?? '',
+    ).toBe('');
+  });
 });
