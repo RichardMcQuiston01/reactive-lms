@@ -142,7 +142,7 @@ export class AiccHacpService {
       return refuse(version, AICC_ERROR.invalidCommand, problems.join(' '));
     }
     if (writes.length > 0) {
-      await this.cmi.putCmi(attemptId, {
+      await this.cmi.putValidatedCmi(attemptId, {
         values: { ...store.snapshot(), [SESSION_OWNER_KEY]: attemptId },
       });
     }
@@ -161,7 +161,7 @@ export class AiccHacpService {
     const values = store.snapshot();
     // The time has been added; a repeated exit must not add it again.
     delete values['cmi.core.session_time'];
-    await this.cmi.putCmi(attemptId, {
+    await this.cmi.putValidatedCmi(attemptId, {
       values: { ...values, [SESSION_OWNER_KEY]: attemptId },
       finished: true,
     });

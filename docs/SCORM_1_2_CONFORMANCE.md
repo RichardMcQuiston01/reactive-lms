@@ -2,7 +2,7 @@
 
 [Back to README](../README.md)
 
-| [What is checked automatically](#what-is-checked-automatically) | [Found and fixed while writing the checks](#found-and-fixed-while-writing-the-checks) | [Interactions](#interactions) | [Assets](#assets) | [Not implemented](#not-implemented) | [Content Aggregation Model](#content-aggregation-model) | [To run the official suite](#to-run-the-official-suite) |
+| [What is checked automatically](#what-is-checked-automatically) | [Found and fixed while writing the checks](#found-and-fixed-while-writing-the-checks) | [Server-side checks](#server-side-checks) | [Interactions](#interactions) | [Assets](#assets) | [Not implemented](#not-implemented) | [Content Aggregation Model](#content-aggregation-model) | [To run the official suite](#to-run-the-official-suite) |
 
 What has been checked against SCORM 1.2, how, and what has not.
 
@@ -54,6 +54,19 @@ browser against the standalone API and a database. See the fixture packages in
 - A second `LMSFinish` answered 101 instead of 301.
 - `LMSGetErrorString` of an unknown code returned text instead of `""`, and the
   405, 202, and 203 strings did not exist.
+
+[Back to Top](#scorm-12-conformance-status)
+
+## Server-side checks
+
+The browser's `window.API` checks every value a SCO writes, but the server does
+not trust the browser. When a snapshot is saved, each value it changes is
+replayed through the same data model on the server. A value the API would have
+refused (out of range, too long, outside its vocabulary, or an element that does
+not exist) refuses the whole save with a 400 `CMI_VALUE_INVALID`, naming each
+value and its SCORM error, and nothing is saved. Read-only values are the LMS's
+own, so the ones the browser sends back are ignored. The total time is added up
+on the server from the session time, once per attempt.
 
 [Back to Top](#scorm-12-conformance-status)
 

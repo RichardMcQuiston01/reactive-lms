@@ -8,6 +8,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-persistence';
 import {
   ATTEMPT_NOT_FOUND,
+  CMI_VALUE_INVALID,
   CmiStore,
   LmsError,
   applyMasteryScore,
@@ -60,25 +61,87 @@ export class ScormCmiService {
   }
 
   /**
-   * Persists a CMI snapshot and rolls it into {@link ProgressSinkService}.
+   * Checks a CMI snapshot from the browser, then persists it and rolls it into
+   * {@link ProgressSinkService}.
+   *
+   * The snapshot is not trusted. Every value it changes is replayed through
+   * the same {@link CmiStore} that the SCORM API uses, so anything the API
+   * would have refused (a score out of range, text that is too long, a status
+   * outside the vocabulary, an element that does not exist) is refused here
+   * too. Read-only values the browser sends back are ignored, because the LMS
+   * owns them, and the total time is worked out here from the session time
+   * when the session finishes. A snapshot with any refused value saves nothing.
    *
    * @param attemptId - Attempt id from launch
    * @param body - Committed CMI values; `finished` closes the attempt
+   * @throws {LmsError} `CMI_VALUE_INVALID` naming every refused element
    */
   async putCmi(attemptId: string, body: ScormCmiDto): Promise<ScormCmiDto> {
     const ctx = await this.loadContext(attemptId);
+    const submitted = body.values ?? {};
     const store = this.seedStore(ctx);
-    store.loadValues(body.values ?? {});
+    const problems = replaySubmitted(store, submitted);
+    if (problems.length > 0) {
+      throw invalidCmiError(attemptId, problems);
+    }
+    if (body.finished && ctx.attempt.termination === 'still_open') {
+      // Adds this session's time to the total, as the SCO's LMSFinish does. A
+      // finish for an attempt that is already closed (a save that was retried
+      // after its reply was lost) has already been added, so it adds nothing.
+      store.LMSFinish('');
+    }
+    return this.commit(
+      ctx,
+      attemptId,
+      store,
+      submitted,
+      body.finished === true,
+    );
+  }
+
+  /**
+   * Persists a CMI snapshot that the caller has already checked, such as the
+   * AICC endpoint, which checks each value with its own {@link CmiStore}. The
+   * values are saved as given.
+   *
+   * @param attemptId - Attempt id from launch
+   * @param body - Checked CMI values; `finished` closes the attempt
+   */
+  async putValidatedCmi(
+    attemptId: string,
+    body: ScormCmiDto,
+  ): Promise<ScormCmiDto> {
+    const ctx = await this.loadContext(attemptId);
+    const submitted = body.values ?? {};
+    const store = this.seedStore(ctx);
+    store.loadValues(submitted);
+    return this.commit(
+      ctx,
+      attemptId,
+      store,
+      submitted,
+      body.finished === true,
+    );
+  }
+
+  /** Saves a session's CMI, rolls it into progress, and closes the attempt when finished. */
+  private async commit(
+    ctx: CmiContext,
+    attemptId: string,
+    store: CmiStore,
+    submitted: CmiValues,
+    finished: boolean,
+  ): Promise<ScormCmiDto> {
     store.applyLmsOwned(lmsOwnedFrom(ctx));
     // When a SCO finishes, the mastery score (if the manifest set one) decides
     // pass or fail from the raw score, whatever status the SCO wrote.
     // Interactions are replaced when this session reported any, and kept as
     // they were when it did not (for example a review session that records none).
-    const carried = hasInteractions(body.values ?? {})
+    const carried = hasInteractions(submitted)
       ? {}
       : onlyInteractions(ctx.persisted);
     const reported = { ...store.snapshot(), ...carried };
-    const values = body.finished ? applyMasteryScore(reported) : reported;
+    const values = finished ? applyMasteryScore(reported) : reported;
     const activityNodeId = ctx.activityNodeId;
     if (!activityNodeId) {
       throw new LmsError({
@@ -99,11 +162,11 @@ export class ScormCmiService {
 
     // Only a session that reported interactions replaces what was stored for
     // its attempt; one that reported none leaves the earlier answers alone.
-    if (hasInteractions(body.values ?? {})) {
+    if (hasInteractions(submitted)) {
       await this.replaceInteractions(ctx, activityNodeId, values);
     }
 
-    if (body.finished) {
+    if (finished) {
       ctx.attempt.termination = 'terminated';
       ctx.attempt.endedAt = new Date();
       await this.dataSource.manager.save(ctx.attempt);
@@ -230,6 +293,100 @@ interface CmiContext {
   maxTimeAllowed?: string;
   timeLimitAction?: string;
   persisted: CmiValues;
+}
+
+/** One value of a refused snapshot, and why the SCORM data model refused it. */
+interface RefusedValue {
+  element: string;
+  value: string;
+  /** SCORM 1.2 error code, such as `405`. */
+  code: string;
+  reason: string;
+}
+
+/** The most refused values named in the message; the details hold more. */
+const MESSAGE_LIMIT = 10;
+const DETAILS_LIMIT = 100;
+
+/**
+ * Replays the values a snapshot changes through a CMI store, as `LMSSetValue`
+ * calls. A value the store already holds is skipped: it is the server's own
+ * data coming back. A read-only or keyword element is skipped too, since the
+ * LMS owns those and a browser cannot change them. Anything else the store
+ * refuses is returned.
+ *
+ * @param store - Store holding the server's state; changed as values are applied
+ * @param submitted - The snapshot from the browser
+ * @returns The refused values; empty when every value was accepted or skipped
+ */
+function replaySubmitted(
+  store: CmiStore,
+  submitted: Record<string, unknown>,
+): RefusedValue[] {
+  const held = store.snapshot();
+  store.LMSInitialize('');
+  const refused: RefusedValue[] = [];
+  for (const [element, raw] of Object.entries(submitted)) {
+    const value = coerceCmiValue(raw);
+    if (value === undefined) {
+      refused.push({
+        element,
+        value: describeValue(raw),
+        code: '201',
+        reason: 'it is not text or a number',
+      });
+      continue;
+    }
+    if (held[element] === value) {
+      continue;
+    }
+    if (store.LMSSetValue(element, value) === 'true') {
+      continue;
+    }
+    const code = store.LMSGetLastError();
+    if (code === '402' || code === '403') {
+      continue;
+    }
+    refused.push({
+      element,
+      value,
+      code,
+      reason: `error ${code}: ${store.LMSGetErrorString(code)}`,
+    });
+  }
+  return refused;
+}
+
+function describeValue(value: unknown): string {
+  return typeof value === 'object' ? JSON.stringify(value) : String(value);
+}
+
+function shortened(text: string): string {
+  return text.length > 40 ? `${text.slice(0, 40)}…` : text;
+}
+
+function invalidCmiError(attemptId: string, refused: RefusedValue[]): LmsError {
+  const named = refused
+    .slice(0, MESSAGE_LIMIT)
+    .map(
+      (entry) =>
+        `${entry.element} "${shortened(entry.value)}" was refused (${entry.reason})`,
+    );
+  const more =
+    refused.length > MESSAGE_LIMIT
+      ? ` and ${refused.length - MESSAGE_LIMIT} more`
+      : '';
+  return new LmsError({
+    status: httpStatusForLmsCode(CMI_VALUE_INVALID),
+    code: CMI_VALUE_INVALID,
+    message: `The SCORM data was not saved. ${named.join('; ')}${more}.`,
+    details: {
+      attemptId,
+      refused: refused
+        .slice(0, DETAILS_LIMIT)
+        .map(({ element, code }) => ({ element, code })),
+    },
+  });
 }
 
 function extractCmi(extras: Record<string, unknown> | null): CmiValues {

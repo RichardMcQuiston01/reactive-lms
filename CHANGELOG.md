@@ -13,6 +13,20 @@
 
 ### Fixed
 
+- The SCORM 1.2 save route (`PUT /scorm/attempts/:id/cmi`) no longer trusts the
+  browser's values. It stored whatever it was sent, so a raw score of 999
+  became a scaled score of 9.99 and a 5,000-character location was kept,
+  although the roadmap says the server re-validates every commit. Each value a
+  snapshot changes is now replayed through the same CMI store the SCORM API
+  uses, and a snapshot with a value the API would have refused (out of range,
+  too long, outside its vocabulary, an element that does not exist) is
+  refused with a 400 `CMI_VALUE_INVALID` that names every such value and the
+  SCORM error for it, and saves nothing. Read-only values the browser sends
+  back are ignored, and the total time is worked out on the server from the
+  session time when the session finishes, once: a finish that is sent again
+  for a closed attempt adds nothing. A real player session was played in a
+  browser to check that legitimate saves are unaffected.
+
 - A request body that a body parser refused (too large, or not readable) was
   reported as a 500 `INTERNAL_ERROR` and logged as a server error. It now keeps
   its 4xx status (413 `PAYLOAD_TOO_LARGE`, 400 `BAD_REQUEST`).
