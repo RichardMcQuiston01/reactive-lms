@@ -30,6 +30,7 @@ export type LmsErrorCode =
   | typeof MODULE_NOT_FOUND
   | typeof REGISTRATION_NOT_FOUND
   | typeof ATTEMPT_NOT_FOUND
+  | typeof CMI_VALUE_INVALID
   | typeof CMI5_TOKEN_USED
   | (string & {});
 
@@ -114,6 +115,12 @@ export const REGISTRATION_NOT_FOUND = 'REGISTRATION_NOT_FOUND';
 /** Attempt id does not exist. */
 export const ATTEMPT_NOT_FOUND = 'ATTEMPT_NOT_FOUND';
 
+/**
+ * A SCORM 1.2 commit holds a value the SCORM data model would refuse (out of
+ * range, too long, not in its vocabulary, or an element that does not exist).
+ */
+export const CMI_VALUE_INVALID = 'CMI_VALUE_INVALID';
+
 /** cmi5 one-time fetch token was already consumed. */
 export const CMI5_TOKEN_USED = 'CMI5_TOKEN_USED';
 
@@ -143,6 +150,7 @@ export const LMS_ERROR_HTTP_STATUS: Readonly<Record<string, number>> = {
   [MODULE_NOT_FOUND]: 404,
   [REGISTRATION_NOT_FOUND]: 404,
   [ATTEMPT_NOT_FOUND]: 404,
+  [CMI_VALUE_INVALID]: 400,
   [LAUNCH_SESSION_OPEN]: 409,
   [MODULE_NOT_AVAILABLE]: 403,
   [ENROLMENT_METHOD_UNAVAILABLE]: 403,

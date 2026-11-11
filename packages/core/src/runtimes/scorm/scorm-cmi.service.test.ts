@@ -10,6 +10,7 @@ import {
   Registration,
 } from '@richardmcquiston01/reactive-lms-persistence';
 import {
+  CmiStore,
   LmsError,
   type CmiValues,
 } from '@richardmcquiston01/reactive-lms-shared';
@@ -521,5 +522,283 @@ describe('ScormCmiService', () => {
         status: 404,
       });
     }
+  });
+
+  describe('server-side validation of the browser snapshot', () => {
+    /** Runs a commit that is expected to be refused and returns the error. */
+    const refusal = async (
+      cmi: ScormCmiService,
+      values: Record<string, unknown>,
+      finished = false,
+    ): Promise<LmsError> => {
+      try {
+        await cmi.putCmi(ATTEMPT_ID, {
+          values: values as Record<string, string>,
+          finished,
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(LmsError);
+        return error as LmsError;
+      }
+      throw new Error('expected the commit to be refused');
+    };
+
+    test.each([
+      [
+        'a score over 100',
+        { 'cmi.core.score.raw': '999' },
+        'cmi.core.score.raw "999"',
+        '405',
+      ],
+      [
+        'a score that is not a number',
+        { 'cmi.core.score.raw': 'lots' },
+        'cmi.core.score.raw "lots"',
+        '405',
+      ],
+      [
+        'a location that is too long',
+        { 'cmi.core.lesson_location': 'x'.repeat(5000) },
+        'cmi.core.lesson_location',
+        '405',
+      ],
+      [
+        'suspend data that is too long',
+        { 'cmi.suspend_data': 'x'.repeat(5000) },
+        'cmi.suspend_data',
+        '405',
+      ],
+      [
+        'a status outside the vocabulary',
+        { 'cmi.core.lesson_status': 'bogus' },
+        'cmi.core.lesson_status "bogus"',
+        '405',
+      ],
+      [
+        'an exit outside the vocabulary',
+        { 'cmi.core.exit': 'quit' },
+        'cmi.core.exit "quit"',
+        '405',
+      ],
+      [
+        'a time that is not a time',
+        { 'cmi.core.session_time': 'soon' },
+        'cmi.core.session_time "soon"',
+        '405',
+      ],
+      [
+        'an element that does not exist',
+        { 'cmi.core.nonsense': '1' },
+        'cmi.core.nonsense',
+        '401',
+      ],
+      [
+        'an array index past the limit',
+        { 'cmi.interactions.99999.id': 'q' },
+        'cmi.interactions.99999.id',
+        '201',
+      ],
+      [
+        'an interaction type outside the vocabulary',
+        { 'cmi.interactions.0.type': 'essay' },
+        'cmi.interactions.0.type "essay"',
+        '405',
+      ],
+    ])(
+      'refuses %s, naming the element and the SCORM error, and saves nothing',
+      async (_name, values, named, code) => {
+        const ds = createMockDataSource();
+        seedAttempt(ds);
+
+        const error = await refusal(service(ds), values);
+
+        expect(error.code).toBe('CMI_VALUE_INVALID');
+        expect(error.status).toBe(400);
+        expect(error.message).toContain('was not saved');
+        expect(error.message).toContain(named);
+        expect(error.message).toContain(`error ${code}`);
+        expect(ds.rowsOf(NormalizedProgress)).toEqual([]);
+        expect(ds.rowsOf(Attempt)[0]).toMatchObject({
+          termination: 'still_open',
+        });
+      },
+    );
+
+    test('a value that is not text or a number is refused', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      const error = await refusal(service(ds), {
+        'cmi.core.score.raw': { nested: true },
+      });
+
+      expect(error.message).toContain('not text or a number');
+    });
+
+    test('one bad value refuses the whole commit, and every bad value is named', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      const error = await refusal(service(ds), {
+        'cmi.core.lesson_status': 'completed',
+        'cmi.core.score.raw': '999',
+        'cmi.core.lesson_status.extra': 'x',
+        'cmi.core.lesson_location': 'x'.repeat(300),
+      });
+
+      expect(error.message).toContain('cmi.core.score.raw');
+      expect(error.message).toContain('cmi.core.lesson_status.extra');
+      expect(error.message).toContain('cmi.core.lesson_location');
+      expect(ds.rowsOf(NormalizedProgress)).toEqual([]);
+    });
+
+    test('a long list is cut in the message and kept in the details', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const bad = Object.fromEntries(
+        Array.from({ length: 25 }, (_, index) => [
+          `cmi.nonsense.${index}`,
+          'x',
+        ]),
+      );
+
+      const error = await refusal(service(ds), bad);
+
+      expect(error.message).toContain('and 15 more');
+      expect((error.details as { refused: unknown[] }).refused).toHaveLength(
+        25,
+      );
+    });
+
+    test('read-only values the browser sends back are ignored, not saved and not refused', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, { masteryScore: 80 });
+      const cmi = service(ds);
+
+      await cmi.putCmi(ATTEMPT_ID, {
+        values: {
+          'cmi.core.student_id': 'hacker',
+          'cmi.core.credit': 'no-credit',
+          'cmi.core.lesson_mode': 'browse',
+          'cmi.core.total_time': '9999:00:00.00',
+          'cmi.student_data.mastery_score': '0',
+          'cmi.core.lesson_location': 'page 2',
+        },
+      });
+
+      const { values } = await cmi.getCmi(ATTEMPT_ID);
+      expect(values['cmi.core.student_id']).toBe('u1');
+      expect(values['cmi.core.credit']).toBe('credit');
+      expect(values['cmi.core.lesson_mode']).toBe('normal');
+      expect(values['cmi.core.total_time']).toBe('0000:00:00.00');
+      expect(values['cmi.student_data.mastery_score']).toBe('80');
+      expect(values['cmi.core.lesson_location']).toBe('page 2');
+    });
+
+    test('the total time is worked out from the session time, not taken from the browser', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+
+      await service(ds).putCmi(ATTEMPT_ID, {
+        values: {
+          'cmi.core.session_time': '00:01:00.00',
+          'cmi.core.total_time': '9999:00:00.00',
+          'cmi.core.lesson_status': 'completed',
+        },
+        finished: true,
+      });
+
+      expect(ds.rowsOf(NormalizedProgress)[0]?.totalTimeIso8601).toBe('PT1M');
+    });
+
+    test('a finish that is sent again for a closed attempt does not add the session time again', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds);
+      const cmi = service(ds);
+      const finish = {
+        values: {
+          'cmi.core.session_time': '00:01:00.00',
+          'cmi.core.lesson_status': 'completed',
+        },
+        finished: true,
+      };
+
+      await cmi.putCmi(ATTEMPT_ID, finish);
+      await cmi.putCmi(ATTEMPT_ID, finish);
+
+      expect(ds.rowsOf(NormalizedProgress)[0]?.totalTimeIso8601).toBe('PT1M');
+    });
+
+    test('a value the server already holds is accepted when it comes back, even if the store would not take it now', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, {
+        cmi: { 'legacy.key': 'kept', 'cmi.core.lesson_status': 'incomplete' },
+      });
+
+      await service(ds).putCmi(ATTEMPT_ID, {
+        values: { 'legacy.key': 'kept', 'cmi.core.lesson_location': 'p2' },
+      });
+
+      const stored = ds.rowsOf(NormalizedProgress)[0]?.extrasJson as {
+        cmi: CmiValues;
+      };
+      expect(stored.cmi['legacy.key']).toBe('kept');
+      expect(stored.cmi['cmi.core.lesson_location']).toBe('p2');
+    });
+
+    test('a real browser-side session is accepted and saves what the SCO reported', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, { masteryScore: 80 });
+      const cmi = service(ds);
+      // What the player bridge does: seed a store from the hydrate, run the SCO's calls, commit.
+      const { values: hydrated } = await cmi.getCmi(ATTEMPT_ID);
+      const browser = new CmiStore({ values: hydrated });
+      expect(browser.LMSInitialize('')).toBe('true');
+      const calls: Array<[string, string]> = [
+        ['cmi.core.lesson_location', 'page 4'],
+        ['cmi.core.score.raw', '90'],
+        ['cmi.core.score.min', '0'],
+        ['cmi.core.score.max', '100'],
+        ['cmi.suspend_data', 'a=1&b=2'],
+        ['cmi.core.session_time', '00:05:10.00'],
+        ['cmi.core.exit', 'suspend'],
+        ['cmi.core.lesson_status', 'completed'],
+        ['cmi.objectives.0.id', 'obj-1'],
+        ['cmi.objectives.0.status', 'passed'],
+        ['cmi.interactions.0.id', 'q1'],
+        ['cmi.interactions.0.type', 'choice'],
+        ['cmi.interactions.0.student_response', 'b'],
+        ['cmi.interactions.0.result', 'correct'],
+        ['cmi.comments', 'nice course'],
+      ];
+      for (const [element, value] of calls) {
+        expect(browser.LMSSetValue(element, value)).toBe('true');
+      }
+      expect(browser.LMSFinish('')).toBe('true');
+
+      const saved = await cmi.putCmi(ATTEMPT_ID, {
+        values: browser.snapshot(),
+        finished: true,
+      });
+
+      // The server reaches the same state the browser did: same total time, and
+      // the mastery score has turned "completed" into "passed" (90 is at least 80).
+      expect(saved.values['cmi.core.total_time']).toBe(
+        browser.snapshot()['cmi.core.total_time'],
+      );
+      expect(saved.values['cmi.core.lesson_status']).toBe('passed');
+      expect(saved.values['cmi.core.lesson_location']).toBe('page 4');
+      expect(saved.values['cmi.suspend_data']).toBe('a=1&b=2');
+      expect(saved.values['cmi.objectives.0.id']).toBe('obj-1');
+      expect(saved.values['cmi.interactions.0.result']).toBe('correct');
+      expect(ds.rowsOf(NormalizedProgress)[0]).toMatchObject({
+        completionStatus: 'completed',
+        successStatus: 'passed',
+        totalTimeIso8601: 'PT5M10S',
+      });
+      expect(ds.rowsOf(Attempt)[0]).toMatchObject({
+        termination: 'terminated',
+      });
+    });
   });
 });
