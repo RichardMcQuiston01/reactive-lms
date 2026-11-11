@@ -1,139 +1,148 @@
 # ReactiveLMS
 
-A TypeScript learning management system that runs standalone or embeds into
-an existing NestJS + TypeORM API and Angular frontend.
+- Author: [Richard McQuiston](mailto:richard.mcquiston@gmail.com)
+- Website: https://richardmcquiston.com/
 
-> **Status:** pre-alpha (v0.2.0). The workspace contains working HTML5 and
-> SCORM 1.2 import, launch, and progress, a module tree with availability
-> conditions, and first admin screens (module tree, sections, packages, upload,
-> placement, enrolments, progress); the rest of the standards are planned. See
-> [ROADMAP.md](ROADMAP.md).
+## Table of Contents
 
-## Dual mode
+| [Overview](#overview) | [Getting Started](#getting-started) | [Features](#features) | [Tech Stack](#tech-stack) | [More Information](#more-information) | [Buy Me a Coffee](#buy-me-a-coffee) | [License](#license) | [Copyright](#copyright) |
+
+## Overview
+
+ReactiveLMS is a learning management system (LMS) written in TypeScript. It can run on its own, or it can plug into an existing NestJS and Angular app. It is for developers who want to add courses, tracking, and reports to their own software.
+
+**Status: pre-alpha, version 0.2.0.** You can import, launch, and track HTML5 and Sharable Content Object Reference Model (SCORM) 1.2 courses. Other formats are planned. See [ROADMAP.md](./ROADMAP.md).
+
+There are two ways to use it:
 
 | Mode | What you run | When to use it |
 | --- | --- | --- |
-| **Standalone** | `@richardmcquiston01/reactive-lms-standalone-api` + `@richardmcquiston01/reactive-lms-standalone-web` | Demo, evaluation, or a self-contained LMS process |
-| **Embed** | Import `@richardmcquiston01/reactive-lms-nest` into a host NestJS app and `@richardmcquiston01/reactive-lms-player` into a host Angular app | Host already owns identity, auth, and UI shell |
+| **Standalone** | `@richardmcquiston01/reactive-lms-standalone-api` | A demo, an evaluation, or a self-contained LMS |
+| **Embed** | `@richardmcquiston01/reactive-lms-nest` in your NestJS app and `@richardmcquiston01/reactive-lms-player` in your Angular app | Your app already handles users, sign-in, and the page layout |
 
-Standalone boots the same Nest module and Angular player with thin local adapters (identity, storage). Embed reuses TypeORM entities/migrations and shared DTOs without owning host users.
+[Back to Top](#table-of-contents)
 
-A course section is a container of modules. Place an imported package with `ModuleService.place`, enrol via `EnrolmentService` (`manual`, `self`, or `group`), then `LaunchService.launch` for HTML5 (`playerKind: 'iframe'`) or SCORM 1.2 (`playerKind: 'scorm-frame'`). Module availability (versioned `all`/`any` conditions: `module_completed`, `date_window`, `min_score`, `group_member`) is enforced at launch, and a block's rules gate every module inside it. Progress writes go through `ProgressSinkService`, which rolls up `registration.status` from the section completion rule (default: every module completed). SCORM 1.2 commits map `cmi.core.lesson_status` and `cmi.core.score.raw` onto that sink.
+## Getting Started
 
-Those services are also exposed over HTTP by `@richardmcquiston01/reactive-lms-nest` (`ReactiveLmsModule.registerAsync`, default prefix `/lms`). `@richardmcquiston01/reactive-lms-player` ships `provideReactiveLms` and `<rlms-player>` which launches a module, iframes `contentUrl`, and posts HTML5 `postMessage` progress.
+### Prerequisites
 
-## Monorepo map
+- [Bun](https://bun.sh), which installs packages and runs the scripts. Do not use npm.
+- Postgres 13 or later, to run the API or the database tests. The CI checks use Postgres 16.
 
-Package manager: **[bun](https://bun.sh)** (workspaces). Do not use npm for install or scripts.
-
-| Package | Name | Responsibility |
-| --- | --- | --- |
-| `packages/shared` | `@richardmcquiston01/reactive-lms-shared` | Enums, DTOs, adapter contracts, launch/progress models, `LmsError` (no Nest/Angular/TypeORM) |
-| `packages/persistence` | `@richardmcquiston01/reactive-lms-persistence` | LIS-shaped TypeORM `rlms_*` entities, `createPersistenceDataSource` factory, and `0001-initial-schema` migration |
-| `packages/core` | `@richardmcquiston01/reactive-lms-core` | Import, launch, progress, LRS, LTI, content runtimes. HTML5 and SCORM 1.2 ZIP import (`PackageImporter`, `Html5Runtime`, `Scorm12Runtime`, `FilesystemBlobStorageAdapter`), CMI store + persist (`ScormCmiService`), module placement (`ModuleService`), enrolment (`manual` / `self` / `group`), iframe / scorm-frame launch, and course-completion rollup are implemented; 2004 / cmi5 / H5P / LTI are detected but not yet parsed. |
-| `packages/nest` | `@richardmcquiston01/reactive-lms-nest` | Embeddable NestJS module, REST + OpenAPI over the 3b/4 services, `LmsError` JSON filter |
-| `packages/player` | `@richardmcquiston01/reactive-lms-player` | Angular standalone `RlmsPlayerComponent`, `provideReactiveLms`, HTML5 postMessage mapper, SCORM `window.API` bridge |
-| `packages/standalone-api` | `@richardmcquiston01/reactive-lms-standalone-api` | Nest bootstrap, filesystem dataroot, demo identity, `/health`, `/lms/content/**` |
-| `packages/standalone-web` | `@richardmcquiston01/reactive-lms-standalone-web` | Thin demo entry that re-exports the Angular player |
-
-> Package names above are the current workspace names. They move to the
-> `@richardmcquiston01/reactive-lms-*` scope when 0.2.0 is reconciled with the
-> roadmap (D4).
-
-## Features (planned)
-
-- **Content formats:** SCORM 1.2, SCORM 2004, xAPI, cmi5, HTML5 bundles, H5P,
-  and LTI 1.3 (as an LTI Platform).
-- **One progress model:** every format launches, tracks, and reports through
-  a common runtime contract.
-- **Dual deployment:** standalone process, or a NestJS module for an existing
-  host API.
-- **Shared contracts:** interfaces and DTOs usable by both frontend and
-  backend.
-- **Standards-aligned:** follows 1EdTech (IMS Global) specs, including LIS
-  concepts for people, courses, and memberships.
-- **Host-friendly persistence:** TypeORM migrations that can be applied to an
-  existing database.
-
-## Tech stack
-
-| Layer     | Technology                                      |
-| --------- | ----------------------------------------------- |
-| Backend   | TypeScript, NestJS, TypeORM (Postgres first)    |
-| Demo UI   | Angular 18+, TailwindCSS, RxJS                  |
-| Shared    | Interfaces and DTOs (`@richardmcquiston01/reactive-lms-shared`)    |
-| Tooling   | bun workspaces                                  |
-| Caching   | Redis later, behind a `CacheAdapter`            |
-
-## Development
-
-Requires [Bun](https://bun.sh). From the repository root:
+### Installation
 
 ```bash
+git clone https://github.com/RichardMcQuiston01/reactive-lms.git
+cd reactive-lms
 bun install
+```
+
+### Usage
+
+Run the same four checks that CI runs on every pull request:
+
+```bash
 bun run typecheck
 bun run lint
-bun run format:check   # bun run format to fix
+bun run format:check
 bun test
 ```
 
-CI runs the same four checks on every pull request, against a Postgres 16
-service. To run the database-backed persistence tests locally, point
-`RLMS_TEST_DATABASE_URL` at an empty Postgres 13+ database; without it those
-tests are skipped.
+Run `bun run format` to fix formatting problems. The database tests are skipped unless `RLMS_TEST_DATABASE_URL` points at an empty Postgres database. See [Configuration](./docs/CONFIGURATION.md).
 
-### Running the standalone API
+Start the standalone API. It sets up an empty database on the first start:
 
-`standalone-api` reads these environment variables:
+```bash
+export RLMS_DATABASE_URL=postgres://user:password@localhost:5432/rlms
+bun run --cwd packages/standalone-api start
+```
 
-| Variable | Default | Meaning |
-| -------- | ------- | ------- |
-| `RLMS_DATABASE_URL` (or `DATABASE_URL`) | built from `DATABASE_*` parts | Postgres connection URL |
-| `RLMS_DATAROOT` (or `DATAROOT`) | `./data` | Directory for uploaded and extracted packages, outside the web root |
-| `RLMS_RUN_MIGRATIONS` | `true` | Run pending migrations on start. Set `false` (or `0`, `no`, `off`) if you apply migrations yourself |
-| `PORT` | `3000` | HTTP port |
+The API listens on port 3000. Open `http://localhost:3000/health` to check that it is running, and `http://localhost:3000/docs` to browse the routes. The standalone API has one demo learner and open admin routes, so use it for evaluation only. See [Authorization](./docs/AUTHORIZATION.md).
 
-Standalone owns its database, so a fresh empty database is migrated on first
-start. When running several API processes against one database, start one
-first so two do not migrate at once. An unrecognised `RLMS_RUN_MIGRATIONS`
-value stops the process with a message naming the variable.
+### Examples
 
-### Authorization
+Zip a sample SCORM 1.2 course, then upload it:
 
-ReactiveLMS asks; the host decides. When embedding, pass a `capabilityAdapter`
-to `ReactiveLmsModule` and every route asks it (`package.import`,
-`module.manage`, `launch`, `grade.view`, and so on). The adapter may also let
-staff act for a learner.
+```bash
+cd packages/core/test-fixtures/scorm12/simple-sco
+zip -r ~/simple-sco.zip .
+cd -
+curl -F "file=@$HOME/simple-sco.zip" http://localhost:3000/lms/packages
+```
 
-Without an adapter:
+The reply names the new package and its type:
 
-- learner routes (launch, progress, SCORM CMI) are limited to the learner who
-  owns the registration, so one learner cannot read or write another's;
-- administrative routes (import, create, place, enrol, delete, people search,
-  rosters) answer 403 with a message that says how to fix it. To try the
-  library without writing an adapter, set `allowUnrestrictedAdmin: true` on
-  `ReactiveLmsModule`: any caller the `IdentityAdapter` identifies can then use
-  them, and a warning is logged at start. An adapter always takes precedence.
+```json
+{"packageId":"…","activityNodeId":"…","packageType":"scorm_12","id":"…"}
+```
 
-The standalone API runs without an adapter, with one fixed demo learner, and
-with `allowUnrestrictedAdmin` on, so it is for evaluation only. An embedding
-host should configure an adapter.
+List the packages you have imported:
 
-## Documentation
+```bash
+curl http://localhost:3000/lms/packages
+```
 
-- [docs/DESIGN_CONSIDERATIONS.md](docs/DESIGN_CONSIDERATIONS.md) — product
-  and standards requirements
-- [docs/TECHNOLOGY.md](docs/TECHNOLOGY.md) — locked technology stack
-- [GROK_PLAN.md](GROK_PLAN.md) — implementation plan
-- [CHANGELOG.md](CHANGELOG.md) — release history
+[Back to Top](#table-of-contents)
 
-## License
+## Features
 
-[MIT](./LICENSE). Copyright (c) 2026 Richard McQuiston. See
-[COPYRIGHT](./COPYRIGHT).
+Working today:
+
+- Import of HTML5 and SCORM 1.2 ZIP files. A broken SCORM manifest is refused with a message that names the problem.
+- Import, launch, and tracking of Aviation Industry Computer-Based Training Committee (AICC) ZIP files. Packages from `lms-package-maker` have been played end to end.
+- Launch in a frame, with SCORM 1.2 bookmarks, scores, pass marks, quiz answers, and assets tracked.
+- Course sections with modules, nested blocks, and rules for when a module opens.
+- Enrolment by the `manual`, `self`, or `group` method.
+- Progress and completion for each person and section.
+- Admin screens for modules, sections, packages, upload, placement, enrolments, progress, quiz answers, and availability rules.
+- Automated SCORM 1.2 checks. These are not a certification. See [SCORM 1.2 conformance](./docs/SCORM_1_2_CONFORMANCE.md).
+
+Planned:
+
+- SCORM 2004, xAPI, cmi5, H5P, and Learning Tools Interoperability (LTI) 1.3.
+- Support for more databases, and Redis caching.
+
+[Back to Top](#table-of-contents)
+
+## Tech Stack
+
+- TypeScript, NestJS, and TypeORM, with Postgres first.
+- Angular 18 or later, and RxJS.
+- Bun workspaces.
+
+TailwindCSS is planned for the demo UI. See [TECHNOLOGY.md](./docs/TECHNOLOGY.md).
+
+[Back to Top](#table-of-contents)
+
+## More Information
+
+- [Packages](./docs/PACKAGES.md): what each package does and how the pieces fit.
+- [Configuration](./docs/CONFIGURATION.md): environment variables and migrations.
+- [Authorization](./docs/AUTHORIZATION.md): how the host decides who can do what.
+- [SCORM 1.2 conformance](./docs/SCORM_1_2_CONFORMANCE.md): what was checked and what was not.
+- [ROADMAP.md](./ROADMAP.md): the release plan.
+- [CHANGELOG.md](./CHANGELOG.md): the release history.
+- [GROK_PLAN.md](./GROK_PLAN.md): the implementation plan.
+- [Design considerations](./docs/DESIGN_CONSIDERATIONS.md): product and standards requirements.
+
+[Back to Top](#table-of-contents)
 
 ## Buy Me a Coffee
 
 If this app, code, or repository has helped you or someone you know, please consider donating. I appreciate any help to offset the costs of development and/or AI Credits.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P1V529Z7ZP)
+
+[Back to Top](#table-of-contents)
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
+
+[Back to Top](#table-of-contents)
+
+## Copyright
+
+(c)2026 Richard McQuiston. All rights reserved. See [COPYRIGHT](./COPYRIGHT).
+
+[Back to Top](#table-of-contents)

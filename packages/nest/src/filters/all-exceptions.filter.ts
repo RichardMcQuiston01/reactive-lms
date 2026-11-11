@@ -17,11 +17,16 @@ import {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { Response } from 'express';
 import { RLMS_ERROR_SINK } from '../tokens';
+import { clientErrorStatus } from './client-error';
+import { isHacpRequest, writeHacpClientError } from './hacp-error-reply';
 
 /**
  * Catch-all filter so every error body is `{ code, message }`.
  * Nest `HttpException`, TypeORM, and unexpected errors do not leak
  * `{ statusCode, message }`.
+ *
+ * The HACP route is the exception: a client error there is answered as a HACP
+ * reply at HTTP 200 (see {@link writeHacpClientError}).
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -41,7 +46,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
    * @param host - Nest arguments host
    */
   catch(exception: unknown, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<Response>();
+    const http = host.switchToHttp();
+    const response = http.getResponse<Response>();
+    if (
+      isHacpRequest(http.getRequest()) &&
+      writeHacpClientError(exception, response)
+    ) {
+      return;
+    }
     if (exception instanceof LmsError) {
       this.report(exception, exception.status);
       response.status(exception.status).json({
@@ -56,6 +68,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       response.status(status).json({
         code: httpExceptionCode(status),
         message: httpExceptionMessage(exception),
+      });
+      return;
+    }
+    const clientStatus = clientErrorStatus(exception);
+    if (clientStatus !== undefined) {
+      response.status(clientStatus).json({
+        code: httpExceptionCode(clientStatus),
+        message: (exception as Error).message,
       });
       return;
     }

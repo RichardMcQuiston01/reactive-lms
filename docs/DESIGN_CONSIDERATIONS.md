@@ -1,5 +1,9 @@
 # Learning Management System (LMS)
 
+[Back to README](../README.md)
+
+| [Overview](#overview) | [Resources](#resources) |
+
 ## Overview
 
 - Need to develop a standardized LMS
@@ -18,6 +22,8 @@
 - Interfaces, Models, and or Services should be stored in a shared library for integration into frontend or backend implementations
 - TypeORM migrations should exist for incorporating into existing databases
 
+[Back to Top](#learning-management-system-lms)
+
 ## Resources
 
 - <https://www.1edtech.org/standards/lti>
@@ -27,3 +33,9 @@
 - <https://xapi.com/specification/>
 - <https://xapi.com/cmi5/overview/>
 - <https://www.docebo.com/learning-network/blog/lms-requirements/>
+
+[Back to Top](#learning-management-system-lms)
+
+---
+
+[Back to README](../README.md)

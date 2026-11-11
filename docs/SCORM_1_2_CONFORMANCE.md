@@ -1,12 +1,21 @@
 # SCORM 1.2 conformance status
 
+[Back to README](../README.md)
+
+| [What is checked automatically](#what-is-checked-automatically) | [Found and fixed while writing the checks](#found-and-fixed-while-writing-the-checks) | [Interactions](#interactions) | [Assets](#assets) | [Not implemented](#not-implemented) | [Content Aggregation Model](#content-aggregation-model) | [To run the official suite](#to-run-the-official-suite) |
+
 What has been checked against SCORM 1.2, how, and what has not.
 
-**The official ADL Test Suite has not been run.** It is a Windows application
-published by ADL, and it could not be downloaded or run where this was built.
-Until it is run, ReactiveLMS does not claim SCORM 1.2 certification. What is
-below is an automated check written from the SCORM 1.2 specification, plus the
-gaps found while writing it.
+**The official ADL Test Suite has not been run, and cannot be on a current
+system.** It is a Windows application published by ADL, and it does not run on
+modern computers. Until it is run, ReactiveLMS does not claim SCORM 1.2
+certification. What is below is an automated check written from the SCORM 1.2
+specification, plus the gaps found while writing it.
+
+SCORM Cloud has been used to validate packages exported by `lms-package-maker`.
+That checks the packages (the content side) against another vendor's engine. It
+does not test this LMS, so it is not evidence of LMS conformance. Packages that
+play correctly there are useful as known-good inputs for ReactiveLMS.
 
 ## What is checked automatically
 
@@ -31,6 +40,8 @@ bookmark, score, complete, resume, mastery score) has been run in a real
 browser against the standalone API and a database. See the fixture packages in
 `packages/core/test-fixtures/scorm12`.
 
+[Back to Top](#scorm-12-conformance-status)
+
 ## Found and fixed while writing the checks
 
 - Invalid values answered 351, and unset optional values answered 391. Neither
@@ -43,6 +54,8 @@ browser against the standalone API and a database. See the fixture packages in
 - A second `LMSFinish` answered 101 instead of 301.
 - `LMSGetErrorString` of an unknown code returned text instead of `""`, and the
   405, 202, and 203 strings did not exist.
+
+[Back to Top](#scorm-12-conformance-status)
 
 ## Interactions
 
@@ -67,6 +80,8 @@ lists them by attempt.
 - `student_response` and `correct_responses.m.pattern` are limited to 255
   characters; their per-type syntax is not checked.
 
+[Back to Top](#scorm-12-conformance-status)
+
 ## Assets
 
 A resource marked `adlcp:scormtype="asset"` is a page or file with no script
@@ -75,6 +90,8 @@ the only signal there is, so a normal launch marks its module completed (the
 success status and any score already recorded are kept) and closes the
 attempt. Browse and Review launches record nothing. A SCO is never treated
 this way: it completes through its own API calls.
+
+[Back to Top](#scorm-12-conformance-status)
 
 ## Not implemented
 
@@ -88,6 +105,8 @@ lets a SCO fall back.
 - `credit` / `no-credit`: the adapter always reports `credit`
 - Time limits (`maxtimeallowed`, `timelimitaction`) are passed to the SCO but
   not enforced by the LMS
+
+[Back to Top](#scorm-12-conformance-status)
 
 ## Content Aggregation Model
 
@@ -125,11 +144,26 @@ not), `isvisible`, and `adlcp:prerequisites`.
 - Behaviours the specification leaves to the LMS, such as what status to set
   when a SCO finishes without setting one.
 
+[Back to Top](#scorm-12-conformance-status)
+
 ## To run the official suite
+
+This is blocked for now: the suite does not run on current systems. If it can
+be run, for example in a virtual machine with a supported older Windows or after
+it has been ported, the steps are:
 
 1. Get the ADL SCORM 1.2 Test Suite from ADL (a Windows application).
 2. Start the standalone API and a database (see the README).
-3. Point the suite at the LMS's launch page, following its LMS test
-   instructions, and run the Run-Time Environment and Content Aggregation
-   Model tests.
+3. Follow the suite's own instructions for testing an LMS, and run the
+   Run-Time Environment and Content Aggregation Model tests. How the suite
+   reaches the LMS has not been confirmed here.
 4. Record the result here, and fix what it reports.
+
+Until then, the practical checks are the automated suites above, the fixture
+packages, and packages from other tools that are known to be good.
+
+[Back to Top](#scorm-12-conformance-status)
+
+---
+
+[Back to README](../README.md)

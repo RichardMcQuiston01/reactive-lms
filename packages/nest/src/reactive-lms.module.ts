@@ -11,6 +11,8 @@ import {
 import {
   consoleErrorSink,
   EnrolmentService,
+  AiccHacpService,
+  AiccRuntime,
   EventLogService,
   FilesystemBlobStorageAdapter,
   Html5Runtime,
@@ -24,6 +26,7 @@ import {
 } from '@richardmcquiston01/reactive-lms-core';
 import type {
   BlobStorageAdapter,
+  ContentRuntime,
   CacheAdapter,
   CapabilityAdapter,
   ErrorSink,
@@ -31,6 +34,7 @@ import type {
 } from '@richardmcquiston01/reactive-lms-shared';
 import type { DataSource } from 'typeorm';
 import { CatalogService } from './catalog/catalog.service';
+import { AiccHacpController } from './controllers/aicc-hacp.controller';
 import { CoursesController } from './controllers/courses.controller';
 import { EnrolmentsController } from './controllers/enrolments.controller';
 import { LaunchesController } from './controllers/launches.controller';
@@ -105,6 +109,13 @@ export interface ReactiveLmsModuleOptions {
   maxUploadBytes?: number;
   /** URL prefix for LMS routes. Default `lms`. */
   routePrefix?: string;
+  /**
+   * Scheme, host, and port that browsers use to reach this API, such as
+   * `https://lms.example.com`, with no path. AICC content is told to call this
+   * address back, so set it when a proxy changes the host or scheme the API
+   * sees. Defaults to the host and scheme of the launch request.
+   */
+  publicBaseUrl?: string;
   /** Caller-owned TypeORM DataSource. */
   dataSource: DataSource;
 }
@@ -128,6 +139,15 @@ export interface ReactiveLmsModuleAsyncOptions {
   routePrefix?: string;
 }
 
+/**
+ * The content runtimes this module imports and launches. The importer and the
+ * launch service both take this list, so a format cannot be importable and not
+ * launchable (or the reverse) because one of them was missed.
+ */
+export function createContentRuntimes(): ContentRuntime[] {
+  return [new Html5Runtime(), new Scorm12Runtime(), new AiccRuntime()];
+}
+
 /** Default cap on a package upload: 200 MiB. */
 export const DEFAULT_MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
 
@@ -147,6 +167,7 @@ const CONTROLLERS = [
   LaunchesController,
   ProgressController,
   ScormRuntimeController,
+  AiccHacpController,
 ];
 
 /**
@@ -260,16 +281,11 @@ function buildModule(input: {
         storage: BlobStorageAdapter,
         opts: ReactiveLmsModuleOptions,
       ) =>
-        new PackageImporter(
-          dataSource,
-          storage,
-          [new Html5Runtime(), new Scorm12Runtime()],
-          {
-            antivirusScan: opts.antivirusScan,
-            maxUncompressedBytes: opts.maxUncompressedBytes,
-            maxFileCount: opts.maxFileCount,
-          },
-        ),
+        new PackageImporter(dataSource, storage, createContentRuntimes(), {
+          antivirusScan: opts.antivirusScan,
+          maxUncompressedBytes: opts.maxUncompressedBytes,
+          maxFileCount: opts.maxFileCount,
+        }),
       inject: [
         RLMS_DATA_SOURCE,
         RLMS_BLOB_STORAGE_ADAPTER,
@@ -291,7 +307,7 @@ function buildModule(input: {
       useFactory: (dataSource: DataSource, sink: ProgressSinkService) =>
         new LaunchService(
           dataSource,
-          [new Html5Runtime(), new Scorm12Runtime()],
+          createContentRuntimes(),
           {},
           new EventLogService(dataSource),
           sink,
@@ -309,6 +325,12 @@ function buildModule(input: {
       useFactory: (dataSource: DataSource, sink: ProgressSinkService) =>
         new ScormCmiService(dataSource, sink),
       inject: [RLMS_DATA_SOURCE, ProgressSinkService],
+    },
+    {
+      provide: AiccHacpService,
+      useFactory: (dataSource: DataSource, cmi: ScormCmiService) =>
+        new AiccHacpService(dataSource, cmi),
+      inject: [RLMS_DATA_SOURCE, ScormCmiService],
     },
     PersonDirectory,
     LmsRequestService,

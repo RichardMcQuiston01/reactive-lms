@@ -47,6 +47,19 @@ export class ScormCmiService {
   }
 
   /**
+   * Returns the CMI values exactly as stored, with nothing dropped for a new
+   * session. {@link getCmi} leaves out the previous session's `session_time`
+   * and `exit`; content that talks to the server directly (AICC) needs them to
+   * carry a session's values from one request to the next.
+   *
+   * @param attemptId - Attempt id from launch
+   */
+  async getStoredCmi(attemptId: string): Promise<CmiValues> {
+    const ctx = await this.loadContext(attemptId);
+    return { ...ctx.persisted };
+  }
+
+  /**
    * Persists a CMI snapshot and rolls it into {@link ProgressSinkService}.
    *
    * @param attemptId - Attempt id from launch

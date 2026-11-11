@@ -1,5 +1,9 @@
 # ROADMAP
 
+[Back to README](./README.md)
+
+| [Adopted packages](#adopted-packages) | [Principles](#principles) | [Milestones](#milestones) | [0.1.0 — Foundation ✅](#010--foundation-) | [0.2.0 — Scaffold, contracts, schema ✅](#020--scaffold-contracts-schema-) | [0.3.0 — Course container + HTML5](#030--course-container--html5) | [0.4.0 — SCORM 1.2](#040--scorm-12) | [0.4.1 — AICC (HACP) (D16)](#041--aicc-hacp-d16) | [0.5.0 — xAPI LRS + cmi5](#050--xapi-lrs--cmi5) | [0.6.0 — SCORM 2004 (CMI, navigation, sequencing spike)](#060--scorm-2004-cmi-navigation-sequencing-spike) | [0.7.0 — H5P](#070--h5p) | [0.8.0 — LTI 1.3 Platform + Advantage](#080--lti-13-platform--advantage) | [0.9.0 — Integration story](#090--integration-story) | [1.0.0 — First stable release](#100--first-stable-release) | [1.1.0 — Portability](#110--portability) | [1.2.0 — Learning paths (D5, option C)](#120--learning-paths-d5-option-c) | [1.3.0 — Built-in certificates (D6, option C)](#130--built-in-certificates-d6-option-c) | [1.4.0 — Open Badges 3.0 credentials (D6, option D)](#140--open-badges-30-credentials-d6-option-d) | [1.5.0 — Learner engagement extension (D14)](#150--learner-engagement-extension-d14) | [Later](#later) | [Non-goals (v1)](#non-goals-v1) | [Open design decisions](#open-design-decisions) |
+
 Release plan for ReactiveLMS, derived from [GROK_PLAN.md](GROK_PLAN.md).
 The plan holds the detail (domain model, API surface, step lists); this file
 holds the order, the exit criteria, and the decisions still open.
@@ -25,6 +29,8 @@ Boundaries, so the two don't blur:
 - Both packages are Apache-2.0 and zero-dependency at the core. Our MIT
   license is unaffected; we depend on them, we don't redistribute them.
 
+[Back to Top](#roadmap)
+
 ## Principles
 
 - **Prove the spine first.** HTML5 plus the course container ships before the
@@ -36,14 +42,17 @@ Boundaries, so the two don't blur:
 - **Host-safe.** Tables are prefixed `rlms_`; identity, authorization, storage,
   and cache are injected adapters.
 
+[Back to Top](#roadmap)
+
 ## Milestones
 
 | Version | Theme                       | PRs (GROK_PLAN §14) | Status |
 | ------- | --------------------------- | ------------------- | ------ |
 | 0.1.0   | Specs, stack, repo hygiene  | —                   | ✅     |
 | 0.2.0   | Scaffold + contracts + schema | 0, 1, 2           | ✅ released 2026-10-29 (see `docs/PLAN_0.2.0.md`) |
-| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, and placement screens built; enrolment and progress screens remain |
-| 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, player bridge, and fixture packages, `masteryscore`, and an automated run-time conformance suite built and run end to end in a browser; the official ADL Test Suite run remains (see `docs/SCORM_1_2_CONFORMANCE.md`) |
+| 0.3.0   | Course container + HTML5 + first admin screens | 3 | 🚧 course spine, HTML5, Nest API, module tree and conditions, blob conformance suite, and the admin module-tree, section list, package list and upload, placement, enrolment, progress, and interaction-answer screens built |
+| 0.4.0   | SCORM 1.2                   | 4                   | 🚧 runtime, CMI store, player bridge, and fixture packages, `masteryscore`, and an automated run-time conformance suite, `cmi.interactions` with stored answers, asset completion, and Content Aggregation Model checks built and run end to end in a browser; the official ADL Test Suite could not be run on a current system (see `docs/SCORM_1_2_CONFORMANCE.md`) |
+| 0.4.1   | AICC (HACP)                 | —                   | 🚧 (D16) import, launch, and the HACP endpoint built, and packages exported by `lms-package-maker` import, launch, score, complete, and resume in a browser; the format is not claimed until a package from an independent tool passes (see the spec gap) |
 | 0.5.0   | xAPI LRS + cmi5             | 5                   | ⬜     |
 | 0.6.0   | SCORM 2004 (CMI, nav, sequencing spike) | 6a, 6b  | ⬜     |
 | 0.7.0   | H5P                         | 7                   | ⬜     |
@@ -59,12 +68,17 @@ Boundaries, so the two don't blur:
 
 Order notes: after 0.3.0, the cmi5, SCORM 2004, H5P, and LTI work depends only
 on the shared pipeline and can run in parallel; the order above is a default,
-not a constraint. LTI depends only on the schema (PR 2).
+not a constraint. LTI depends only on the schema (PR 2). AICC (0.4.1) depends only on the
+SCORM 1.2 CMI store.
+
+[Back to Top](#roadmap)
 
 ## 0.1.0 — Foundation ✅
 
 - Design spec, technology stack, implementation plan
 - MIT license, README, CHANGELOG, funding metadata
+
+[Back to Top](#roadmap)
 
 ## 0.2.0 — Scaffold, contracts, schema ✅
 
@@ -96,6 +110,8 @@ console fallback, so nothing else waits on them.
 **Guardrail:** dump the database and get an explicit OK before running
 migrations against any shared database.
 
+[Back to Top](#roadmap)
+
 ## 0.3.0 — Course container + HTML5
 
 **Delivers:** package import (ZIP limits, antivirus hook), filesystem storage
@@ -125,6 +141,8 @@ same flow works end to end through the admin screens in `standalone-web`; and
 the filesystem `BlobStorageAdapter` passes the shared adapter conformance
 suite (D3).
 
+[Back to Top](#roadmap)
+
 ## 0.4.0 — SCORM 1.2
 
 **Delivers:** manifest parsing, CMI store with error codes, `window.API`
@@ -132,6 +150,68 @@ bridge, resume of `lesson_location` and `suspend_data`.
 
 **Done when:** a known-good SCORM 1.2 sample launches, bookmarks, scores, and
 completes, and a refresh resumes.
+
+[Back to Top](#roadmap)
+
+## 0.4.1 — AICC (HACP) (D16)
+
+**Delivers:** an `aicc` package type. Import detects the course description
+files (`*.crs`, `*.au`, `*.des`, `*.cst`) at the package root and parses them
+into the course, its assignable units, and each unit's launch file and mastery
+score. A HACP endpoint answers `GetParam`, `PutParam` and `ExitAU` from the
+content, on top of the SCORM 1.2 CMI store and its validation (status, score,
+location, suspend data, time). A launch gives the content `AICC_SID` and
+`AICC_URL`, with a session id the LMS makes and ends at `ExitAU`.
+
+**Done when:** the AICC packages exported by `lms-package-maker` (D15) import,
+launch, bookmark, score, complete, and resume after a refresh, and a session
+that has been exited refuses further requests with an AICC error.
+
+**Notes**
+
+- Content is served from our origin (D3), so the content's POST to the HACP
+  endpoint is same-origin and needs no CORS handling here.
+- The server re-validates every `PutParam` (D1); a second `ExitAU` or a
+  request for an unknown session returns an AICC error, never a crash.
+- **Spec gap:** the AICC CMI001 document is not in this repo. The HACP details
+  (exit flags such as `Incomplete,Suspend`, the `Score` field order, the
+  `version` value, the `.au` column set) come from public descriptions and
+  sample implementations, and `lms-package-maker`'s AICC export was written
+  from the same sources. Agreement between the two proves consistency, not
+  correctness. Before the format is claimed (see Principles), check the
+  details against the CMI001 text or a real AICC package from another tool.
+- **HACP choices** (also unchecked against CMI001): the launch gives the
+  content `AICC_SID`, which is the attempt's session id, and `AICC_URL`, the
+  absolute address `<API root>/aicc/hacp` (the content needs an absolute
+  address; set `publicBaseUrl` behind a proxy that changes the host or scheme).
+  The endpoint has no sign-in: the session id is the only credential, and it
+  works only while the attempt is open. Every outcome is an HTTP 200 reply with
+  an error code in the body, as HACP defines, including a request whose body
+  cannot be read or is too large and a method other than POST (error 1 with the
+  reason); only a server fault is a 5xx. An unknown, ended, replaced, or
+  non-AICC session is always error 3 with the same words; an unknown command,
+  an empty `PutParam`, or a value the CMI store refuses is error 1 naming the
+  value, and nothing is saved. `PutParam` reads `[Core]` location, status with
+  an exit flag (`Time-out`, `Suspend`, `Logout`, or `T`, `S`, `L`), score
+  (`raw[,max[,min]]`), and time, and `[Core_Lesson]` as suspend data; keys only
+  the LMS sets are ignored. `GetParam` also sends `Lesson_Mode` in `[Core]`,
+  `[Core_Vendor]` (launch data), and `[Student_Data]` (mastery score, time limit
+  and action). `ExitAU` adds the session time to the total, applies the mastery
+  score, and ends the attempt. `au_password` is not checked.
+- **Import choices** (also unchecked against CMI001): `core_vendor` becomes the
+  launch data the content reads back; `web_launch` is appended to `file_name`
+  as launch parameters; `time_limit_action` (`E,M`, `E,N`, `C,M`, `C,N`) is
+  stored as the SCORM 1.2 words so the CMI store applies it unchanged; a
+  `max_time_allowed` of all zeros means no limit; `au_password` is not stored.
+  The import is refused, naming the unit, for a missing launch file, a
+  `mastery_score` outside 0 to 100, a malformed time, a unit or block placed
+  twice, or a `.cst` without a `ROOT` block. A unit the `.cst` leaves out is
+  placed after the others.
+- Not in scope: the optional `.ort`, `.pre` and `.cmp` files, blocks beyond
+  `ROOT`, and `PutComments`, `PutObjectives`, `PutInteractions`, `PutPath` and
+  `PutPerformance` (answered with a success response and ignored).
+
+[Back to Top](#roadmap)
 
 ## 0.5.0 — xAPI LRS + cmi5
 
@@ -142,6 +222,8 @@ and `satisfied` statements.
 **Done when:** a cmi5 sample AU initializes, passes, terminates, and the
 registration satisfies per `moveOn=Passed`.
 
+[Back to Top](#roadmap)
+
 ## 0.6.0 — SCORM 2004 (CMI, navigation, sequencing spike)
 
 **Delivers:** `window.API_1484_11`, independent `completion_status` and
@@ -150,12 +232,16 @@ registration satisfies per `moveOn=Passed`.
 **Done when:** a SCORM 2004 sample without complex sequencing reports both
 statuses independently.
 
+[Back to Top](#roadmap)
+
 ## 0.7.0 — H5P
 
 **Delivers:** `.h5p` import, shared libraries by `machineName-major.minor`,
 iframe runtime, xAPI events forwarded into the LRS and progress.
 
 **Done when:** an official multiple-choice sample records a score.
+
+[Back to Top](#roadmap)
 
 ## 0.8.0 — LTI 1.3 Platform + Advantage
 
@@ -164,6 +250,8 @@ Linking 2.0, AGS 2.0, NRPS 2.0, single-use nonces.
 
 **Done when:** an LTI 1.3 reference tool launches and posts a grade that
 appears on the registration.
+
+[Back to Top](#roadmap)
 
 ## 0.9.0 — Integration story
 
@@ -187,6 +275,8 @@ appears on the registration.
 one package of each implemented type; a host app can add the Nest module and
 Angular player without forking.
 
+[Back to Top](#roadmap)
+
 ## 1.0.0 — First stable release
 
 - Publish strategy executed: stable 1.0.0 published as `latest` (D4)
@@ -195,6 +285,8 @@ Angular player without forking.
 - Conformance fixtures green for every claimed format
 - Security review: ZIP handling, token scoping, LTI key handling
 - Docs: embedding guide, adapter guide, upgrade notes
+
+[Back to Top](#roadmap)
 
 ## 1.1.0 — Portability
 
@@ -208,6 +300,8 @@ Angular player without forking.
   `ioredis` client; unset, it stays in-memory. Docs say when to turn it on
   (more than one API process).
 - Per-driver integration tests behind env flags
+
+[Back to Top](#roadmap)
 
 ## 1.2.0 — Learning paths (D5, option C)
 
@@ -225,6 +319,8 @@ links to a path version or keeps ad-hoc modules as before.
 **Done when:** one path is linked to two sections; editing the path publishes
 a new version that sections can adopt; unlinked sections are unchanged.
 
+[Back to Top](#roadmap)
+
 ## 1.3.0 — Built-in certificates (D6, option C)
 
 **Delivers:** a certificate template per course or offering, issued on
@@ -240,11 +336,15 @@ screens for templates; PDF output with a lightweight library such as
 **Done when:** completing a section issues a certificate whose code verifies
 at the public endpoint, and forgetting the learner anonymises it.
 
+[Back to Top](#roadmap)
+
 ## 1.4.0 — Open Badges 3.0 credentials (D6, option D)
 
 **Delivers:** signed, verifiable credentials built on the 1.3.0 issuing flow,
 using the 1EdTech Open Badges 3.0 standard: issuer key management, credential
 signing, and a verification path. Extends C; it does not replace it.
+
+[Back to Top](#roadmap)
 
 ## 1.5.0 — Learner engagement extension (D14)
 
@@ -272,10 +372,14 @@ depends on it.
 follows the scheduler, a streak and a badge are awarded, and forgetting the
 learner removes their review state and logs.
 
+[Back to Top](#roadmap)
+
 ## Later
 
 - SCORM 2004 sequencing, only if the 0.6.0 spike fails ADL conformance (own
   plan; no commercial engine unless the owner decides otherwise)
+
+[Back to Top](#roadmap)
 
 ## Non-goals (v1)
 
@@ -283,7 +387,9 @@ Native quizzes/QTI, forums/assignments/calendar/chat, competencies,
 content bank, plugin themes/blocks/formats, authoring, marketplace/e-commerce,
 social features (feeds, chat; gamification is allowed only in the D14 extension package), built-in IdP, LIS SOAP/LDAP, LTI 1.1, LTI dynamic
 registration/proctoring/Caliper, acting as an LTI Tool, Moodle `.mbz`,
-multi-tenant billing, native mobile apps, AICC.
+multi-tenant billing, native mobile apps.
+
+[Back to Top](#roadmap)
 
 ## Open design decisions
 
@@ -357,6 +463,19 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
     through import and launch, and consider using them as the SCORM 1.2
     fixtures for 0.4.0 alongside the ADL conformance check.
   - **No work is planned or blocked** on this until then.
+- **D16 — AICC support** (recorded 2026-11-08 at the owner's request).
+  Moves AICC from the v1 non-goals into the plan, as 0.4.1, and answers
+  GROK_PLAN §13 question 6 ("out of scope unless requested") with "requested".
+  - **Why:** `lms-package-maker` now exports AICC packages (D15) and this LMS
+    is the test target for its output; AICC packages also remain in use in
+    older course libraries.
+  - **Scope:** AICC level 1 over HACP, one assignable unit under `ROOT`, built
+    on the SCORM 1.2 CMI store (see 0.4.1). No JavaScript-API AICC.
+  - **Risk:** the protocol details are not yet checked against CMI001 (see the
+    0.4.1 notes). No format claim until a fixture from an independent tool
+    passes, per the Principles.
+  - **Sequencing:** after the 0.4.0 conformance run, in parallel with 0.5.0
+    work if wanted; nothing else waits on it.
 - **D10 — Git workflow** (decided 2026-10-20, per the owner's git-workflow
   skill). Long-lived branches: `main` (production) and `dev` (development);
   there is no `staging` branch. New work goes on `feature/<name>` off `dev`
@@ -379,6 +498,7 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   | cmi5 | Own launch and token flow, `@xapi/xapi` | `cmi5.xml` import, statement guard, `moveOn` |
   | H5P | `h5p-standalone` (MIT) | `.h5p` import; events forwarded to the LRS |
   | LTI 1.3 | Own platform | `jose` (MIT) for JWT/OIDC; own AGS, NRPS, Deep Linking |
+  | AICC | None; the content's own code POSTs to the HACP endpoint | Own HACP endpoint on the SCORM 1.2 CMI store; `.crs`/`.au`/`.des`/`.cst` import (D16) |
   | HTML5 | Own `postMessage` contract | Own |
 
   Rules that follow from it:
@@ -495,5 +615,11 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   - Not scheduled: SQL Server and others, on demand through the extension
     guide.
 
-AICC is closed as out of scope. Angular version is closed by
+AICC is in scope from 0.4.1 (D16). Angular version is closed by
 `docs/TECHNOLOGY.md` (18+, standalone APIs).
+
+[Back to Top](#roadmap)
+
+---
+
+[Back to README](./README.md)

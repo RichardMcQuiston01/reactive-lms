@@ -11,10 +11,13 @@ const CMI5_MARKER = 'cmi5.xml';
 const SCORM_MARKER = 'imsmanifest.xml';
 const XAPI_MARKER = 'tincan.xml';
 const H5P_MARKER = 'h5p.json';
+/** AICC course description files, which sit at the package root. */
+const AICC_MARKERS = ['.crs', '.au'];
 
 /**
  * Detects a package format from an in-memory file index.
- * Order: `cmi5` → SCORM (`schemaversion`) → `xapi` → `h5p` → `html5`.
+ * Order: `cmi5` → SCORM (`schemaversion`) → `xapi` → `h5p` → AICC → `html5`.
+ * AICC is checked before `html5` because its packages also hold HTML.
  *
  * @param files - Package file index (paths relative to the package root)
  * @returns Detected package type
@@ -43,6 +46,10 @@ export function detectPackageType(files: PackageFileIndex): PackageType {
     return 'h5p';
   }
 
+  if (hasAiccFiles(rootFiles)) {
+    return 'aicc';
+  }
+
   if (hasHtmlFile(files)) {
     return 'html5';
   }
@@ -65,6 +72,14 @@ function rootFileMap(files: PackageFileIndex): Map<string, string> {
     root.set(normalized.toLowerCase(), normalized);
   }
   return root;
+}
+
+/** True when the root holds a `.crs` course file and a `.au` unit file. */
+function hasAiccFiles(rootFiles: Map<string, string>): boolean {
+  const names = [...rootFiles.keys()];
+  return AICC_MARKERS.every((suffix) =>
+    names.some((name) => name.endsWith(suffix)),
+  );
 }
 
 function hasHtmlFile(files: PackageFileIndex): boolean {
