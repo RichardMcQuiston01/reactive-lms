@@ -57,6 +57,23 @@ browser against the standalone API and a database. See the fixture packages in
 
 [Back to Top](#scorm-12-conformance-status)
 
+## Mastery score and suspended sessions
+
+When a SCO finishes and the manifest set a mastery score, the LMS decides
+`passed` or `failed` from `cmi.core.score.raw`, whatever status the SCO wrote.
+Browse mode and a missing score or mastery score leave the status alone.
+
+A session that exits with `cmi.core.exit` = `suspend` has not finished, since
+the learner will come back (the next launch reads `cmi.core.entry` =
+`resume`). Its status is kept as the SCO wrote it, so a partial score of 40
+against a mastery score of 80 stays `incomplete` rather than turning
+`failed`. The mastery score is applied when a later session ends with
+`logout`, `time-out`, or no exit value. AICC follows the same rule: a
+`Lesson_Status=Incomplete,Suspend` flag is read as `cmi.core.exit` =
+`suspend`.
+
+[Back to Top](#scorm-12-conformance-status)
+
 ## Server-side checks
 
 The browser's `window.API` checks every value a SCO writes, but the server does
