@@ -753,6 +753,12 @@ function isTimespan(value: string): boolean {
  * SCO wrote (typically `completed`). Nothing changes without a mastery score,
  * without a raw score, or in browse mode, which is not for credit.
  *
+ * A session that exits with `cmi.core.exit` = `suspend` has not finished: the
+ * learner means to come back, and a partial score must not turn the unit into
+ * `failed` meanwhile. The status the SCO wrote is kept, and the mastery score
+ * is applied when a later session ends normally (`logout`, `time-out`, or no
+ * exit value).
+ *
  * @param values - CMI snapshot at the end of the session
  * @returns The snapshot, with `cmi.core.lesson_status` replaced when it applies
  */
@@ -762,7 +768,8 @@ export function applyMasteryScore(values: CmiValues): CmiValues {
   if (
     mastery === undefined ||
     raw === undefined ||
-    values['cmi.core.lesson_mode'] === 'browse'
+    values['cmi.core.lesson_mode'] === 'browse' ||
+    values['cmi.core.exit'] === 'suspend'
   ) {
     return values;
   }

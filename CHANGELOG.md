@@ -13,6 +13,15 @@
 
 ### Fixed
 
+- A session that exits with `cmi.core.exit` = `suspend` (or the AICC `Suspend`
+  flag) is no longer marked `failed` by the mastery score. A unit with mastery
+  score 80 and a partial raw score of 40 stayed `incomplete` in the content's
+  own words but was recorded as `failed` when the session ended, and the
+  registration could show failed until the learner returned. The status the
+  SCO wrote is now kept on a suspend; the mastery score still decides pass or
+  fail when a session ends with `logout`, `time-out`, or no exit value. See
+  `docs/SCORM_1_2_CONFORMANCE.md`.
+
 - The SCORM 1.2 save route (`PUT /scorm/attempts/:id/cmi`) no longer trusts the
   browser's values. It stored whatever it was sent, so a raw score of 999
   became a scaled score of 9.99 and a 5,000-character location was kept,
