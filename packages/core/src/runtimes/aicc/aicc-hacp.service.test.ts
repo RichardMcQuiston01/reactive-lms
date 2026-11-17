@@ -487,6 +487,27 @@ describe('AiccHacpService: ExitAU', () => {
     expect(await run('50')).toBe('failed');
   });
 
+  test('a Suspend exit keeps the status, whatever the partial score', async () => {
+    const ds = createMockDataSource();
+    seedCourse(ds);
+    seedAttempt(ds, 's1');
+    const service = build(ds);
+    await service.handle(
+      request(
+        'PutParam',
+        's1',
+        put('[Core]', 'Lesson_Status=Incomplete,Suspend', 'Score=40,100,0'),
+      ),
+    );
+    await service.handle(request('ExitAU', 's1'));
+
+    expect(ds.rowsOf(NormalizedProgress)[0]).toMatchObject({
+      completionStatus: 'incomplete',
+      successStatus: 'unknown',
+    });
+    expect(ds.rowsOf(Registration)[0]?.status).not.toBe('failed');
+  });
+
   test('completing the unit completes the registration', async () => {
     const ds = createMockDataSource();
     seedCourse(ds);

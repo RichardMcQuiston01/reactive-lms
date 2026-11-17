@@ -340,6 +340,30 @@ describe('ScormCmiService', () => {
       expect(values['cmi.student_data.mastery_score']).toBe('');
     });
 
+    test('a suspended session keeps its status, and the next one that ends normally is judged', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const suspended = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('40', 'incomplete', { 'cmi.core.exit': 'suspend' }),
+      );
+
+      expect(suspended.values['cmi.core.lesson_status']).toBe('incomplete');
+      expect(ds.rowsOf(NormalizedProgress)[0]).toMatchObject({
+        completionStatus: 'incomplete',
+        successStatus: 'unknown',
+      });
+      expect(ds.rowsOf(Registration)[0]?.status).not.toBe('failed');
+
+      const finished = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('90', 'completed', { 'cmi.core.exit': 'logout' }),
+      );
+
+      expect(finished.values['cmi.core.lesson_status']).toBe('passed');
+    });
+
     test('a SCO cannot change it', async () => {
       const ds = createMockDataSource();
       seedAttempt(ds, undefined, withMastery);
@@ -761,7 +785,7 @@ describe('ScormCmiService', () => {
         ['cmi.core.score.max', '100'],
         ['cmi.suspend_data', 'a=1&b=2'],
         ['cmi.core.session_time', '00:05:10.00'],
-        ['cmi.core.exit', 'suspend'],
+        ['cmi.core.exit', 'logout'],
         ['cmi.core.lesson_status', 'completed'],
         ['cmi.objectives.0.id', 'obj-1'],
         ['cmi.objectives.0.status', 'passed'],

@@ -460,6 +460,32 @@ describe('applyMasteryScore', () => {
     }
   });
 
+  test('leaves a suspended session alone, whatever its partial score', () => {
+    const suspended = values({
+      'cmi.core.lesson_status': 'incomplete',
+      'cmi.core.exit': 'suspend',
+      'cmi.student_data.mastery_score': '80',
+      'cmi.core.score.raw': '40',
+    });
+
+    expect(applyMasteryScore(suspended)).toBe(suspended);
+  });
+
+  test.each(['logout', 'time-out', ''])(
+    'still decides pass or fail when the exit is "%s"',
+    (exit) => {
+      const finished = applyMasteryScore(
+        values({
+          'cmi.core.exit': exit,
+          'cmi.student_data.mastery_score': '80',
+          'cmi.core.score.raw': '40',
+        }),
+      );
+
+      expect(finished['cmi.core.lesson_status']).toBe('failed');
+    },
+  );
+
   test('does not change the values it was given', () => {
     const input = values({
       'cmi.student_data.mastery_score': '70',
