@@ -442,7 +442,7 @@ describe('applyMasteryScore', () => {
     ).toBe('passed');
   });
 
-  test('leaves the values alone without a mastery score, a raw score, or outside credit mode, or on suspend', () => {
+  test('leaves the values alone without a mastery score, a raw score, or outside credit mode', () => {
     const noMastery = values({ 'cmi.core.score.raw': '5' });
     const noRaw = values({ 'cmi.student_data.mastery_score': '70' });
     const blankMastery = values({
@@ -455,16 +455,36 @@ describe('applyMasteryScore', () => {
       'cmi.core.lesson_mode': 'browse',
     });
 
-    const suspended = values({
-      'cmi.student_data.mastery_score': '70',
-      'cmi.core.score.raw': '5',
-      'cmi.core.exit': 'suspend',
-    });
-
-    for (const input of [noMastery, noRaw, blankMastery, browse, suspended]) {
+    for (const input of [noMastery, noRaw, blankMastery, browse]) {
       expect(applyMasteryScore(input)).toBe(input);
     }
   });
+
+  test('leaves a suspended session alone, whatever its partial score', () => {
+    const suspended = values({
+      'cmi.core.lesson_status': 'incomplete',
+      'cmi.core.exit': 'suspend',
+      'cmi.student_data.mastery_score': '80',
+      'cmi.core.score.raw': '40',
+    });
+
+    expect(applyMasteryScore(suspended)).toBe(suspended);
+  });
+
+  test.each(['logout', 'time-out', ''])(
+    'still decides pass or fail when the exit is "%s"',
+    (exit) => {
+      const finished = applyMasteryScore(
+        values({
+          'cmi.core.exit': exit,
+          'cmi.student_data.mastery_score': '80',
+          'cmi.core.score.raw': '40',
+        }),
+      );
+
+      expect(finished['cmi.core.lesson_status']).toBe('failed');
+    },
+  );
 
   test('does not change the values it was given', () => {
     const input = values({

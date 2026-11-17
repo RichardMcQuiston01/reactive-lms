@@ -315,25 +315,6 @@ describe('ScormCmiService', () => {
       expect(values['cmi.core.lesson_status']).toBe('incomplete');
     });
 
-    test('a suspended session keeps its status; the verdict comes on the final exit', async () => {
-      const ds = createMockDataSource();
-      seedAttempt(ds, undefined, withMastery);
-      const cmi = service(ds);
-
-      const { values } = await cmi.putCmi(ATTEMPT_ID, {
-        values: {
-          'cmi.core.score.raw': '40',
-          'cmi.core.lesson_status': 'incomplete',
-          'cmi.core.exit': 'suspend',
-        },
-        finished: true,
-      });
-
-      expect(values['cmi.core.lesson_status']).toBe('incomplete');
-      expect(ds.rowsOf(NormalizedProgress)[0]?.successStatus).toBe('unknown');
-      expect(ds.rowsOf(Registration)[0]?.status).not.toBe('failed');
-    });
-
     test('changes nothing without a raw score', async () => {
       const ds = createMockDataSource();
       seedAttempt(ds, undefined, withMastery);
@@ -357,6 +338,30 @@ describe('ScormCmiService', () => {
 
       expect(values['cmi.core.lesson_status']).toBe('completed');
       expect(values['cmi.student_data.mastery_score']).toBe('');
+    });
+
+    test('a suspended session keeps its status, and the next one that ends normally is judged', async () => {
+      const ds = createMockDataSource();
+      seedAttempt(ds, undefined, withMastery);
+
+      const suspended = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('40', 'incomplete', { 'cmi.core.exit': 'suspend' }),
+      );
+
+      expect(suspended.values['cmi.core.lesson_status']).toBe('incomplete');
+      expect(ds.rowsOf(NormalizedProgress)[0]).toMatchObject({
+        completionStatus: 'incomplete',
+        successStatus: 'unknown',
+      });
+      expect(ds.rowsOf(Registration)[0]?.status).not.toBe('failed');
+
+      const finished = await service(ds).putCmi(
+        ATTEMPT_ID,
+        finishWith('90', 'completed', { 'cmi.core.exit': 'logout' }),
+      );
+
+      expect(finished.values['cmi.core.lesson_status']).toBe('passed');
     });
 
     test('a SCO cannot change it', async () => {
