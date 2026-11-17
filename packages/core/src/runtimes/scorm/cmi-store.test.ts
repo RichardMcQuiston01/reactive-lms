@@ -442,7 +442,7 @@ describe('applyMasteryScore', () => {
     ).toBe('passed');
   });
 
-  test('leaves the values alone without a mastery score, a raw score, or outside credit mode', () => {
+  test('leaves the values alone without a mastery score, a raw score, or outside credit mode, or on suspend', () => {
     const noMastery = values({ 'cmi.core.score.raw': '5' });
     const noRaw = values({ 'cmi.student_data.mastery_score': '70' });
     const blankMastery = values({
@@ -455,7 +455,13 @@ describe('applyMasteryScore', () => {
       'cmi.core.lesson_mode': 'browse',
     });
 
-    for (const input of [noMastery, noRaw, blankMastery, browse]) {
+    const suspended = values({
+      'cmi.student_data.mastery_score': '70',
+      'cmi.core.score.raw': '5',
+      'cmi.core.exit': 'suspend',
+    });
+
+    for (const input of [noMastery, noRaw, blankMastery, browse, suspended]) {
       expect(applyMasteryScore(input)).toBe(input);
     }
   });

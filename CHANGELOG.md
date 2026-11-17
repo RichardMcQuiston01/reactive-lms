@@ -13,6 +13,12 @@
 
 ### Fixed
 
+- A learner who suspended a SCORM 1.2 session with a partial score was marked
+  failed. The mastery score was applied whenever a session ended, so a
+  suspend with a raw score below it set `failed` before the learner came
+  back. It now applies only when the session ends without a suspend, so a
+  suspended session keeps the status the SCO wrote and the verdict comes on
+  the final exit.
 - The SCORM 1.2 save route (`PUT /scorm/attempts/:id/cmi`) no longer trusts the
   browser's values. It stored whatever it was sent, so a raw score of 999
   became a scaled score of 9.99 and a 5,000-character location was kept,

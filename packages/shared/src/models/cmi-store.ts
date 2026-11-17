@@ -751,7 +751,9 @@ function isTimespan(value: string): boolean {
  * SCO reported a raw score, `cmi.core.lesson_status` becomes `passed` when the
  * score reaches the mastery score and `failed` when it does not, whatever the
  * SCO wrote (typically `completed`). Nothing changes without a mastery score,
- * without a raw score, or in browse mode, which is not for credit.
+ * without a raw score, in browse mode, which is not for credit, or when the
+ * session is suspended: the learner is coming back, so a partial score is not
+ * a verdict yet.
  *
  * @param values - CMI snapshot at the end of the session
  * @returns The snapshot, with `cmi.core.lesson_status` replaced when it applies
@@ -762,7 +764,8 @@ export function applyMasteryScore(values: CmiValues): CmiValues {
   if (
     mastery === undefined ||
     raw === undefined ||
-    values['cmi.core.lesson_mode'] === 'browse'
+    values['cmi.core.lesson_mode'] === 'browse' ||
+    values['cmi.core.exit'] === 'suspend'
   ) {
     return values;
   }
