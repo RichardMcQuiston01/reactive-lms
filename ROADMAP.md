@@ -559,11 +559,36 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   | `admin` | `@richardmcquiston01/reactive-lms-admin` |
 
   `standalone-api` and `standalone-web` are apps and stay private. Names for
-  the six libraries were unused on npm when checked. Proposed, not yet
-  confirmed: workspace path references through 0.2.0, `next`-tagged
-  prereleases from 0.3.0, and 1.0.0 as the first `latest`, with independent
-  per-package versioning (for example Changesets) and releases tagged from
-  `main`.
+  the six libraries were unused on npm when checked.
+
+  Confirmed 2026-11-18:
+
+  - **First preview scope:** `shared`, `persistence`, `core` and `nest`. The
+    Angular packages (`player`, `admin`) wait for their own packaging work
+    (ng-packagr), so they stay `private` until then.
+  - **Dist-tags:** every pre-1.0 release is published with `--tag next`, never
+    as `latest`. npm gives a package's first publish the `latest` tag unless
+    told otherwise, so the publish script always passes the tag. 1.0.0 is the
+    first `latest`.
+  - **First version:** `0.4.1-next.0`, which is where the code is (SCORM 1.2
+    and AICC). Versions before that stay as workspace references and were
+    never published.
+  - **Versioning:** independent per-package versions, managed with
+    Changesets in prerelease mode, with a release PR and a changelog for each
+    package.
+  - **Tags:** releases are tagged from `main`, and the publish workflow runs
+    from the tag with npm provenance.
+  - **Build:** each library is bundled with `tsup` into ESM plus type
+    declarations that load in plain Node, with `exports`, `files` and
+    `publishConfig` set. The current source-only `exports` and the
+    extensionless imports in `dist/` do not load under Node ESM.
+  - **Claims:** the README of each preview package says that SCORM 1.2 and
+    AICC are not claimed as conformant until the ADL Test Suite run and an
+    independent AICC package pass. Nothing is published as `latest` before
+    that.
+  - **Order of work:** build setup, then package READMEs and metadata, then
+    the release workflow, then the first publish. The first publish needs an
+    npm token that only the project owner can add.
 - **D5 — Learning paths** (decided 2026-10-20). Build option B in 0.3.0,
   then option C in 1.2.0.
   - **B (0.3.0):** `parent_module_id` tree plus a versioned, all/any
