@@ -596,6 +596,9 @@ Recommendations are defaults, not agreements. Each blocks the milestone shown.
   - **Order of work:** build setup, then package READMEs and metadata, then
     the release workflow, then the first publish. The first publish needs an
     npm token that only the project owner can add.
+  - **Status (2026-11-20):** build setup and Changesets are done (the four
+    packages start from `0.4.0`, so the first preview is `0.4.1-next.0`). The
+    package READMEs, the release workflow, and the first publish remain.
 - **D5 — Learning paths** (decided 2026-10-20). Build option B in 0.3.0,
   then option C in 1.2.0.
   - **B (0.3.0):** `parent_module_id` tree plus a versioned, all/any
