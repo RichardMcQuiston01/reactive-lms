@@ -18,6 +18,7 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
+      '**/.tsbuild/**',
       '**/node_modules/**',
       '**/coverage/**',
       // Fixture packages are course content, not project code.

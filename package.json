@@ -19,6 +19,8 @@
   ],
   "scripts": {
     "typecheck": "tsc -b packages/shared packages/persistence packages/core packages/nest packages/player packages/admin packages/standalone-api packages/standalone-web",
+    "build": "bun run --filter './packages/shared' --filter './packages/persistence' --filter './packages/core' --filter './packages/nest' build",
+    "verify:packages": "bun scripts/verify-packages.ts",
     "test": "bun test",
     "test:file": "bun test",
     "lint": "eslint .",
@@ -28,10 +30,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9",
+    "@swc/core": "^1.16.22",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
     "globals": "^17.13.0",
     "prettier": "^3",
+    "tsup": "^9.0.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8"
   }

@@ -6,6 +6,25 @@
 
 ## Unreleased
 
+### Added
+
+- Build and pack setup for `shared`, `persistence`, `core` and `nest`, the
+  libraries planned for the first npm preview (D4). Each is bundled with
+  `tsup` into one ES module plus type declarations that load in plain Node;
+  the old `dist` output had extensionless imports that Node cannot resolve,
+  and `exports` pointed at `.ts` source. Decorator metadata, which TypeORM and
+  Nest read at run time, is kept. Packing points `exports` at `dist`, pins
+  `workspace:*` ranges to the real version, and restores `package.json`
+  afterwards, so the workspace still runs from source with no build step.
+  `typeorm`, `reflect-metadata` and, for `nest`, NestJS and `rxjs` are now peer
+  dependencies so a host and the library share one copy; `pg` is an optional
+  peer. The four packages are no longer `private`, and publish with the `next`
+  tag. Nothing is published yet.
+- `bun run build` and `bun run verify:packages`. The second packs the four
+  libraries, installs the tarballs into an empty project, loads them under
+  plain Node, checks that decorator metadata survived, and (with
+  `RLMS_TEST_DATABASE_URL`) boots the Nest module against Postgres. CI runs it.
+
 ### Planned
 
 - AICC (HACP) support added to the roadmap as 0.4.1 (D16), replacing the earlier

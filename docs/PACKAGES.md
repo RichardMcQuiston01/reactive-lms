@@ -2,7 +2,7 @@
 
 [Back to README](../README.md)
 
-| [Workspace](#workspace) | [Package Map](#package-map) | [How the Pieces Fit](#how-the-pieces-fit) |
+| [Workspace](#workspace) | [Package Map](#package-map) | [Build and Pack](#build-and-pack) | [How the Pieces Fit](#how-the-pieces-fit) |
 
 ReactiveLMS is a Bun workspace. Each package lives in the `packages` folder.
 
@@ -25,7 +25,24 @@ Use [Bun](https://bun.sh) to install and to run scripts. Do not use npm for eith
 | `packages/standalone-api` | `@richardmcquiston01/reactive-lms-standalone-api` | A ready-to-run Nest app with a data folder, a demo learner, and `/health`. |
 | `packages/standalone-web` | `@richardmcquiston01/reactive-lms-standalone-web` | A thin demo entry that re-exports the Angular player. |
 
-Every package is private for now. Nothing is published to a package registry yet.
+`shared`, `persistence`, `core`, and `nest` are set up for the npm registry. The other four stay private. Nothing is published yet. See [Build and Pack](#build-and-pack).
+
+[Back to Top](#packages)
+
+## Build and Pack
+
+Day to day, you do not need a build. Bun, `tsc`, and the Angular builds read the TypeScript source of each package directly.
+
+To build the four libraries, run `bun run build`. It bundles each one with [tsup](https://tsup.egoist.dev) into a `dist` folder, as a standard JavaScript module with type declarations.
+
+To check that the packages work for someone else, run `bun run verify:packages`. It packs the four libraries, installs the tarballs into an empty project, and loads them with plain Node. If `RLMS_TEST_DATABASE_URL` is set, it also starts the Nest module against Postgres and calls `/lms/packages`. Continuous integration (CI) runs it on every pull request.
+
+A few things to know:
+
+- Packing changes a copy of `package.json`. It points `exports` at `dist` and swaps each `workspace:*` range for the real version. The original file is put back afterwards.
+- The host app supplies `typeorm` and `reflect-metadata`. `nest` also needs NestJS and `rxjs`. These are peer dependencies, so the host and the library share one copy. `pg` is an optional peer, for hosts that use Postgres.
+- The `@richardmcquiston01/reactive-lms-core/testing` entry holds the adapter test suites. It loads only under Bun, because it uses the Bun test runner.
+- Releases will use the `next` tag until 1.0.0. See decision D4 in the [roadmap](../ROADMAP.md).
 
 [Back to Top](#packages)
 

@@ -8,3 +8,6 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+.tsbuild/
+packages/*/LICENSE
+packages/*/package.json.prepack-backup

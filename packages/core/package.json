@@ -1,8 +1,28 @@
 {
   "name": "@richardmcquiston01/reactive-lms-core",
   "version": "0.2.0",
-  "private": true,
+  "description": "Framework-free ReactiveLMS core: course container, SCORM 1.2 and AICC runtimes, progress, blob storage and import.",
+  "keywords": [
+    "lms",
+    "scorm",
+    "aicc",
+    "elearning"
+  ],
+  "license": "MIT",
+  "author": "Richard McQuiston",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RichardMcQuiston01/reactive-lms.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/RichardMcQuiston01/reactive-lms#readme",
+  "bugs": {
+    "url": "https://github.com/RichardMcQuiston01/reactive-lms/issues"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -13,16 +33,30 @@
       "import": "./src/testing/index.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "next",
+    "provenance": true
+  },
   "scripts": {
-    "typecheck": "tsc -b"
+    "build": "tsup",
+    "typecheck": "tsc -b",
+    "prepack": "tsup && bun ../../scripts/prepare-publish.ts prepack",
+    "postpack": "bun ../../scripts/prepare-publish.ts postpack"
   },
   "dependencies": {
     "@richardmcquiston01/reactive-lms-persistence": "workspace:*",
     "@richardmcquiston01/reactive-lms-shared": "workspace:*",
-    "fflate": "^0.8.3",
-    "typeorm": "^0.3.31"
+    "fflate": "^0.8.3"
+  },
+  "peerDependencies": {
+    "typeorm": "^0.3.0"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0"
+    "@types/node": "^24.3.0",
+    "typeorm": "^0.3.31"
   }
 }

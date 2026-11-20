@@ -1,24 +1,65 @@
 {
   "name": "@richardmcquiston01/reactive-lms-persistence",
   "version": "0.2.0",
-  "private": true,
+  "description": "TypeORM entities, dialects and migrations for ReactiveLMS.",
+  "keywords": [
+    "lms",
+    "typeorm",
+    "postgres",
+    "migrations"
+  ],
+  "license": "MIT",
+  "author": "Richard McQuiston",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RichardMcQuiston01/reactive-lms.git",
+    "directory": "packages/persistence"
+  },
+  "homepage": "https://github.com/RichardMcQuiston01/reactive-lms#readme",
+  "bugs": {
+    "url": "https://github.com/RichardMcQuiston01/reactive-lms/issues"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "next",
+    "provenance": true
+  },
   "scripts": {
-    "typecheck": "tsc -b"
+    "build": "tsup",
+    "typecheck": "tsc -b",
+    "prepack": "tsup && bun ../../scripts/prepare-publish.ts prepack",
+    "postpack": "bun ../../scripts/prepare-publish.ts postpack"
   },
   "dependencies": {
-    "@richardmcquiston01/reactive-lms-shared": "workspace:*",
+    "@richardmcquiston01/reactive-lms-shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "typeorm": "^0.3.0",
+    "reflect-metadata": "^0.2.0",
+    "pg": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/pg": "^8.21.0",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.31"
-  },
-  "devDependencies": {
-    "@types/pg": "^8.21.0"
   }
 }
