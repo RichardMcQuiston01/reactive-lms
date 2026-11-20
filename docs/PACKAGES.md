@@ -42,7 +42,7 @@ A few things to know:
 - Packing changes a copy of `package.json`. It points `exports` at `dist` and swaps each `workspace:*` range for the real version. The original file is put back afterwards.
 - The host app supplies `typeorm` and `reflect-metadata`. `nest` also needs NestJS and `rxjs`. These are peer dependencies, so the host and the library share one copy. `pg` is an optional peer, for hosts that use Postgres.
 - The `@richardmcquiston01/reactive-lms-core/testing` entry holds the adapter test suites. It loads only under Bun, because it uses the Bun test runner.
-- Releases will use the `next` tag until 1.0.0. See decision D4 in the [roadmap](../ROADMAP.md).
+- Releases will use the `next` tag until 1.0.0. See [Releasing](./RELEASING.md) and decision D4 in the [roadmap](../ROADMAP.md).
 
 [Back to Top](#packages)
 

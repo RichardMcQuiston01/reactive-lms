@@ -119,6 +119,7 @@ TailwindCSS is planned for the demo UI. See [TECHNOLOGY.md](./docs/TECHNOLOGY.md
 - [Packages](./docs/PACKAGES.md): what each package does and how the pieces fit.
 - [Configuration](./docs/CONFIGURATION.md): environment variables and migrations.
 - [Authorization](./docs/AUTHORIZATION.md): how the host decides who can do what.
+- [Releasing](./docs/RELEASING.md): how package versions are chosen and published.
 - [SCORM 1.2 conformance](./docs/SCORM_1_2_CONFORMANCE.md): what was checked and what was not.
 - [ROADMAP.md](./ROADMAP.md): the release plan.
 - [CHANGELOG.md](./CHANGELOG.md): the release history.
