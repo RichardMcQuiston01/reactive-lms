@@ -164,7 +164,7 @@ describe.skipIf(!databaseUrl)('AICC end to end (real Postgres)', () => {
       request(
         'PutParam',
         sessionId,
-        '[Core]\r\nLesson_Location=page 4\r\nLesson_Status=Incomplete,Suspend\r\nTime=00:05:10\r\n[Core_Lesson]\r\nstate=1\r\n',
+        '[Core]\r\nLesson_Location=page 4\r\nLesson_Status=Incomplete,Suspend\r\nScore=40,100,0\r\nTime=00:05:10\r\n[Core_Lesson]\r\nstate=1\r\n',
       ),
     );
     const bad = await service.handle(
@@ -184,13 +184,31 @@ describe.skipIf(!databaseUrl)('AICC end to end (real Postgres)', () => {
     expect(attempts).toHaveLength(1);
     expect(attempts[0]?.termination).toBe('terminated');
 
+    // The partial score (40, against the unit's mastery score of 80) must not
+    // turn a suspended session into a failure.
+    const suspended = await ds.getRepository(NormalizedProgress).find({
+      where: { registrationId: registration.id },
+    });
+    expect(suspended).toHaveLength(1);
+    expect(suspended[0]).toMatchObject({
+      completionStatus: 'incomplete',
+      successStatus: 'unknown',
+    });
+    expect(
+      (
+        await ds
+          .getRepository(Registration)
+          .findOneByOrFail({ id: registration.id })
+      ).status,
+    ).not.toBe('failed');
+
     // Second launch resumes where the first stopped, and passes the unit.
     const second = await launch();
     const resumed = await service.handle(request('GetParam', second.sessionId));
     expect(core(resumed.aiccData)).toMatchObject({
       Lesson_Location: 'page 4',
       Lesson_Status: 'Incomplete',
-      Score: '',
+      Score: '40,100,0',
       Time: '00:05:10',
     });
     await service.handle(
