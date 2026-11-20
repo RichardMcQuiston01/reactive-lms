@@ -180,6 +180,13 @@ that has been exited refuses further requests with an AICC error.
   from the same sources. Agreement between the two proves consistency, not
   correctness. Before the format is claimed (see Principles), check the
   details against the CMI001 text or a real AICC package from another tool.
+  **Partly checked (2026-11):** `lms-package-maker`'s AICC packages import and
+  run on SCORM Cloud, a third-party LMS: view-all completion, quiz `passed`
+  (100%) and `failed` (40%, pass mark 80%), resume, and the exit. That shows
+  one independent LMS accepts the exit flags, `Score` order, `version` 3.5 and
+  `.au` layout the exporter uses and this LMS serves. It tested the exporter
+  against another LMS, not this LMS against another tool's package, so the
+  CMI001 text is still unread and the format claim still waits.
 - **HACP choices** (also unchecked against CMI001): the launch gives the
   content `AICC_SID`, which is the attempt's session id, and `AICC_URL`, the
   absolute address `<API root>/aicc/hacp` (the content needs an absolute
