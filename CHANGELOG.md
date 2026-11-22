@@ -24,6 +24,13 @@
   libraries, installs the tarballs into an empty project, loads them under
   plain Node, checks that decorator metadata survived, and (with
   `RLMS_TEST_DATABASE_URL`) boots the Nest module against Postgres. CI runs it.
+- Changesets for versioning and release notes (D4). `.changeset` holds the
+  config and the first changeset, and the repository is in prerelease mode
+  with the tag `next`. `shared`, `persistence`, `core` and `nest` start from
+  version `0.4.0` (never published), so `changeset version` gives
+  `0.4.1-next.0` as the first preview, with a `CHANGELOG.md` for each package.
+  Private packages are not versioned. New `docs/RELEASING.md` explains how to
+  add a changeset and cut a release. The publish workflow is not added yet.
 
 ### Planned
 
